@@ -78,9 +78,9 @@ public class Config {
         SHOW_ATTACHMENTS = toml.getBoolean("discord.show_attachments_ingame", true);
 
         DISCORD_CHAT_MESSAGE = toml.getString("discord.chat.message", DISCORD_CHAT_MESSAGE);
-        JOIN_MESSAGE = toml.getString("discord.join_message", JOIN_MESSAGE);
-        LEAVE_MESSAGE = toml.getString("discord.leave_message", LEAVE_MESSAGE);
-        SERVER_SWITCH_MESSAGE = toml.getString("discord.server_switch_message", SERVER_SWITCH_MESSAGE);
+        JOIN_MESSAGE = toml.getString("discord.chat.join_message", JOIN_MESSAGE);
+        LEAVE_MESSAGE = toml.getString("discord.chat.leave_message", LEAVE_MESSAGE);
+        SERVER_SWITCH_MESSAGE = toml.getString("discord.chat.server_switch_message", SERVER_SWITCH_MESSAGE);
 
         DISCORD_CHUNK = toml.getString("minecraft.discord_chunk", DISCORD_CHUNK);
         USERNAME_CHUNK = toml.getString("minecraft.username_chunk", USERNAME_CHUNK);
