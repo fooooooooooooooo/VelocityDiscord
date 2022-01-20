@@ -87,7 +87,7 @@ public class Discord extends ListenerAdapter {
                 .replace("{username}", username)
                 .replace("{message}", content);
 
-        activeChannel.sendMessage(message).queue();
+        sendMessage(message);
     }
 
     @Subscribe
@@ -98,10 +98,10 @@ public class Discord extends ListenerAdapter {
 
         String username = event.getPlayer().getUsername();
 
-        String msg = config.JOIN_MESSAGE
+        String message = config.JOIN_MESSAGE
                 .replace("{username}", username);
 
-        activeChannel.sendMessage(msg).queue();
+        sendMessage(message);
     }
 
     @Subscribe
@@ -114,7 +114,7 @@ public class Discord extends ListenerAdapter {
         String message = config.LEAVE_MESSAGE
                 .replace("{username}", username);
 
-        activeChannel.sendMessage(message).queue();
+        sendMessage(message);
     }
 
     @SuppressWarnings("UnstableApiUsage")
@@ -143,6 +143,18 @@ public class Discord extends ListenerAdapter {
                 .replace("{current}", server)
                 .replace("{previous}", previous);
 
+        sendMessage(message);
+    }
+
+    public void sendMessage(String message) {
         activeChannel.sendMessage(message).queue();
+    }
+
+    public void playerDeath(String message) {
+        sendMessage("**" + message + "**");
+    }
+
+    public void playerAdvancement(String message) {
+        sendMessage("**" + message + "**");
     }
 }
