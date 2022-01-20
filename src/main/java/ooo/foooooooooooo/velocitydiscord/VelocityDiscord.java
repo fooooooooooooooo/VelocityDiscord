@@ -20,7 +20,7 @@ import java.util.logging.Logger;
 public class VelocityDiscord {
     public static final String PluginName = "Velocity Discord Bridge";
     public static final String PluginDescription = "Velocity Discord Chat Bridge";
-    public static final String PluginVersion = "1.0.1";
+    public static final String PluginVersion = "1.0.2";
     public static final String PluginUrl = "https://github.com/fooooooooooooooo/VelocityDiscord";
 
     private final ProxyServer server;
