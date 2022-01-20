@@ -138,7 +138,7 @@ public class Discord extends ListenerAdapter {
 
         String previous = previousServer.getServerInfo().getName();
 
-        String message = config.DISCORD_CHAT_MESSAGE
+        String message = config.SERVER_SWITCH_MESSAGE
                 .replace("{username}", username)
                 .replace("{current}", server)
                 .replace("{previous}", previous);

@@ -24,7 +24,7 @@ public class Config {
     public String DISCORD_CHAT_MESSAGE = "{username}: {message}";
     public String JOIN_MESSAGE = "**{username} joined the game**";
     public String LEAVE_MESSAGE = "**{username} left the game**";
-    public String SERVER_SWITCH = "**{username} moved to {current} from {previous}**";
+    public String SERVER_SWITCH_MESSAGE = "**{username} moved to {current} from {previous}**";
 
     // minecraft formats
     public String DISCORD_CHUNK = "<dark_gray>[<{discord_color}>Discord<dark_gray>]";
@@ -80,7 +80,7 @@ public class Config {
         DISCORD_CHAT_MESSAGE = toml.getString("discord.chat.message", DISCORD_CHAT_MESSAGE);
         JOIN_MESSAGE = toml.getString("discord.join_message", JOIN_MESSAGE);
         LEAVE_MESSAGE = toml.getString("discord.leave_message", LEAVE_MESSAGE);
-        SERVER_SWITCH = toml.getString("discord.server_switch_message", SERVER_SWITCH);
+        SERVER_SWITCH_MESSAGE = toml.getString("discord.server_switch_message", SERVER_SWITCH_MESSAGE);
 
         DISCORD_CHUNK = toml.getString("minecraft.discord_chunk", DISCORD_CHUNK);
         USERNAME_CHUNK = toml.getString("minecraft.username_chunk", USERNAME_CHUNK);
