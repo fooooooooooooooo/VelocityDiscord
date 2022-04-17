@@ -106,7 +106,7 @@ public class MessageListener extends ListenerAdapter {
                 .replace("{message}", content)
                 .replace("{attachments}", String.join(" ", attachmentChunks));
 
-        sendMessage(MiniMessage.get().parse(message_chunk).asComponent());
+        sendMessage(MiniMessage.miniMessage().deserialize(message_chunk).asComponent());
     }
 
     private void sendMessage(Component msg) {
