@@ -5,6 +5,7 @@ import com.velocitypowered.api.event.Subscribe;
 import com.velocitypowered.api.event.connection.DisconnectEvent;
 import com.velocitypowered.api.event.connection.LoginEvent;
 import com.velocitypowered.api.event.player.PlayerChatEvent;
+import com.velocitypowered.api.event.player.PlayerChooseInitialServerEvent;
 import com.velocitypowered.api.event.player.ServerPostConnectEvent;
 import com.velocitypowered.api.proxy.ProxyServer;
 import com.velocitypowered.api.proxy.ServerConnection;
@@ -80,26 +81,38 @@ public class Discord extends ListenerAdapter {
             logger.warning("Channel not loaded yet");
         }
 
+        Optional<ServerConnection> currentServer = event.getPlayer().getCurrentServer();
+
+        if (currentServer.isEmpty()) return;
+
         String username = event.getPlayer().getUsername();
+        String server = currentServer.get().getServerInfo().getName();
         String content = event.getMessage();
 
         String message = config.DISCORD_CHAT_MESSAGE
                 .replace("{username}", username)
+                .replace("{server}", server)
                 .replace("{message}", content);
 
         sendMessage(message);
     }
 
     @Subscribe
-    public void onConnect(LoginEvent event) {
+    public void onConnect(PlayerChooseInitialServerEvent event) {
         if (activeChannel == null) {
             logger.warning("Channel not loaded yet");
         }
 
+        Optional<RegisteredServer> initialServer = event.getInitialServer();
+
+        if (initialServer.isEmpty()) return;
+
         String username = event.getPlayer().getUsername();
+        String server = initialServer.get().getServerInfo().getName();
 
         String message = config.JOIN_MESSAGE
-                .replace("{username}", username);
+                .replace("{username}", username)
+                .replace("{server}", server);
 
         sendMessage(message);
     }
@@ -110,9 +123,15 @@ public class Discord extends ListenerAdapter {
             logger.warning("Channel not loaded yet");
         }
 
+        Optional<ServerConnection> currentServer = event.getPlayer().getCurrentServer();
+
+        if (currentServer.isEmpty()) return;
+
         String username = event.getPlayer().getUsername();
+        String server = currentServer.get().getServerInfo().getName();
         String message = config.LEAVE_MESSAGE
-                .replace("{username}", username);
+                .replace("{username}", username)
+                .replace("{server}", server);
 
         sendMessage(message);
     }
