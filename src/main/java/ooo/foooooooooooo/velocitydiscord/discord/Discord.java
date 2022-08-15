@@ -101,7 +101,7 @@ public class Discord extends ListenerAdapter {
         String message = new StringTemplate(config.DISCORD_CHAT_MESSAGE)
                 .add("username", username)
                 .add("server", server)
-                .add("content", content)
+                .add("message", content)
                 .toString();
 
         sendMessage(message);
