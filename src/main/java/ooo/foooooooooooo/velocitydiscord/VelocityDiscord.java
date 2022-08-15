@@ -8,6 +8,7 @@ import com.velocitypowered.api.plugin.annotation.DataDirectory;
 import com.velocitypowered.api.proxy.ProxyServer;
 import com.velocitypowered.api.proxy.messages.MinecraftChannelIdentifier;
 import ooo.foooooooooooo.velocitydiscord.Yep.YepListener;
+import ooo.foooooooooooo.velocitydiscord.discord.Discord;
 
 import javax.annotation.Nullable;
 import java.nio.file.Path;

@@ -8,6 +8,7 @@ import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
+import ooo.foooooooooooo.velocitydiscord.util.StringTemplate;
 
 import java.awt.*;
 import java.util.ArrayList;
@@ -65,20 +66,21 @@ public class MessageListener extends ListenerAdapter {
         String hex = "#" + Integer.toHexString(color.getRGB()).substring(2);
 
         // parse configured message formats
-        String discord_chunk = config.DISCORD_CHUNK
-                .replace("{discord_color}", config.DISCORD_COLOR);
+        String discord_chunk = new StringTemplate(config.DISCORD_CHUNK)
+                .add("discord_color", config.DISCORD_COLOR).toString();
 
-        String username_chunk = config.USERNAME_CHUNK
-                .replace("{role_color}", hex)
-                .replace("{username}", author.getName())
-                .replace("{discriminator}", author.getDiscriminator())
-                .replace("{nickname}", member.getEffectiveName());
+        String username_chunk = new StringTemplate(config.USERNAME_CHUNK)
+                .add("role_color", hex)
+                .add("username", author.getName())
+                .add("discriminator", author.getDiscriminator())
+                .add("nickname", member.getEffectiveName())
+                .toString();
 
         String attachment_chunk = config.ATTACHMENTS;
-        String message_chunk = config.MC_CHAT_MESSAGE
-                .replace("{discord_chunk}", discord_chunk)
-                .replace("{username_chunk}", username_chunk)
-                .replace("{message}", message.getContentDisplay());
+        StringTemplate message_chunk = new StringTemplate(config.MC_CHAT_MESSAGE)
+                .add("discord_chunk", discord_chunk)
+                .add("username_chunk", username_chunk)
+                .add("message", message.getContentDisplay());
 
         ArrayList<String> attachmentChunks = new ArrayList<>();
 
@@ -88,23 +90,24 @@ public class MessageListener extends ListenerAdapter {
         }
 
         for (Message.Attachment attachment : attachments) {
-            attachmentChunks.add(attachment_chunk
-                    .replace("{url}", attachment.getUrl())
-                    .replace("{attachment_color}", config.ATTACHMENT_COLOR)
+            attachmentChunks.add(new StringTemplate(attachment_chunk)
+                    .add("url", attachment.getUrl())
+                    .add("attachment_color", config.ATTACHMENT_COLOR)
+                    .toString()
             );
         }
 
         var content = message.getContentDisplay();
 
+        // Remove leading whitespace from attachments if there's no content
         if (content.isBlank()) {
             message_chunk = message_chunk.replace(" {attachments}", "{attachments}");
         }
 
-        message_chunk = message_chunk
-                .replace("{message}", content)
-                .replace("{attachments}", String.join(" ", attachmentChunks));
+        message_chunk.add("message", content);
+        message_chunk.add("attachments", String.join(" ", attachmentChunks));
 
-        sendMessage(MiniMessage.miniMessage().deserialize(message_chunk).asComponent());
+        sendMessage(MiniMessage.miniMessage().deserialize(message_chunk.toString()).asComponent());
     }
 
     private void sendMessage(Component msg) {
