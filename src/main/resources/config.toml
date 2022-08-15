@@ -1,5 +1,5 @@
 # Don't change this
-config_version = "1"
+config_version = "1.1"
 
 [discord]
 # Bot token from https://discordapp.com/developers/applications/
@@ -25,6 +25,7 @@ enabled = true
 server_format = "[{server_name} {online_players}/{max_players}]"
 player_format = "- {username}"
 no_players = "No players online"
+codeblock_lang = "asciidoc"
 
 # Discord > Minecraft message formats
 # Uses XML-like formatting with https://docs.adventure.kyori.net/minimessage#format

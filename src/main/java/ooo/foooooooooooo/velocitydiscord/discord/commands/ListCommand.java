@@ -22,7 +22,7 @@ public class ListCommand implements ICommand {
         var servers = server.getAllServers().stream().toList();
 
         var sb = new StringBuilder();
-        sb.append("```\n");
+        sb.append("```").append(config.DISCORD_LIST_CODEBLOCK_LANG).append("\n");
 
         for (var server : servers) {
             var name = server.getServerInfo().getName();
@@ -43,19 +43,22 @@ public class ListCommand implements ICommand {
                     .add("online_players", playerCount)
                     .add("max_players", maxPlayers)
                     .toString()
-            );
+            ).append("\n");
 
             if (playerCount == 0) {
-                sb.append(config.DISCORD_LIST_NO_PLAYERS).append("\n");
-                continue;
+                if (!config.DISCORD_LIST_NO_PLAYERS.isEmpty()) {
+                    sb.append(config.DISCORD_LIST_NO_PLAYERS).append("\n");
+                }
+            } else {
+                for (var player : players) {
+                    sb.append(new StringTemplate(config.DISCORD_LIST_PLAYER_FORMAT)
+                            .add("username", player.getUsername())
+                            .toString()
+                    ).append("\n");
+                }
             }
 
-            for (var player : players) {
-                sb.append(new StringTemplate(config.DISCORD_LIST_PLAYER_FORMAT)
-                        .add("username", player.getUsername())
-                        .toString()
-                );
-            }
+            sb.append("\n");
         }
         sb.append("```");
 
