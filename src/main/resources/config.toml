@@ -27,3 +27,6 @@ discord_chunk="<dark_gray>[<{discord_color}>Discord<dark_gray>]<reset>"
 username_chunk="<{role_color}><hover:show_text:{username}#{discriminator}>{nickname}</hover><reset>"
 message="{discord_chunk} {username_chunk}<dark_gray>: <reset>{message} {attachments}"
 attachments="<dark_gray><click:open_url:{url}>[<{attachment_color}>Attachment<dark_gray>]</click><reset>"
+# colors for the <{discord_color}> and <{attachment_color}> tags
+discord_color="#7289da"
+attachment_color="#4abdff"

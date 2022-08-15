@@ -3,7 +3,6 @@ package ooo.foooooooooooo.velocitydiscord;
 import com.velocitypowered.api.event.PostOrder;
 import com.velocitypowered.api.event.Subscribe;
 import com.velocitypowered.api.event.connection.DisconnectEvent;
-import com.velocitypowered.api.event.connection.LoginEvent;
 import com.velocitypowered.api.event.player.PlayerChatEvent;
 import com.velocitypowered.api.event.player.PlayerChooseInitialServerEvent;
 import com.velocitypowered.api.event.player.ServerPostConnectEvent;
@@ -77,10 +76,6 @@ public class Discord extends ListenerAdapter {
 
     @Subscribe(order = PostOrder.FIRST)
     public void onPlayerChat(PlayerChatEvent event) {
-        if (activeChannel == null) {
-            logger.warning("Channel not loaded yet");
-        }
-
         Optional<ServerConnection> currentServer = event.getPlayer().getCurrentServer();
 
         if (currentServer.isEmpty()) return;
@@ -99,10 +94,6 @@ public class Discord extends ListenerAdapter {
 
     @Subscribe
     public void onConnect(PlayerChooseInitialServerEvent event) {
-        if (activeChannel == null) {
-            logger.warning("Channel not loaded yet");
-        }
-
         Optional<RegisteredServer> initialServer = event.getInitialServer();
 
         if (initialServer.isEmpty()) return;
@@ -119,10 +110,6 @@ public class Discord extends ListenerAdapter {
 
     @Subscribe
     public void onDisconnect(DisconnectEvent event) {
-        if (activeChannel == null) {
-            logger.warning("Channel not loaded yet");
-        }
-
         Optional<ServerConnection> currentServer = event.getPlayer().getCurrentServer();
 
         if (currentServer.isEmpty()) return;
@@ -139,10 +126,6 @@ public class Discord extends ListenerAdapter {
     @SuppressWarnings("UnstableApiUsage")
     @Subscribe
     public void onServerConnect(ServerPostConnectEvent event) {
-        if (activeChannel == null) {
-            logger.warning("Channel not loaded yet");
-        }
-
         Optional<ServerConnection> currentServer = event.getPlayer().getCurrentServer(); // why Optional? true lulw
 
         if (currentServer.isEmpty()) return;

@@ -15,8 +15,6 @@ import java.util.List;
 import java.util.logging.Logger;
 
 public class MessageListener extends ListenerAdapter {
-    public final String discordColor = "#7289da";
-    public final String attachmentColor = "#4abdff";
     private final ProxyServer server;
     private final Logger logger;
     private final Config config;
@@ -68,7 +66,7 @@ public class MessageListener extends ListenerAdapter {
 
         // parse configured message formats
         String discord_chunk = config.DISCORD_CHUNK
-                .replace("{discord_color}", discordColor);
+                .replace("{discord_color}", config.DISCORD_COLOR);
 
         String username_chunk = config.USERNAME_CHUNK
                 .replace("{role_color}", hex)
@@ -92,7 +90,7 @@ public class MessageListener extends ListenerAdapter {
         for (Message.Attachment attachment : attachments) {
             attachmentChunks.add(attachment_chunk
                     .replace("{url}", attachment.getUrl())
-                    .replace("{attachment_color}", attachmentColor)
+                    .replace("{attachment_color}", config.ATTACHMENT_COLOR)
             );
         }
 

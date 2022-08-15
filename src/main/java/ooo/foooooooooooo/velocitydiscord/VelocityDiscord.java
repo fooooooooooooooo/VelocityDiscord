@@ -9,6 +9,7 @@ import com.velocitypowered.api.proxy.ProxyServer;
 import com.velocitypowered.api.proxy.messages.MinecraftChannelIdentifier;
 import ooo.foooooooooooo.velocitydiscord.Yep.YepListener;
 
+import javax.annotation.Nullable;
 import java.nio.file.Path;
 import java.util.logging.Logger;
 
@@ -24,29 +25,35 @@ public class VelocityDiscord {
     public static final String PluginDescription = "Velocity Discord Chat Bridge";
     public static final String PluginVersion = "1.1.0";
     public static final String PluginUrl = "https://github.com/fooooooooooooooo/VelocityDiscord";
-
     public static final MinecraftChannelIdentifier YepIdentifier =
             MinecraftChannelIdentifier.create("velocity", "yep");
+    public static boolean pluginDisabled = false;
     private static VelocityDiscord instance;
 
     private final ProxyServer server;
-    private final Logger logger;
-    private final Discord discord;
-    private final YepListener yep;
-
     Config config;
+
+    @Nullable
+    private Discord discord = null;
+
+    @Nullable
+    private YepListener yep = null;
 
     @Inject
     public VelocityDiscord(ProxyServer server, Logger logger, @DataDirectory Path dataDirectory) {
         this.server = server;
-        this.logger = logger;
 
         logger.info("Loading " + PluginName + " v" + PluginVersion);
 
         this.config = new Config(dataDirectory);
+        pluginDisabled = config.isFirstRun();
 
-        this.discord = new Discord(this.server, this.logger, this.config);
-        this.yep = new YepListener(this.logger);
+        if (pluginDisabled) {
+            logger.severe("This is the first time you are running this plugin. Please configure it in the config.yml file. Disabling plugin.");
+        } else {
+            this.discord = new Discord(this.server, logger, this.config);
+            this.yep = new YepListener(logger);
+        }
 
         instance = this;
     }
@@ -57,8 +64,8 @@ public class VelocityDiscord {
 
     @Subscribe
     public void onProxyInitialization(ProxyInitializeEvent event) {
-        register(discord);
-        register(yep);
+        if (discord != null) register(discord);
+        if (yep != null) register(yep);
 
         this.server.getChannelRegistrar().register(YepIdentifier);
     }
