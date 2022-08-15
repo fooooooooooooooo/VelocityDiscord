@@ -12,7 +12,9 @@ import java.nio.file.Path;
 import java.util.Objects;
 
 public class Config {
-    static final String CONFIG_VERSION = "1";
+    public static final String CONFIG_MAJOR_VERSION = "1";
+    public static final String CONFIG_MINOR_VERSION = "1";
+    public static final String CONFIG_VERSION = CONFIG_MAJOR_VERSION + "." + CONFIG_MINOR_VERSION;
     private static final String DefaultToken = "TOKEN";
     private static final String DefaultChannelId = "000000000000000000";
     private final Path dataDir;
@@ -83,10 +85,14 @@ public class Config {
         toml = new Toml().read(dataFile);
 
         // make sure the config makes sense for the current plugin's version
-        String version = toml.getString("config_version", "1");
-        if (!version.equals(CONFIG_VERSION)) {
+        String version = toml.getString("config_version", CONFIG_VERSION);
+        if (versionCompatible(version)) {
             throw new RuntimeException("ERROR: Can't use the existing configuration file: version mismatch (intended for another, older version?)");
         }
+    }
+
+    private boolean versionCompatible(String newVersion) {
+        return newVersion.split("\\.")[0].equals(CONFIG_MAJOR_VERSION);
     }
 
     public void loadConfigs() {
