@@ -39,7 +39,7 @@ public class MessageListener extends ListenerAdapter {
             jda = event.getJDA();
         }
 
-        TextChannel channel = event.getTextChannel();
+        TextChannel channel = event.getChannel().asTextChannel();
         if (!channel.getId().equals(config.CHANNEL_ID)) return;
 
         User author = event.getAuthor();
