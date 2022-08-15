@@ -20,7 +20,7 @@ public class Config {
     public String CHANNEL_ID = DefaultChannelId;
     // toggles
     public Boolean SHOW_BOT_MESSAGES = false;
-    public Boolean SHOW_ATTACHMENTS = false;
+    public Boolean SHOW_ATTACHMENTS = true;
     // discord formats
     public String DISCORD_CHAT_MESSAGE = "{username}: {message}";
     public String JOIN_MESSAGE = "**{username} joined the game**";

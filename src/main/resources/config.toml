@@ -8,7 +8,7 @@ token="TOKEN"
 channel="000000000000000000"
 
 # Show messages from bots in minecraft chat
-show_bot_messages=true
+show_bot_messages=false
 # Show clickable links for attachments in minecraft chat
 show_attachments_ingame=true
 
