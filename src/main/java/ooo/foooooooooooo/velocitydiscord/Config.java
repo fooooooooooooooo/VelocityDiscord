@@ -86,7 +86,7 @@ public class Config {
 
         // make sure the config makes sense for the current plugin's version
         String version = toml.getString("config_version", CONFIG_VERSION);
-        if (versionCompatible(version)) {
+        if (!versionCompatible(version)) {
             throw new RuntimeException("ERROR: Can't use the existing configuration file: version mismatch (intended for another, older version?)");
         }
     }
