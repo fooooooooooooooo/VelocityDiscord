@@ -8,7 +8,6 @@ import com.velocitypowered.api.event.player.PlayerChooseInitialServerEvent;
 import com.velocitypowered.api.event.player.ServerPostConnectEvent;
 import com.velocitypowered.api.proxy.ProxyServer;
 import com.velocitypowered.api.proxy.ServerConnection;
-import com.velocitypowered.api.proxy.server.RegisteredServer;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.TextChannel;
@@ -20,6 +19,8 @@ import net.dv8tion.jda.api.utils.ChunkingFilter;
 import net.dv8tion.jda.api.utils.MemberCachePolicy;
 import ooo.foooooooooooo.velocitydiscord.Config;
 import ooo.foooooooooooo.velocitydiscord.MessageListener;
+import ooo.foooooooooooo.velocitydiscord.Yep.AdvancementMessage;
+import ooo.foooooooooooo.velocitydiscord.Yep.DeathMessage;
 import ooo.foooooooooooo.velocitydiscord.discord.commands.ICommand;
 import ooo.foooooooooooo.velocitydiscord.discord.commands.ListCommand;
 import ooo.foooooooooooo.velocitydiscord.util.StringTemplate;
@@ -49,11 +50,11 @@ public class Discord extends ListenerAdapter {
         MessageListener messageListener = new MessageListener(server, logger, config);
 
         JDABuilder builder = JDABuilder
-                .createDefault(config.DISCORD_TOKEN)
-                .setChunkingFilter(ChunkingFilter.ALL)
-                .enableIntents(GatewayIntent.GUILD_MEMBERS, GatewayIntent.GUILD_MESSAGES, GatewayIntent.MESSAGE_CONTENT)
-                .setMemberCachePolicy(MemberCachePolicy.ALL)
-                .addEventListeners(messageListener, this);
+            .createDefault(config.DISCORD_TOKEN)
+            .setChunkingFilter(ChunkingFilter.ALL)
+            .enableIntents(GatewayIntent.GUILD_MEMBERS, GatewayIntent.GUILD_MESSAGES, GatewayIntent.MESSAGE_CONTENT)
+            .setMemberCachePolicy(MemberCachePolicy.ALL)
+            .addEventListeners(messageListener, this);
 
         try {
             jda = builder.build();
@@ -99,10 +100,10 @@ public class Discord extends ListenerAdapter {
         String content = event.getMessage();
 
         String message = new StringTemplate(config.DISCORD_CHAT_MESSAGE)
-                .add("username", username)
-                .add("server", server)
-                .add("message", content)
-                .toString();
+            .add("username", username)
+            .add("server", server)
+            .add("message", content)
+            .toString();
 
         sendMessage(message);
     }
@@ -117,8 +118,8 @@ public class Discord extends ListenerAdapter {
         var server = initialServer.get().getServerInfo().getName();
 
         var message = new StringTemplate(config.JOIN_MESSAGE)
-                .add("username", username)
-                .add("server", server);
+            .add("username", username)
+            .add("server", server);
 
         sendMessage(message.toString());
     }
@@ -133,8 +134,8 @@ public class Discord extends ListenerAdapter {
         var server = currentServer.get().getServerInfo().getName();
 
         var message = new StringTemplate(config.LEAVE_MESSAGE)
-                .add("username", username)
-                .add("server", server);
+            .add("username", username)
+            .add("server", server);
 
         sendMessage(message.toString());
     }
@@ -157,9 +158,9 @@ public class Discord extends ListenerAdapter {
         var previous = previousServer.getServerInfo().getName();
 
         var message = new StringTemplate(config.SERVER_SWITCH_MESSAGE)
-                .add("username", username)
-                .add("current", server)
-                .add("previous", previous);
+            .add("username", username)
+            .add("current", server)
+            .add("previous", previous);
 
         sendMessage(message.toString());
     }
@@ -168,12 +169,23 @@ public class Discord extends ListenerAdapter {
         activeChannel.sendMessage(message).queue();
     }
 
-    public void playerDeath(String message) {
-        sendMessage("**" + message + "**");
+    public void playerDeath(String username, DeathMessage message) {
+        sendMessage(
+            new StringTemplate(config.DEATH_MESSAGE) //
+                .add("username", username) //
+                .add("death_message", message.message) //
+                .toString()
+        );
     }
 
-    public void playerAdvancement(String message) {
-        sendMessage("**" + message + "**");
+    public void playerAdvancement(String username, AdvancementMessage message) {
+        sendMessage(
+            new StringTemplate(config.ADVANCEMENT_MESSAGE) //
+                .add("username", username) //
+                .add("advancement_title", message.title) //
+                .add("advancement_description", message.description) //
+                .toString()
+        );
     }
 
     @Override

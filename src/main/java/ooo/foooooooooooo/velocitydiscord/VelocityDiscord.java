@@ -15,11 +15,11 @@ import java.nio.file.Path;
 import java.util.logging.Logger;
 
 @Plugin(id = "discord",
-        name = VelocityDiscord.PluginName,
-        description = VelocityDiscord.PluginDescription,
-        version = VelocityDiscord.PluginVersion,
-        url = VelocityDiscord.PluginUrl,
-        authors = {"fooooooooooooooo"}
+    name = VelocityDiscord.PluginName,
+    description = VelocityDiscord.PluginDescription,
+    version = VelocityDiscord.PluginVersion,
+    url = VelocityDiscord.PluginUrl,
+    authors = {"fooooooooooooooo"}
 )
 public class VelocityDiscord {
     public static final String PluginName = "Velocity Discord Bridge";
@@ -27,7 +27,7 @@ public class VelocityDiscord {
     public static final String PluginVersion = "1.1.0";
     public static final String PluginUrl = "https://github.com/fooooooooooooooo/VelocityDiscord";
     public static final MinecraftChannelIdentifier YepIdentifier =
-            MinecraftChannelIdentifier.create("velocity", "yep");
+        MinecraftChannelIdentifier.create("velocity", "yep");
     public static boolean pluginDisabled = false;
     private static VelocityDiscord instance;
 

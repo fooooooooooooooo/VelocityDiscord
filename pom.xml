@@ -6,7 +6,7 @@
 
     <groupId>ooo.foooooooooooo</groupId>
     <artifactId>velocity-discord</artifactId>
-    <version>1.2.0</version>
+    <version>1.2.1</version>
 
     <properties>
         <maven.compiler.source>16</maven.compiler.source>

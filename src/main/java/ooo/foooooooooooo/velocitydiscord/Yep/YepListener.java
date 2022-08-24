@@ -23,27 +23,30 @@ public class YepListener {
 
         String data = new String(event.getData(), StandardCharsets.UTF_8);
 
-        // type:message
+        // username:type:message
         var parts = data.split(":");
 
-        if (parts.length != 2) {
+        if (parts.length != 3) {
             logger.warning("Invalid yep message: " + data);
             return;
         }
 
-        var type = MessageType.INVALID;
+        MessageType type = null;
         try {
-            type = MessageType.valueOf(parts[0]);
+            type = MessageType.valueOf(parts[1]);
         } catch (IllegalArgumentException e) {
             logger.warning("Invalid yep message type: " + parts[0]);
         }
 
-        var message = parts[1];
+        var player = parts[0];
+        var message = parts[2];
         var discord = VelocityDiscord.getDiscord();
 
+        if (type == null) return;
+
         switch (type) {
-            case DEATH -> discord.playerDeath(message);
-            case ADVANCEMENT -> discord.playerAdvancement(message);
+            case DEATH -> discord.playerDeath(player, DeathMessage.fromString(message));
+            case ADVANCEMENT -> discord.playerAdvancement(player, AdvancementMessage.fromString(message));
             default -> logger.warning("Invalid yep message type: " + parts[0]);
         }
     }

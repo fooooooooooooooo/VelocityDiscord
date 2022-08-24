@@ -39,10 +39,10 @@ public class ListCommand implements ICommand {
             var playerCount = players.size();
 
             sb.append(new StringTemplate(config.DISCORD_LIST_SERVER_FORMAT)
-                    .add("server_name", name)
-                    .add("online_players", playerCount)
-                    .add("max_players", maxPlayers)
-                    .toString()
+                .add("server_name", name)
+                .add("online_players", playerCount)
+                .add("max_players", maxPlayers)
+                .toString()
             ).append("\n");
 
             if (playerCount == 0) {
@@ -52,8 +52,8 @@ public class ListCommand implements ICommand {
             } else {
                 for (var player : players) {
                     sb.append(new StringTemplate(config.DISCORD_LIST_PLAYER_FORMAT)
-                            .add("username", player.getUsername())
-                            .toString()
+                        .add("username", player.getUsername())
+                        .toString()
                     ).append("\n");
                 }
             }
