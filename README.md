@@ -6,7 +6,7 @@ Default config generated on startup:
 
 ```toml
 # Don't change this
-config_version = "1.1"
+config_version = "1.2"
 
 [discord]
 # Bot token from https://discordapp.com/developers/applications/
@@ -26,6 +26,8 @@ message = "{username}: {message}"
 join_message = "**{username} joined the game**"
 leave_message = "**{username} left the game**"
 server_switch_message = "**{username} moved to {current} from {previous}**"
+death_message = "**{username} {death_message}**"
+advancement_message = "**{username} has made the advancement __{advancement_title}__**\n_{advancement_description}_"
 
 [discord.commands.list]
 enabled = true
