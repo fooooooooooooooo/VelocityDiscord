@@ -13,9 +13,15 @@ import ooo.foooooooooooo.velocitydiscord.util.StringTemplate;
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
+import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class MessageListener extends ListenerAdapter {
+    private static final Pattern WEBHOOK_ID_REGEX = Pattern.compile("^https://discord\\.com/api/webhooks/(\\d+)/.+$");
+    private final String webhookId;
     private final ProxyServer server;
     private final Logger logger;
     private final Config config;
@@ -25,6 +31,12 @@ public class MessageListener extends ListenerAdapter {
         this.server = server;
         this.logger = logger;
         this.config = config;
+
+        final Matcher matcher = WEBHOOK_ID_REGEX.matcher(config.DISCORD_WEBHOOK_URL);
+        this.webhookId = matcher.find()
+                ? matcher.group(1)
+                : null;
+        logger.log(Level.FINER, "Found webhook id: {0}", webhookId);
     }
 
     @Override
@@ -47,7 +59,8 @@ public class MessageListener extends ListenerAdapter {
             return;
         }
 
-        if (author.getId().equals(jda.getSelfUser().getId())) {
+        if (author.getId().equals(jda.getSelfUser().getId())
+                || (Objects.nonNull(this.webhookId) && author.getId().equals(this.webhookId))) {
             logger.finer("ignoring own message");
             return;
         }
