@@ -1,5 +1,7 @@
 package ooo.foooooooooooo.velocitydiscord.discord;
 
+import club.minnced.discord.webhook.WebhookClient;
+import club.minnced.discord.webhook.WebhookClientBuilder;
 import com.velocitypowered.api.event.PostOrder;
 import com.velocitypowered.api.event.Subscribe;
 import com.velocitypowered.api.event.connection.DisconnectEvent;
@@ -38,6 +40,7 @@ public class Discord extends ListenerAdapter {
     private final Config config;
 
     private final JDA jda;
+    private final WebhookClient webhookClient;
     private final Map<String, ICommand> commands = new HashMap<>();
     private TextChannel activeChannel;
 
@@ -62,6 +65,10 @@ public class Discord extends ListenerAdapter {
             this.logger.severe("Failed to login to discord: " + e);
             throw new RuntimeException("Failed to login to discord: " + e);
         }
+
+        webhookClient = config.DISCORD_WEBHOOK_URL.isEmpty()
+                ? null
+                : new WebhookClientBuilder(config.DISCORD_WEBHOOK_URL).build();
     }
 
     @Override

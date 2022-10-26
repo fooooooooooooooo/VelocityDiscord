@@ -13,6 +13,8 @@ config_version = "1.2"
 token = "TOKEN"
 # Channel ID to send minecraft chat messages to
 channel = "000000000000000000"
+# Full webhook URL to send more fancy minecraft chat messages to
+webhook_url = ""
 
 # Show messages from bots in minecraft chat
 show_bot_messages = false
