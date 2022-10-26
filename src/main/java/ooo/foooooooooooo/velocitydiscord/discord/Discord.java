@@ -2,6 +2,8 @@ package ooo.foooooooooooo.velocitydiscord.discord;
 
 import club.minnced.discord.webhook.WebhookClient;
 import club.minnced.discord.webhook.WebhookClientBuilder;
+import club.minnced.discord.webhook.send.WebhookMessage;
+import club.minnced.discord.webhook.send.WebhookMessageBuilder;
 import com.velocitypowered.api.event.PostOrder;
 import com.velocitypowered.api.event.Subscribe;
 import com.velocitypowered.api.event.connection.DisconnectEvent;
@@ -103,16 +105,10 @@ public class Discord extends ListenerAdapter {
         if (currentServer.isEmpty()) return;
 
         String username = event.getPlayer().getUsername();
-        String server = currentServer.get().getServerInfo().getName();
+        String avatar = String.format("https://crafatar.com/avatars/%s?overlay", event.getPlayer().getUniqueId());
         String content = event.getMessage();
 
-        String message = new StringTemplate(config.DISCORD_CHAT_MESSAGE)
-            .add("username", username)
-            .add("server", server)
-            .add("message", content)
-            .toString();
-
-        sendMessage(message);
+        sendWebhookMessage(username, avatar, content);
     }
 
     @Subscribe
@@ -174,6 +170,24 @@ public class Discord extends ListenerAdapter {
 
     public void sendMessage(String message) {
         activeChannel.sendMessage(message).queue();
+    }
+
+    public void sendWebhookMessage(String name, String avatar, String content) {
+        if (webhookClient == null) {
+            String simpleMessage = new StringTemplate(config.DISCORD_CHAT_MESSAGE)
+                    .add("username", name)
+                    .add("message", content)
+                    .toString();
+
+            sendMessage(simpleMessage);
+        } else {
+            WebhookMessage webhookMessage = new WebhookMessageBuilder()
+                    .setUsername(name)
+                    .setAvatarUrl(avatar)
+                    .setContent(content)
+                    .build();
+            webhookClient.send(webhookMessage);
+        }
     }
 
     public void playerDeath(String username, DeathMessage message) {
