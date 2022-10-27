@@ -29,6 +29,7 @@ show_attachments_ingame = true
 # Minecraft > Discord message formats
 # Uses the same formatting as the Discord client
 [discord.chat]
+# The format set in the following key "discord.chat.message" is ignored when webhooks are used
 message = "{username}: {message}"
 join_message = "**{username} joined the game**"
 leave_message = "**{username} left the game**"
