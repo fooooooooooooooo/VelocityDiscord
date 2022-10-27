@@ -105,10 +105,23 @@ public class Discord extends ListenerAdapter {
         if (currentServer.isEmpty()) return;
 
         String username = event.getPlayer().getUsername();
-        String avatar = String.format("https://crafatar.com/avatars/%s?overlay", event.getPlayer().getUniqueId());
         String content = event.getMessage();
 
-        sendWebhookMessage(username, avatar, content);
+        if (config.DISCORD_USE_WEBHOOKS) {
+            String avatar = String.format("https://crafatar.com/avatars/%s?overlay", event.getPlayer().getUniqueId());
+
+            sendWebhookMessage(username, avatar, content);
+        } else {
+            String server = currentServer.get().getServerInfo().getName();
+
+            String message = new StringTemplate(config.DISCORD_CHAT_MESSAGE)
+                    .add("username", username)
+                    .add("server", server)
+                    .add("message", content)
+                    .toString();
+
+            sendMessage(message);
+        }
     }
 
     @Subscribe
@@ -173,21 +186,12 @@ public class Discord extends ListenerAdapter {
     }
 
     public void sendWebhookMessage(String name, String avatar, String content) {
-        if (config.DISCORD_USE_WEBHOOKS) {
             WebhookMessage webhookMessage = new WebhookMessageBuilder()
                     .setUsername(name)
                     .setAvatarUrl(avatar)
                     .setContent(content)
                     .build();
             webhookClient.send(webhookMessage);
-        } else {
-            String simpleMessage = new StringTemplate(config.DISCORD_CHAT_MESSAGE)
-                    .add("username", name)
-                    .add("message", content)
-                    .toString();
-
-            sendMessage(simpleMessage);
-        }
     }
 
     public void playerDeath(String username, DeathMessage message) {
