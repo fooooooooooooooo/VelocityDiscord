@@ -68,9 +68,9 @@ public class Discord extends ListenerAdapter {
             throw new RuntimeException("Failed to login to discord: " + e);
         }
 
-        webhookClient = config.DISCORD_WEBHOOK_URL.isEmpty()
-                ? null
-                : new WebhookClientBuilder(config.DISCORD_WEBHOOK_URL).build();
+        webhookClient = config.DISCORD_USE_WEBHOOKS
+                ? new WebhookClientBuilder(config.DISCORD_WEBHOOK_URL).build()
+                : null;
     }
 
     @Override
@@ -173,20 +173,20 @@ public class Discord extends ListenerAdapter {
     }
 
     public void sendWebhookMessage(String name, String avatar, String content) {
-        if (webhookClient == null) {
-            String simpleMessage = new StringTemplate(config.DISCORD_CHAT_MESSAGE)
-                    .add("username", name)
-                    .add("message", content)
-                    .toString();
-
-            sendMessage(simpleMessage);
-        } else {
+        if (config.DISCORD_USE_WEBHOOKS) {
             WebhookMessage webhookMessage = new WebhookMessageBuilder()
                     .setUsername(name)
                     .setAvatarUrl(avatar)
                     .setContent(content)
                     .build();
             webhookClient.send(webhookMessage);
+        } else {
+            String simpleMessage = new StringTemplate(config.DISCORD_CHAT_MESSAGE)
+                    .add("username", name)
+                    .add("message", content)
+                    .toString();
+
+            sendMessage(simpleMessage);
         }
     }
 

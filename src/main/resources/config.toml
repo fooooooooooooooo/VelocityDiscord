@@ -6,6 +6,11 @@ config_version = "1.2"
 token = "TOKEN"
 # Channel ID to send minecraft chat messages to
 channel = "000000000000000000"
+
+# Use a Discord webhook to send messages in a more fancy way (otherwise it will use the bot account)
+# This will show the player's avatar and name as the sender
+# Requires a webhook URL to be set below
+use_webhooks = false
 # Full webhook URL to send more fancy minecraft chat messages to
 webhook_url = ""
 

@@ -21,6 +21,7 @@ public class Config {
     private final Path dataDir;
     public String DISCORD_TOKEN = DefaultToken;
     public String CHANNEL_ID = DefaultChannelId;
+    public Boolean DISCORD_USE_WEBHOOKS = false;
     public String DISCORD_WEBHOOK_URL = DefaultWebhookUrl;
 
     // toggles
@@ -102,6 +103,7 @@ public class Config {
     public void loadConfigs() {
         DISCORD_TOKEN = toml.getString("discord.token", DISCORD_TOKEN);
         CHANNEL_ID = toml.getString("discord.channel", CHANNEL_ID);
+        DISCORD_USE_WEBHOOKS = toml.getBoolean("discord.use_webhooks", DISCORD_USE_WEBHOOKS);
         DISCORD_WEBHOOK_URL = toml.getString("discord.webhook_url", DISCORD_WEBHOOK_URL);
 
         SHOW_BOT_MESSAGES = toml.getBoolean("discord.show_bot_messages", SHOW_BOT_MESSAGES);
