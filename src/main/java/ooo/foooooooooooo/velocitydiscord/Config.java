@@ -18,11 +18,13 @@ public class Config {
     private static final String DefaultToken = "TOKEN";
     private static final String DefaultChannelId = "000000000000000000";
     private static final String DefaultWebhookUrl = "";
+    private static final String DefaultAvatarUrl = "https://crafatar.com/avatars/{uuid}?overlay";
     private final Path dataDir;
     public String DISCORD_TOKEN = DefaultToken;
     public String CHANNEL_ID = DefaultChannelId;
     public Boolean DISCORD_USE_WEBHOOKS = false;
     public String DISCORD_WEBHOOK_URL = DefaultWebhookUrl;
+    public String DISCORD_AVATAR_URL = DefaultAvatarUrl;
 
     // toggles
     public Boolean SHOW_BOT_MESSAGES = false;
@@ -105,6 +107,7 @@ public class Config {
         CHANNEL_ID = toml.getString("discord.channel", CHANNEL_ID);
         DISCORD_USE_WEBHOOKS = toml.getBoolean("discord.use_webhooks", DISCORD_USE_WEBHOOKS);
         DISCORD_WEBHOOK_URL = toml.getString("discord.webhook_url", DISCORD_WEBHOOK_URL);
+        DISCORD_AVATAR_URL = toml.getString("discord.avatar_url", DISCORD_AVATAR_URL);
 
         SHOW_BOT_MESSAGES = toml.getBoolean("discord.show_bot_messages", SHOW_BOT_MESSAGES);
         SHOW_ATTACHMENTS = toml.getBoolean("discord.show_attachments_ingame", SHOW_ATTACHMENTS);

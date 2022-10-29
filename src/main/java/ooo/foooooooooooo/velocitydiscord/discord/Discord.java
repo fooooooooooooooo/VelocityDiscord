@@ -108,7 +108,11 @@ public class Discord extends ListenerAdapter {
         String content = event.getMessage();
 
         if (config.DISCORD_USE_WEBHOOKS) {
-            String avatar = String.format("https://crafatar.com/avatars/%s?overlay", event.getPlayer().getUniqueId());
+            String uuid = event.getPlayer().getUniqueId().toString();
+            String avatar = new StringTemplate(config.DISCORD_AVATAR_URL)
+                    .add("username", username)
+                    .add("uuid", uuid)
+                    .toString();
 
             sendWebhookMessage(avatar, username, content);
         } else {

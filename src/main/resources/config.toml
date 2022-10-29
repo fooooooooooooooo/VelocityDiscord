@@ -13,6 +13,9 @@ channel = "000000000000000000"
 use_webhooks = false
 # Full webhook URL to send more fancy minecraft chat messages to
 webhook_url = ""
+# Full URL of an avatar service to get the player's avatar from
+# Placeholders {uuid} and {username} are available
+avatar_url = "https://crafatar.com/avatars/{uuid}?overlay"
 
 # Show messages from bots in minecraft chat
 show_bot_messages = false
