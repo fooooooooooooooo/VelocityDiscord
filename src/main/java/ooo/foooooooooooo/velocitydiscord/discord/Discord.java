@@ -110,7 +110,7 @@ public class Discord extends ListenerAdapter {
         if (config.DISCORD_USE_WEBHOOKS) {
             String avatar = String.format("https://crafatar.com/avatars/%s?overlay", event.getPlayer().getUniqueId());
 
-            sendWebhookMessage(username, avatar, content);
+            sendWebhookMessage(avatar, username, content);
         } else {
             String server = currentServer.get().getServerInfo().getName();
 
@@ -185,13 +185,13 @@ public class Discord extends ListenerAdapter {
         activeChannel.sendMessage(message).queue();
     }
 
-    public void sendWebhookMessage(String name, String avatar, String content) {
-            WebhookMessage webhookMessage = new WebhookMessageBuilder()
-                    .setUsername(name)
-                    .setAvatarUrl(avatar)
-                    .setContent(content)
-                    .build();
-            webhookClient.send(webhookMessage);
+    public void sendWebhookMessage(String avatar, String name, String content) {
+        WebhookMessage webhookMessage = new WebhookMessageBuilder()
+                .setAvatarUrl(avatar)
+                .setUsername(name)
+                .setContent(content)
+                .build();
+        webhookClient.send(webhookMessage);
     }
 
     public void playerDeath(String username, DeathMessage message) {
