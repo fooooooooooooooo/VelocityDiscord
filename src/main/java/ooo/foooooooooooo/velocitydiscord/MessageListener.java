@@ -19,6 +19,8 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import javax.annotation.Nonnull;
+
 public class MessageListener extends ListenerAdapter {
     private static final Pattern WEBHOOK_ID_REGEX = Pattern.compile("^https://discord\\.com/api/webhooks/(\\d+)/.+$");
     private final String webhookId;
@@ -40,7 +42,7 @@ public class MessageListener extends ListenerAdapter {
     }
 
     @Override
-    public void onMessageReceived(MessageReceivedEvent event) {
+    public void onMessageReceived(@Nonnull MessageReceivedEvent event) {
         if (!event.isFromType(ChannelType.TEXT)) {
             logger.finest("ignoring non text channel message");
             return;

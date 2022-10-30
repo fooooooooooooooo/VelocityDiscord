@@ -18,6 +18,7 @@ public class ListCommand implements ICommand {
     }
 
     @Override
+    @SuppressWarnings("null")
     public void handle(SlashCommandInteraction interaction) {
         var servers = server.getAllServers().stream().toList();
 

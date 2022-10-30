@@ -34,6 +34,7 @@ import javax.security.auth.login.LoginException;
 import java.text.MessageFormat;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.logging.Logger;
 
@@ -77,7 +78,7 @@ public class Discord extends ListenerAdapter {
     public void onReady(@Nonnull ReadyEvent event) {
         logger.info(MessageFormat.format("Bot ready, Guilds: {0} ({1} available)", event.getGuildTotalCount(), event.getGuildAvailableCount()));
 
-        TextChannel channel = jda.getTextChannelById(config.CHANNEL_ID);
+        TextChannel channel = jda.getTextChannelById(Objects.requireNonNull(config.CHANNEL_ID));
 
         if (channel == null) {
             logger.severe("Could not load channel with id: " + config.CHANNEL_ID);
@@ -163,7 +164,7 @@ public class Discord extends ListenerAdapter {
     @SuppressWarnings("UnstableApiUsage")
     @Subscribe
     public void onServerConnect(ServerPostConnectEvent event) {
-        var currentServer = event.getPlayer().getCurrentServer(); // why Optional? true lulw
+        var currentServer = event.getPlayer().getCurrentServer();
 
         if (currentServer.isEmpty()) return;
 
@@ -185,7 +186,7 @@ public class Discord extends ListenerAdapter {
         sendMessage(message.toString());
     }
 
-    public void sendMessage(String message) {
+    public void sendMessage(@Nonnull String message) {
         activeChannel.sendMessage(message).queue();
     }
 

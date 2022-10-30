@@ -2,13 +2,17 @@ package ooo.foooooooooooo.velocitydiscord.util;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
+
+import javax.annotation.Nonnull;
 
 public class StringTemplate {
     private final Map<String, String> variables = new HashMap<>();
+    @Nonnull
     private String template;
 
     public StringTemplate(String template) {
-        this.template = template;
+        this.template = Objects.requireNonNull(template);
     }
 
     public StringTemplate add(String key, String value) {
@@ -32,16 +36,17 @@ public class StringTemplate {
     }
 
     @Override
+    @Nonnull
     public String toString() {
         for (var entry : variables.entrySet()) {
-            template = template.replace("{" + entry.getKey() + "}", entry.getValue());
+            template = Objects.requireNonNull(template.replace("{" + entry.getKey() + "}", entry.getValue()));
         }
 
         return template;
     }
 
     public StringTemplate replace(String target, String replacement) {
-        template = template.replace(target, replacement);
+        template = Objects.requireNonNull(template.replace(target, replacement));
         return this;
     }
 }
