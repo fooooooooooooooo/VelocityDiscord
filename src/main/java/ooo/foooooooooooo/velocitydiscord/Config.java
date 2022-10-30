@@ -12,16 +12,21 @@ import java.nio.file.Path;
 import java.util.Objects;
 
 public class Config {
+    private final Path dataDir;
+
     public static final String CONFIG_MAJOR_VERSION = "1";
-    public static final String CONFIG_MINOR_VERSION = "2";
+    public static final String CONFIG_MINOR_VERSION = "3";
     public static final String CONFIG_VERSION = CONFIG_MAJOR_VERSION + "." + CONFIG_MINOR_VERSION;
+
     private static final String DefaultToken = "TOKEN";
     private static final String DefaultChannelId = "000000000000000000";
     private static final String DefaultWebhookUrl = "";
     private static final String DefaultAvatarUrl = "https://crafatar.com/avatars/{uuid}?overlay";
-    private final Path dataDir;
+
     public String DISCORD_TOKEN = DefaultToken;
     public String CHANNEL_ID = DefaultChannelId;
+
+    // webhooks
     public Boolean DISCORD_USE_WEBHOOKS = false;
     public String DISCORD_WEBHOOK_URL = DefaultWebhookUrl;
     public String DISCORD_AVATAR_URL = DefaultAvatarUrl;
