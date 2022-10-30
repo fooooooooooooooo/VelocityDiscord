@@ -1,5 +1,9 @@
 package ooo.foooooooooooo.velocitydiscord.discord;
 
+import club.minnced.discord.webhook.WebhookClient;
+import club.minnced.discord.webhook.WebhookClientBuilder;
+import club.minnced.discord.webhook.send.WebhookMessage;
+import club.minnced.discord.webhook.send.WebhookMessageBuilder;
 import com.velocitypowered.api.event.PostOrder;
 import com.velocitypowered.api.event.Subscribe;
 import com.velocitypowered.api.event.connection.DisconnectEvent;
@@ -38,6 +42,7 @@ public class Discord extends ListenerAdapter {
     private final Config config;
 
     private final JDA jda;
+    private final WebhookClient webhookClient;
     private final Map<String, ICommand> commands = new HashMap<>();
     private TextChannel activeChannel;
 
@@ -62,6 +67,10 @@ public class Discord extends ListenerAdapter {
             this.logger.severe("Failed to login to discord: " + e);
             throw new RuntimeException("Failed to login to discord: " + e);
         }
+
+        webhookClient = config.DISCORD_USE_WEBHOOKS
+                ? new WebhookClientBuilder(config.DISCORD_WEBHOOK_URL).build()
+                : null;
     }
 
     @Override
@@ -96,16 +105,27 @@ public class Discord extends ListenerAdapter {
         if (currentServer.isEmpty()) return;
 
         String username = event.getPlayer().getUsername();
-        String server = currentServer.get().getServerInfo().getName();
         String content = event.getMessage();
 
-        String message = new StringTemplate(config.DISCORD_CHAT_MESSAGE)
-            .add("username", username)
-            .add("server", server)
-            .add("message", content)
-            .toString();
+        if (config.DISCORD_USE_WEBHOOKS) {
+            String uuid = event.getPlayer().getUniqueId().toString();
+            String avatar = new StringTemplate(config.DISCORD_AVATAR_URL)
+                    .add("username", username)
+                    .add("uuid", uuid)
+                    .toString();
 
-        sendMessage(message);
+            sendWebhookMessage(avatar, username, content);
+        } else {
+            String server = currentServer.get().getServerInfo().getName();
+
+            String message = new StringTemplate(config.DISCORD_CHAT_MESSAGE)
+                    .add("username", username)
+                    .add("server", server)
+                    .add("message", content)
+                    .toString();
+
+            sendMessage(message);
+        }
     }
 
     @Subscribe
@@ -167,6 +187,15 @@ public class Discord extends ListenerAdapter {
 
     public void sendMessage(String message) {
         activeChannel.sendMessage(message).queue();
+    }
+
+    public void sendWebhookMessage(String avatar, String name, String content) {
+        WebhookMessage webhookMessage = new WebhookMessageBuilder()
+                .setAvatarUrl(avatar)
+                .setUsername(name)
+                .setContent(content)
+                .build();
+        webhookClient.send(webhookMessage);
     }
 
     public void playerDeath(String username, DeathMessage message) {
