@@ -41,7 +41,7 @@ public class Config {
     public String LEAVE_MESSAGE = "**{username} left the game**";
     public String SERVER_SWITCH_MESSAGE = "**{username} moved to {current} from {previous}**";
     public String DEATH_MESSAGE = "**{username} {death_message}**";
-    public String ADVANCEMENT_MESSAGE = "**{username} has made the advancement __{advancement_title}__**\\n_{advancement_description}_";
+    public String ADVANCEMENT_MESSAGE = "**{username} has made the advancement __{advancement_title}__**\n_{advancement_description}_";
 
     // discord commands
     public Boolean DISCORD_LIST_ENABLED = true;
