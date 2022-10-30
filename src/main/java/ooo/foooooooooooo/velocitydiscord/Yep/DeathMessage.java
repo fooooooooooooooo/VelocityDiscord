@@ -1,4 +1,4 @@
-package ooo.foooooooooooo.velocitydiscord.Yep;
+package ooo.foooooooooooo.velocitydiscord.yep;
 
 public class DeathMessage implements IYepMessage {
     public final String message;

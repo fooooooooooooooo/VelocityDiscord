@@ -1,4 +1,4 @@
-package ooo.foooooooooooo.velocitydiscord.Yep;
+package ooo.foooooooooooo.velocitydiscord.yep;
 
 public class AdvancementMessage implements IYepMessage {
     public final String title;

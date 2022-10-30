@@ -1,4 +1,4 @@
-package ooo.foooooooooooo.velocitydiscord.Yep;
+package ooo.foooooooooooo.velocitydiscord.yep;
 
 import com.velocitypowered.api.event.Subscribe;
 import com.velocitypowered.api.event.connection.PluginMessageEvent;

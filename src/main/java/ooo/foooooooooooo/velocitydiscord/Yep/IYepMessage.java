@@ -1,4 +1,4 @@
-package ooo.foooooooooooo.velocitydiscord.Yep;
+package ooo.foooooooooooo.velocitydiscord.yep;
 
 public interface IYepMessage {
     MessageType getType();
