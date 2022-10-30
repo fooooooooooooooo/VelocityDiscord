@@ -14,9 +14,9 @@ import com.velocitypowered.api.proxy.ProxyServer;
 import com.velocitypowered.api.proxy.ServerConnection;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
-import net.dv8tion.jda.api.entities.TextChannel;
-import net.dv8tion.jda.api.events.ReadyEvent;
+import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
+import net.dv8tion.jda.api.events.session.ReadyEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.requests.GatewayIntent;
 import net.dv8tion.jda.api.utils.ChunkingFilter;
@@ -30,7 +30,6 @@ import ooo.foooooooooooo.velocitydiscord.discord.commands.ListCommand;
 import ooo.foooooooooooo.velocitydiscord.util.StringTemplate;
 
 import javax.annotation.Nonnull;
-import javax.security.auth.login.LoginException;
 import java.text.MessageFormat;
 import java.util.HashMap;
 import java.util.Map;
@@ -64,9 +63,9 @@ public class Discord extends ListenerAdapter {
 
         try {
             jda = builder.build();
-        } catch (LoginException e) {
+        } catch (Exception e) {
             this.logger.severe("Failed to login to discord: " + e);
-            throw new RuntimeException("Failed to login to discord: " + e);
+            throw new RuntimeException("Failed to login to discord: ", e);
         }
 
         webhookClient = config.DISCORD_USE_WEBHOOKS
