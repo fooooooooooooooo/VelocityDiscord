@@ -8,10 +8,10 @@ import com.velocitypowered.api.event.PostOrder;
 import com.velocitypowered.api.event.Subscribe;
 import com.velocitypowered.api.event.connection.DisconnectEvent;
 import com.velocitypowered.api.event.player.PlayerChatEvent;
-import com.velocitypowered.api.event.player.PlayerChooseInitialServerEvent;
-import com.velocitypowered.api.event.player.ServerPostConnectEvent;
+import com.velocitypowered.api.event.player.ServerConnectedEvent;
 import com.velocitypowered.api.proxy.ProxyServer;
 import com.velocitypowered.api.proxy.ServerConnection;
+import com.velocitypowered.api.proxy.server.RegisteredServer;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
@@ -129,17 +129,26 @@ public class Discord extends ListenerAdapter {
     }
 
     @Subscribe
-    public void onConnect(PlayerChooseInitialServerEvent event) {
-        var initialServer = event.getInitialServer();
-
-        if (initialServer.isEmpty()) return;
-
+    public void onConnect(ServerConnectedEvent event) {
         var username = event.getPlayer().getUsername();
-        var server = initialServer.get().getServerInfo().getName();
+        var server = event.getServer().getServerInfo().getName();
 
-        var message = new StringTemplate(config.JOIN_MESSAGE)
-            .add("username", username)
-            .add("server", server);
+        Optional<RegisteredServer> previousServer = event.getPreviousServer();
+
+        StringTemplate message;
+
+        if (previousServer.isPresent()) {
+            var previous = previousServer.get().getServerInfo().getName();
+
+            message = new StringTemplate(config.SERVER_SWITCH_MESSAGE)
+                    .add("username", username)
+                    .add("current", server)
+                    .add("previous", previous);
+        } else {
+            message = new StringTemplate(config.JOIN_MESSAGE)
+                    .add("username", username)
+                    .add("server", server);
+        }
 
         sendMessage(message.toString());
     }
@@ -159,32 +168,6 @@ public class Discord extends ListenerAdapter {
 
         sendMessage(message.toString());
     }
-
-    @SuppressWarnings("UnstableApiUsage")
-    @Subscribe
-    public void onServerConnect(ServerPostConnectEvent event) {
-        var currentServer = event.getPlayer().getCurrentServer();
-
-        if (currentServer.isEmpty()) return;
-
-        var username = event.getPlayer().getUsername();
-        var server = currentServer.get().getServerInfo().getName();
-        var previousServer = event.getPreviousServer();
-
-        if (previousServer == null) {
-            return;
-        }
-
-        var previous = previousServer.getServerInfo().getName();
-
-        var message = new StringTemplate(config.SERVER_SWITCH_MESSAGE)
-            .add("username", username)
-            .add("current", server)
-            .add("previous", previous);
-
-        sendMessage(message.toString());
-    }
-
     public void sendMessage(@Nonnull String message) {
         activeChannel.sendMessage(message).queue();
     }
