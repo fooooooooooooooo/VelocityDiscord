@@ -68,8 +68,8 @@ public class Discord extends ListenerAdapter {
             throw new RuntimeException("Failed to login to discord: ", e);
         }
 
-        webhookClient = config.DISCORD_USE_WEBHOOKS
-                ? new WebhookClientBuilder(config.DISCORD_WEBHOOK_URL).build()
+        webhookClient = config.DISCORD_USE_WEBHOOK
+                ? new WebhookClientBuilder(config.WEBHOOK_URL).build()
                 : null;
     }
 
@@ -104,21 +104,26 @@ public class Discord extends ListenerAdapter {
 
         if (currentServer.isEmpty()) return;
 
-        String username = event.getPlayer().getUsername();
-        String content = event.getMessage();
+        var username = event.getPlayer().getUsername();
+        var server = currentServer.get().getServerInfo().getName();
+        var content = event.getMessage();
 
-        if (config.DISCORD_USE_WEBHOOKS) {
-            String uuid = event.getPlayer().getUniqueId().toString();
-            String avatar = new StringTemplate(config.DISCORD_AVATAR_URL)
+        if (config.DISCORD_USE_WEBHOOK) {
+            var uuid = event.getPlayer().getUniqueId().toString();
+
+            var avatar = new StringTemplate(config.WEBHOOK_AVATAR_URL)
                     .add("username", username)
                     .add("uuid", uuid)
                     .toString();
 
-            sendWebhookMessage(avatar, username, content);
-        } else {
-            String server = currentServer.get().getServerInfo().getName();
+            var discordName = new StringTemplate(config.WEBHOOK_USERNAME)
+                    .add("username", username)
+                    .add("server", server)
+                    .toString();
 
-            String message = new StringTemplate(config.DISCORD_CHAT_MESSAGE)
+            sendWebhookMessage(avatar, discordName, content);
+        } else {
+            var message = new StringTemplate(config.DISCORD_CHAT_MESSAGE)
                     .add("username", username)
                     .add("server", server)
                     .add("message", content)
@@ -155,7 +160,7 @@ public class Discord extends ListenerAdapter {
 
     @Subscribe
     public void onDisconnect(DisconnectEvent event) {
-        var currentServer = event.getPlayer().getCurrentServer();
+        Optional<ServerConnection> currentServer = event.getPlayer().getCurrentServer();
 
         if (currentServer.isEmpty()) return;
 
@@ -172,10 +177,10 @@ public class Discord extends ListenerAdapter {
         activeChannel.sendMessage(message).queue();
     }
 
-    public void sendWebhookMessage(String avatar, String name, String content) {
+    public void sendWebhookMessage(String avatar, String username, String content) {
         WebhookMessage webhookMessage = new WebhookMessageBuilder()
                 .setAvatarUrl(avatar)
-                .setUsername(name)
+                .setUsername(username)
                 .setContent(content)
                 .build();
         webhookClient.send(webhookMessage);
