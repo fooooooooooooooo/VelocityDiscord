@@ -39,7 +39,7 @@ public class MessageListener extends ListenerAdapter {
         this.logger = logger;
         this.config = config;
 
-        final Matcher matcher = WEBHOOK_ID_REGEX.matcher(config.DISCORD_WEBHOOK_URL);
+        final Matcher matcher = WEBHOOK_ID_REGEX.matcher(config.WEBHOOK_URL);
         this.webhookId = matcher.find()
                 ? matcher.group(1)
                 : null;

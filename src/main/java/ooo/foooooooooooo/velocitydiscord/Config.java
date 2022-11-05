@@ -15,7 +15,7 @@ public class Config {
     private final Path dataDir;
 
     public static final String CONFIG_MAJOR_VERSION = "1";
-    public static final String CONFIG_MINOR_VERSION = "3";
+    public static final String CONFIG_MINOR_VERSION = "4";
     public static final String CONFIG_VERSION = CONFIG_MAJOR_VERSION + "." + CONFIG_MINOR_VERSION;
 
     private static final String DefaultToken = "TOKEN";
@@ -26,14 +26,15 @@ public class Config {
     public String DISCORD_TOKEN = DefaultToken;
     public String CHANNEL_ID = DefaultChannelId;
 
-    // webhooks
-    public Boolean DISCORD_USE_WEBHOOKS = false;
-    public String DISCORD_WEBHOOK_URL = DefaultWebhookUrl;
-    public String DISCORD_AVATAR_URL = DefaultAvatarUrl;
-
     // toggles
     public Boolean SHOW_BOT_MESSAGES = false;
     public Boolean SHOW_ATTACHMENTS = true;
+
+    // webhooks
+    public Boolean DISCORD_USE_WEBHOOK = false;
+    public String WEBHOOK_URL = DefaultWebhookUrl;
+    public String WEBHOOK_AVATAR_URL = DefaultAvatarUrl;
+    public String WEBHOOK_USERNAME = "{username}";
 
     // discord formats
     public String DISCORD_CHAT_MESSAGE = "{username}: {message}";
@@ -110,12 +111,14 @@ public class Config {
     public void loadConfigs() {
         DISCORD_TOKEN = toml.getString("discord.token", DISCORD_TOKEN);
         CHANNEL_ID = toml.getString("discord.channel", CHANNEL_ID);
-        DISCORD_USE_WEBHOOKS = toml.getBoolean("discord.use_webhooks", DISCORD_USE_WEBHOOKS);
-        DISCORD_WEBHOOK_URL = toml.getString("discord.webhook_url", DISCORD_WEBHOOK_URL);
-        DISCORD_AVATAR_URL = toml.getString("discord.avatar_url", DISCORD_AVATAR_URL);
 
         SHOW_BOT_MESSAGES = toml.getBoolean("discord.show_bot_messages", SHOW_BOT_MESSAGES);
         SHOW_ATTACHMENTS = toml.getBoolean("discord.show_attachments_ingame", SHOW_ATTACHMENTS);
+
+        DISCORD_USE_WEBHOOK = toml.getBoolean("discord.use_webhook", DISCORD_USE_WEBHOOK);
+        WEBHOOK_URL = toml.getString("discord.webhook.webhook_url", WEBHOOK_URL);
+        WEBHOOK_AVATAR_URL = toml.getString("discord.webhook.avatar_url", WEBHOOK_AVATAR_URL);
+        WEBHOOK_USERNAME = toml.getString("discord.webhook.webhook_username", WEBHOOK_USERNAME);
 
         DISCORD_CHAT_MESSAGE = toml.getString("discord.chat.message", DISCORD_CHAT_MESSAGE);
         JOIN_MESSAGE = toml.getString("discord.chat.join_message", JOIN_MESSAGE);

@@ -8,10 +8,10 @@ import com.velocitypowered.api.event.PostOrder;
 import com.velocitypowered.api.event.Subscribe;
 import com.velocitypowered.api.event.connection.DisconnectEvent;
 import com.velocitypowered.api.event.player.PlayerChatEvent;
-import com.velocitypowered.api.event.player.PlayerChooseInitialServerEvent;
-import com.velocitypowered.api.event.player.ServerPostConnectEvent;
+import com.velocitypowered.api.event.player.ServerConnectedEvent;
 import com.velocitypowered.api.proxy.ProxyServer;
 import com.velocitypowered.api.proxy.ServerConnection;
+import com.velocitypowered.api.proxy.server.RegisteredServer;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
@@ -68,8 +68,8 @@ public class Discord extends ListenerAdapter {
             throw new RuntimeException("Failed to login to discord: ", e);
         }
 
-        webhookClient = config.DISCORD_USE_WEBHOOKS
-                ? new WebhookClientBuilder(config.DISCORD_WEBHOOK_URL).build()
+        webhookClient = config.DISCORD_USE_WEBHOOK
+                ? new WebhookClientBuilder(config.WEBHOOK_URL).build()
                 : null;
     }
 
@@ -104,21 +104,26 @@ public class Discord extends ListenerAdapter {
 
         if (currentServer.isEmpty()) return;
 
-        String username = event.getPlayer().getUsername();
-        String content = event.getMessage();
+        var username = event.getPlayer().getUsername();
+        var server = currentServer.get().getServerInfo().getName();
+        var content = event.getMessage();
 
-        if (config.DISCORD_USE_WEBHOOKS) {
-            String uuid = event.getPlayer().getUniqueId().toString();
-            String avatar = new StringTemplate(config.DISCORD_AVATAR_URL)
+        if (config.DISCORD_USE_WEBHOOK) {
+            var uuid = event.getPlayer().getUniqueId().toString();
+
+            var avatar = new StringTemplate(config.WEBHOOK_AVATAR_URL)
                     .add("username", username)
                     .add("uuid", uuid)
                     .toString();
 
-            sendWebhookMessage(avatar, username, content);
-        } else {
-            String server = currentServer.get().getServerInfo().getName();
+            var discordName = new StringTemplate(config.WEBHOOK_USERNAME)
+                    .add("username", username)
+                    .add("server", server)
+                    .toString();
 
-            String message = new StringTemplate(config.DISCORD_CHAT_MESSAGE)
+            sendWebhookMessage(avatar, discordName, content);
+        } else {
+            var message = new StringTemplate(config.DISCORD_CHAT_MESSAGE)
                     .add("username", username)
                     .add("server", server)
                     .add("message", content)
@@ -129,24 +134,33 @@ public class Discord extends ListenerAdapter {
     }
 
     @Subscribe
-    public void onConnect(PlayerChooseInitialServerEvent event) {
-        var initialServer = event.getInitialServer();
-
-        if (initialServer.isEmpty()) return;
-
+    public void onConnect(ServerConnectedEvent event) {
         var username = event.getPlayer().getUsername();
-        var server = initialServer.get().getServerInfo().getName();
+        var server = event.getServer().getServerInfo().getName();
 
-        var message = new StringTemplate(config.JOIN_MESSAGE)
-            .add("username", username)
-            .add("server", server);
+        Optional<RegisteredServer> previousServer = event.getPreviousServer();
+
+        StringTemplate message;
+
+        if (previousServer.isPresent()) {
+            var previous = previousServer.get().getServerInfo().getName();
+
+            message = new StringTemplate(config.SERVER_SWITCH_MESSAGE)
+                    .add("username", username)
+                    .add("current", server)
+                    .add("previous", previous);
+        } else {
+            message = new StringTemplate(config.JOIN_MESSAGE)
+                    .add("username", username)
+                    .add("server", server);
+        }
 
         sendMessage(message.toString());
     }
 
     @Subscribe
     public void onDisconnect(DisconnectEvent event) {
-        var currentServer = event.getPlayer().getCurrentServer();
+        Optional<ServerConnection> currentServer = event.getPlayer().getCurrentServer();
 
         if (currentServer.isEmpty()) return;
 
@@ -159,40 +173,14 @@ public class Discord extends ListenerAdapter {
 
         sendMessage(message.toString());
     }
-
-    @SuppressWarnings("UnstableApiUsage")
-    @Subscribe
-    public void onServerConnect(ServerPostConnectEvent event) {
-        var currentServer = event.getPlayer().getCurrentServer();
-
-        if (currentServer.isEmpty()) return;
-
-        var username = event.getPlayer().getUsername();
-        var server = currentServer.get().getServerInfo().getName();
-        var previousServer = event.getPreviousServer();
-
-        if (previousServer == null) {
-            return;
-        }
-
-        var previous = previousServer.getServerInfo().getName();
-
-        var message = new StringTemplate(config.SERVER_SWITCH_MESSAGE)
-            .add("username", username)
-            .add("current", server)
-            .add("previous", previous);
-
-        sendMessage(message.toString());
-    }
-
     public void sendMessage(@Nonnull String message) {
         activeChannel.sendMessage(message).queue();
     }
 
-    public void sendWebhookMessage(String avatar, String name, String content) {
+    public void sendWebhookMessage(String avatar, String username, String content) {
         WebhookMessage webhookMessage = new WebhookMessageBuilder()
                 .setAvatarUrl(avatar)
-                .setUsername(name)
+                .setUsername(username)
                 .setContent(content)
                 .build();
         webhookClient.send(webhookMessage);
