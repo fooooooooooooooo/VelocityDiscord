@@ -12,7 +12,7 @@ show_bot_messages = false
 # Show clickable links for attachments in Minecraft chat
 show_attachments_ingame = true
 
-# Use a Discord webhook to have the bot use the player's username and avatar when sending messages
+# OPTIONAL - Use a Discord webhook to have the bot use the player's username and avatar when sending messages
 # Requires a webhook URL to be set below
 use_webhook = false
 
