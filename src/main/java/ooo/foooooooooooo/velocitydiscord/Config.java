@@ -115,7 +115,7 @@ public class Config {
         SHOW_BOT_MESSAGES = toml.getBoolean("discord.show_bot_messages", SHOW_BOT_MESSAGES);
         SHOW_ATTACHMENTS = toml.getBoolean("discord.show_attachments_ingame", SHOW_ATTACHMENTS);
 
-        DISCORD_USE_WEBHOOK = toml.getBoolean("discord.use_webhooks", DISCORD_USE_WEBHOOK);
+        DISCORD_USE_WEBHOOK = toml.getBoolean("discord.use_webhook", DISCORD_USE_WEBHOOK);
         WEBHOOK_URL = toml.getString("discord.webhook.webhook_url", WEBHOOK_URL);
         WEBHOOK_AVATAR_URL = toml.getString("discord.webhook.avatar_url", WEBHOOK_AVATAR_URL);
         WEBHOOK_USERNAME = toml.getString("discord.webhook.webhook_username", WEBHOOK_USERNAME);
