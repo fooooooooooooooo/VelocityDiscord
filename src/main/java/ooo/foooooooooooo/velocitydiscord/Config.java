@@ -43,6 +43,7 @@ public class Config {
     public String SERVER_SWITCH_MESSAGE = "**{username} moved to {current} from {previous}**";
     public String DEATH_MESSAGE = "**{username} {death_message}**";
     public String ADVANCEMENT_MESSAGE = "**{username} has made the advancement __{advancement_title}__**\n_{advancement_description}_";
+    public String DISCORD_ACTIVITY_TEXT = "with {amount} players online";
 
     // discord commands
     public Boolean DISCORD_LIST_ENABLED = true;
@@ -126,6 +127,7 @@ public class Config {
         SERVER_SWITCH_MESSAGE = toml.getString("discord.chat.server_switch_message", SERVER_SWITCH_MESSAGE);
         DEATH_MESSAGE = toml.getString("discord.chat.death_message", DEATH_MESSAGE);
         ADVANCEMENT_MESSAGE = toml.getString("discord.chat.advancement_message", ADVANCEMENT_MESSAGE);
+        DISCORD_ACTIVITY_TEXT = toml.getString("discord.discord_activity_text", DISCORD_ACTIVITY_TEXT);
 
         DISCORD_LIST_ENABLED = toml.getBoolean("discord.commands.list.enabled", DISCORD_LIST_ENABLED);
         DISCORD_LIST_SERVER_FORMAT = toml.getString("discord.commands.list.server_format", DISCORD_LIST_SERVER_FORMAT);

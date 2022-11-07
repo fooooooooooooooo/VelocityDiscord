@@ -14,6 +14,7 @@ import com.velocitypowered.api.proxy.ServerConnection;
 import com.velocitypowered.api.proxy.server.RegisteredServer;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
+import net.dv8tion.jda.api.entities.Activity;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.session.ReadyEvent;
@@ -38,6 +39,7 @@ import java.util.Optional;
 import java.util.logging.Logger;
 
 public class Discord extends ListenerAdapter {
+    private final ProxyServer server;
     private final Logger logger;
     private final Config config;
 
@@ -47,6 +49,7 @@ public class Discord extends ListenerAdapter {
     private TextChannel activeChannel;
 
     public Discord(ProxyServer server, Logger logger, Config config) {
+        this.server = server;
         this.logger = logger;
         this.config = config;
 
@@ -96,6 +99,8 @@ public class Discord extends ListenerAdapter {
         var guild = activeChannel.getGuild();
 
         guild.upsertCommand("list", "list players").queue();
+
+        updateActivityPlayerAmount();
     }
 
     @Subscribe(order = PostOrder.FIRST)
@@ -156,6 +161,8 @@ public class Discord extends ListenerAdapter {
         }
 
         sendMessage(message.toString());
+
+        updateActivityPlayerAmount();
     }
 
     @Subscribe
@@ -172,6 +179,8 @@ public class Discord extends ListenerAdapter {
             .add("server", server);
 
         sendMessage(message.toString());
+
+        updateActivityPlayerAmount();
     }
     public void sendMessage(@Nonnull String message) {
         activeChannel.sendMessage(message).queue();
@@ -214,5 +223,13 @@ public class Discord extends ListenerAdapter {
         }
 
         commands.get(command).handle(event);
+    }
+
+    public void updateActivityPlayerAmount() {
+        jda.getPresence()
+                .setActivity(Activity.playing(
+                        new StringTemplate(config.DISCORD_ACTIVITY_TEXT)
+                                .add("amount", this.server.getPlayerCount())
+                                .toString()));
     }
 }

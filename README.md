@@ -18,6 +18,8 @@ channel = "000000000000000000"
 show_bot_messages = false
 # Show clickable links for attachments in Minecraft chat
 show_attachments_ingame = true
+# Activity of the bot to show in Discord
+discord_activity_text = "with {amount} players online"
 
 # OPTIONAL - Use a Discord webhook to have the bot use the player's username and avatar when sending messages
 # Requires a webhook URL to be set below
