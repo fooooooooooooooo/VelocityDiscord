@@ -48,6 +48,8 @@ public class Discord extends ListenerAdapter {
     private final Map<String, ICommand> commands = new HashMap<>();
     private TextChannel activeChannel;
 
+    private int lastPlayerCount = -1;
+
     public Discord(ProxyServer server, Logger logger, Config config) {
         this.server = server;
         this.logger = logger;
@@ -226,10 +228,15 @@ public class Discord extends ListenerAdapter {
     }
 
     public void updateActivityPlayerAmount() {
-        jda.getPresence()
-                .setActivity(Activity.playing(
-                        new StringTemplate(config.DISCORD_ACTIVITY_TEXT)
-                                .add("amount", this.server.getPlayerCount())
-                                .toString()));
+        final int playerCount = this.server.getPlayerCount();
+
+        if (this.lastPlayerCount != playerCount) {
+            jda.getPresence()
+                    .setActivity(Activity.playing(
+                            new StringTemplate(config.DISCORD_ACTIVITY_TEXT)
+                                    .add("amount", playerCount)
+                                    .toString()));
+            this.lastPlayerCount = playerCount;
+        }
     }
 }
