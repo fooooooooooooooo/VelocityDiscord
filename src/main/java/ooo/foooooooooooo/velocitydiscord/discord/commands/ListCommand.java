@@ -63,6 +63,8 @@ public class ListCommand implements ICommand {
         }
         sb.append("```");
 
-        interaction.reply(sb.toString()).queue();
+        interaction.reply(sb.toString())
+                .setEphemeral(true)
+                .queue();
     }
 }
