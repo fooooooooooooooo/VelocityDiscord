@@ -20,15 +20,13 @@ import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEve
 import net.dv8tion.jda.api.events.session.ReadyEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.requests.GatewayIntent;
-import net.dv8tion.jda.api.utils.ChunkingFilter;
-import net.dv8tion.jda.api.utils.MemberCachePolicy;
 import ooo.foooooooooooo.velocitydiscord.Config;
 import ooo.foooooooooooo.velocitydiscord.MessageListener;
-import ooo.foooooooooooo.velocitydiscord.yep.AdvancementMessage;
-import ooo.foooooooooooo.velocitydiscord.yep.DeathMessage;
 import ooo.foooooooooooo.velocitydiscord.discord.commands.ICommand;
 import ooo.foooooooooooo.velocitydiscord.discord.commands.ListCommand;
 import ooo.foooooooooooo.velocitydiscord.util.StringTemplate;
+import ooo.foooooooooooo.velocitydiscord.yep.AdvancementMessage;
+import ooo.foooooooooooo.velocitydiscord.yep.DeathMessage;
 
 import javax.annotation.Nonnull;
 import java.text.MessageFormat;
@@ -226,15 +224,17 @@ public class Discord extends ListenerAdapter {
     }
 
     public void updateActivityPlayerAmount() {
-        final int playerCount = this.server.getPlayerCount();
+        if (config.SHOW_ACTIVITY) {
+            final int playerCount = this.server.getPlayerCount();
 
-        if (this.lastPlayerCount != playerCount) {
-            jda.getPresence()
-                    .setActivity(Activity.playing(
-                            new StringTemplate(config.DISCORD_ACTIVITY_TEXT)
-                                    .add("amount", playerCount)
-                                    .toString()));
-            this.lastPlayerCount = playerCount;
+            if (this.lastPlayerCount != playerCount) {
+                jda.getPresence()
+                        .setActivity(Activity.playing(
+                                new StringTemplate(config.DISCORD_ACTIVITY_TEXT)
+                                        .add("amount", playerCount)
+                                        .toString()));
+                this.lastPlayerCount = playerCount;
+            }
         }
     }
 }

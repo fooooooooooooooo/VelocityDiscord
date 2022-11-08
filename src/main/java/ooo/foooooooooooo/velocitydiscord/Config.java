@@ -29,6 +29,7 @@ public class Config {
     // toggles
     public Boolean SHOW_BOT_MESSAGES = false;
     public Boolean SHOW_ATTACHMENTS = true;
+    public Boolean SHOW_ACTIVITY = true;
 
     // webhooks
     public Boolean DISCORD_USE_WEBHOOK = false;
@@ -115,6 +116,7 @@ public class Config {
 
         SHOW_BOT_MESSAGES = toml.getBoolean("discord.show_bot_messages", SHOW_BOT_MESSAGES);
         SHOW_ATTACHMENTS = toml.getBoolean("discord.show_attachments_ingame", SHOW_ATTACHMENTS);
+        SHOW_ACTIVITY = toml.getBoolean("discord.show_activity", SHOW_ACTIVITY);
 
         DISCORD_USE_WEBHOOK = toml.getBoolean("discord.use_webhook", DISCORD_USE_WEBHOOK);
         WEBHOOK_URL = toml.getString("discord.webhook.webhook_url", WEBHOOK_URL);
