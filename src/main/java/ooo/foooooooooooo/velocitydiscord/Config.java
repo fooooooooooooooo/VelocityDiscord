@@ -48,6 +48,7 @@ public class Config {
 
     // discord commands
     public Boolean DISCORD_LIST_ENABLED = true;
+    public Boolean DISCORD_LIST_EPHEMERAL = true;
     public String DISCORD_LIST_SERVER_FORMAT = "[{server_name} {online_players}/{max_players}]";
     public String DISCORD_LIST_PLAYER_FORMAT = "- {username}";
     public String DISCORD_LIST_NO_PLAYERS = "No players online";
@@ -132,6 +133,7 @@ public class Config {
         DISCORD_ACTIVITY_TEXT = toml.getString("discord.activity_text", DISCORD_ACTIVITY_TEXT);
 
         DISCORD_LIST_ENABLED = toml.getBoolean("discord.commands.list.enabled", DISCORD_LIST_ENABLED);
+        DISCORD_LIST_EPHEMERAL = toml.getBoolean("discord.commands.list.ephemeral", DISCORD_LIST_EPHEMERAL);
         DISCORD_LIST_SERVER_FORMAT = toml.getString("discord.commands.list.server_format", DISCORD_LIST_SERVER_FORMAT);
         DISCORD_LIST_PLAYER_FORMAT = toml.getString("discord.commands.list.player_format", DISCORD_LIST_PLAYER_FORMAT);
         DISCORD_LIST_NO_PLAYERS = toml.getString("discord.commands.list.no_players", DISCORD_LIST_NO_PLAYERS);

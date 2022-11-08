@@ -55,6 +55,8 @@ advancement_message = "**{username} has made the advancement __{advancement_titl
 
 [discord.commands.list]
 enabled = true
+# Ephemeral messages are only visible to the user who sent the command
+ephemeral = true
 server_format = "[{server_name} {online_players}/{max_players}]"
 player_format = "- {username}"
 no_players = "No players online"
