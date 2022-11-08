@@ -127,7 +127,7 @@ public class Config {
         SERVER_SWITCH_MESSAGE = toml.getString("discord.chat.server_switch_message", SERVER_SWITCH_MESSAGE);
         DEATH_MESSAGE = toml.getString("discord.chat.death_message", DEATH_MESSAGE);
         ADVANCEMENT_MESSAGE = toml.getString("discord.chat.advancement_message", ADVANCEMENT_MESSAGE);
-        DISCORD_ACTIVITY_TEXT = toml.getString("discord.discord_activity_text", DISCORD_ACTIVITY_TEXT);
+        DISCORD_ACTIVITY_TEXT = toml.getString("discord.activity_text", DISCORD_ACTIVITY_TEXT);
 
         DISCORD_LIST_ENABLED = toml.getBoolean("discord.commands.list.enabled", DISCORD_LIST_ENABLED);
         DISCORD_LIST_SERVER_FORMAT = toml.getString("discord.commands.list.server_format", DISCORD_LIST_SERVER_FORMAT);
