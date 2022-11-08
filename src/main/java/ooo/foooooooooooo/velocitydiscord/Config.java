@@ -29,6 +29,7 @@ public class Config {
     // toggles
     public Boolean SHOW_BOT_MESSAGES = false;
     public Boolean SHOW_ATTACHMENTS = true;
+    public Boolean SHOW_ACTIVITY = true;
 
     // webhooks
     public Boolean DISCORD_USE_WEBHOOK = false;
@@ -43,6 +44,7 @@ public class Config {
     public String SERVER_SWITCH_MESSAGE = "**{username} moved to {current} from {previous}**";
     public String DEATH_MESSAGE = "**{username} {death_message}**";
     public String ADVANCEMENT_MESSAGE = "**{username} has made the advancement __{advancement_title}__**\n_{advancement_description}_";
+    public String DISCORD_ACTIVITY_TEXT = "with {amount} players online";
 
     // discord commands
     public Boolean DISCORD_LIST_ENABLED = true;
@@ -114,6 +116,7 @@ public class Config {
 
         SHOW_BOT_MESSAGES = toml.getBoolean("discord.show_bot_messages", SHOW_BOT_MESSAGES);
         SHOW_ATTACHMENTS = toml.getBoolean("discord.show_attachments_ingame", SHOW_ATTACHMENTS);
+        SHOW_ACTIVITY = toml.getBoolean("discord.show_activity", SHOW_ACTIVITY);
 
         DISCORD_USE_WEBHOOK = toml.getBoolean("discord.use_webhook", DISCORD_USE_WEBHOOK);
         WEBHOOK_URL = toml.getString("discord.webhook.webhook_url", WEBHOOK_URL);
@@ -126,6 +129,7 @@ public class Config {
         SERVER_SWITCH_MESSAGE = toml.getString("discord.chat.server_switch_message", SERVER_SWITCH_MESSAGE);
         DEATH_MESSAGE = toml.getString("discord.chat.death_message", DEATH_MESSAGE);
         ADVANCEMENT_MESSAGE = toml.getString("discord.chat.advancement_message", ADVANCEMENT_MESSAGE);
+        DISCORD_ACTIVITY_TEXT = toml.getString("discord.activity_text", DISCORD_ACTIVITY_TEXT);
 
         DISCORD_LIST_ENABLED = toml.getBoolean("discord.commands.list.enabled", DISCORD_LIST_ENABLED);
         DISCORD_LIST_SERVER_FORMAT = toml.getString("discord.commands.list.server_format", DISCORD_LIST_SERVER_FORMAT);

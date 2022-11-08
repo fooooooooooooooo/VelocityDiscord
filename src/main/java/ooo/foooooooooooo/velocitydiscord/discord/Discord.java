@@ -14,20 +14,19 @@ import com.velocitypowered.api.proxy.ServerConnection;
 import com.velocitypowered.api.proxy.server.RegisteredServer;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
+import net.dv8tion.jda.api.entities.Activity;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.session.ReadyEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.requests.GatewayIntent;
-import net.dv8tion.jda.api.utils.ChunkingFilter;
-import net.dv8tion.jda.api.utils.MemberCachePolicy;
 import ooo.foooooooooooo.velocitydiscord.Config;
 import ooo.foooooooooooo.velocitydiscord.MessageListener;
-import ooo.foooooooooooo.velocitydiscord.yep.AdvancementMessage;
-import ooo.foooooooooooo.velocitydiscord.yep.DeathMessage;
 import ooo.foooooooooooo.velocitydiscord.discord.commands.ICommand;
 import ooo.foooooooooooo.velocitydiscord.discord.commands.ListCommand;
 import ooo.foooooooooooo.velocitydiscord.util.StringTemplate;
+import ooo.foooooooooooo.velocitydiscord.yep.AdvancementMessage;
+import ooo.foooooooooooo.velocitydiscord.yep.DeathMessage;
 
 import javax.annotation.Nonnull;
 import java.text.MessageFormat;
@@ -38,6 +37,7 @@ import java.util.Optional;
 import java.util.logging.Logger;
 
 public class Discord extends ListenerAdapter {
+    private final ProxyServer server;
     private final Logger logger;
     private final Config config;
 
@@ -46,7 +46,10 @@ public class Discord extends ListenerAdapter {
     private final Map<String, ICommand> commands = new HashMap<>();
     private TextChannel activeChannel;
 
+    private int lastPlayerCount = -1;
+
     public Discord(ProxyServer server, Logger logger, Config config) {
+        this.server = server;
         this.logger = logger;
         this.config = config;
 
@@ -94,6 +97,8 @@ public class Discord extends ListenerAdapter {
         var guild = activeChannel.getGuild();
 
         guild.upsertCommand("list", "list players").queue();
+
+        updateActivityPlayerAmount();
     }
 
     @Subscribe(order = PostOrder.FIRST)
@@ -154,6 +159,8 @@ public class Discord extends ListenerAdapter {
         }
 
         sendMessage(message.toString());
+
+        updateActivityPlayerAmount();
     }
 
     @Subscribe
@@ -170,6 +177,8 @@ public class Discord extends ListenerAdapter {
             .add("server", server);
 
         sendMessage(message.toString());
+
+        updateActivityPlayerAmount();
     }
     public void sendMessage(@Nonnull String message) {
         activeChannel.sendMessage(message).queue();
@@ -212,5 +221,20 @@ public class Discord extends ListenerAdapter {
         }
 
         commands.get(command).handle(event);
+    }
+
+    public void updateActivityPlayerAmount() {
+        if (config.SHOW_ACTIVITY) {
+            final int playerCount = this.server.getPlayerCount();
+
+            if (this.lastPlayerCount != playerCount) {
+                jda.getPresence()
+                        .setActivity(Activity.playing(
+                                new StringTemplate(config.DISCORD_ACTIVITY_TEXT)
+                                        .add("amount", playerCount)
+                                        .toString()));
+                this.lastPlayerCount = playerCount;
+            }
+        }
     }
 }
