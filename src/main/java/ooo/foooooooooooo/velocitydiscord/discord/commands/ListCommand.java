@@ -64,7 +64,7 @@ public class ListCommand implements ICommand {
         sb.append("```");
 
         interaction.reply(sb.toString())
-                .setEphemeral(true)
+                .setEphemeral(config.DISCORD_LIST_EPHEMERAL)
                 .queue();
     }
 }
