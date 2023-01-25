@@ -96,3 +96,6 @@ buildNumber.properties
 
 # VSCode
 .vscode
+
+# Fleet
+.fleet

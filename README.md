@@ -6,7 +6,7 @@ Default config generated on startup:
 
 ```toml
 # Don't change this
-config_version = "1.4"
+config_version = "1.5"
 
 [discord]
 # Bot token from https://discordapp.com/developers/applications/
@@ -18,10 +18,14 @@ channel = "000000000000000000"
 show_bot_messages = false
 # Show clickable links for attachments in Minecraft chat
 show_attachments_ingame = true
+
 # Show a text as playing activity of the bot
 show_activity = true
 # Activity text of the bot to show in Discord
 activity_text = "with {amount} players online"
+
+# Enable mentioning Discord users from Minecraft chat
+enable_mentions = true
 
 # OPTIONAL - Use a Discord webhook to have the bot use the player's username and avatar when sending messages
 # Requires a webhook URL to be set below

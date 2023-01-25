@@ -15,11 +15,14 @@ import com.velocitypowered.api.proxy.server.RegisteredServer;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Activity;
+import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.session.ReadyEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.requests.GatewayIntent;
+import net.dv8tion.jda.api.utils.ChunkingFilter;
+import net.dv8tion.jda.api.utils.MemberCachePolicy;
 import ooo.foooooooooooo.velocitydiscord.Config;
 import ooo.foooooooooooo.velocitydiscord.MessageListener;
 import ooo.foooooooooooo.velocitydiscord.discord.commands.ICommand;
@@ -35,6 +38,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 
 public class Discord extends ListenerAdapter {
     private final ProxyServer server;
@@ -55,12 +59,17 @@ public class Discord extends ListenerAdapter {
 
         commands.put("list", new ListCommand(server, config));
 
-        MessageListener messageListener = new MessageListener(server, logger, config);
+        var messageListener = new MessageListener(server, logger, config);
 
-        JDABuilder builder = JDABuilder
-            .createDefault(config.DISCORD_TOKEN)
-            .enableIntents(GatewayIntent.GUILD_MESSAGES, GatewayIntent.MESSAGE_CONTENT)
-            .addEventListeners(messageListener, this);
+        var builder = JDABuilder
+                .createDefault(config.DISCORD_TOKEN)
+                // this seems to download all users at bot startup and keep internal cache updated
+                // without it, sometimes mentions miss when they shouldn't
+                .setChunkingFilter(ChunkingFilter.ALL)
+                .enableIntents(GatewayIntent.GUILD_MEMBERS, GatewayIntent.GUILD_MESSAGES, GatewayIntent.MESSAGE_CONTENT)
+                // mentions always miss without this
+                .setMemberCachePolicy(MemberCachePolicy.ALL)
+                .addEventListeners(messageListener, this);
 
         try {
             jda = builder.build();
@@ -78,7 +87,7 @@ public class Discord extends ListenerAdapter {
     public void onReady(@Nonnull ReadyEvent event) {
         logger.info(MessageFormat.format("Bot ready, Guilds: {0} ({1} available)", event.getGuildTotalCount(), event.getGuildAvailableCount()));
 
-        TextChannel channel = jda.getTextChannelById(Objects.requireNonNull(config.CHANNEL_ID));
+        var channel = jda.getTextChannelById(Objects.requireNonNull(config.CHANNEL_ID));
 
         if (channel == null) {
             logger.severe("Could not load channel with id: " + config.CHANNEL_ID);
@@ -103,13 +112,17 @@ public class Discord extends ListenerAdapter {
 
     @Subscribe(order = PostOrder.FIRST)
     public void onPlayerChat(PlayerChatEvent event) {
-        Optional<ServerConnection> currentServer = event.getPlayer().getCurrentServer();
+        var currentServer = event.getPlayer().getCurrentServer();
 
         if (currentServer.isEmpty()) return;
 
         var username = event.getPlayer().getUsername();
         var server = currentServer.get().getServerInfo().getName();
         var content = event.getMessage();
+
+        if (config.ENABLE_MENTIONS) {
+            content = parseMentions(content);
+        }
 
         if (config.DISCORD_USE_WEBHOOK) {
             var uuid = event.getPlayer().getUniqueId().toString();
@@ -141,7 +154,7 @@ public class Discord extends ListenerAdapter {
         var username = event.getPlayer().getUsername();
         var server = event.getServer().getServerInfo().getName();
 
-        Optional<RegisteredServer> previousServer = event.getPreviousServer();
+        var previousServer = event.getPreviousServer();
 
         StringTemplate message;
 
@@ -165,7 +178,7 @@ public class Discord extends ListenerAdapter {
 
     @Subscribe
     public void onDisconnect(DisconnectEvent event) {
-        Optional<ServerConnection> currentServer = event.getPlayer().getCurrentServer();
+        var currentServer = event.getPlayer().getCurrentServer();
 
         if (currentServer.isEmpty()) return;
 
@@ -173,42 +186,56 @@ public class Discord extends ListenerAdapter {
         var server = currentServer.get().getServerInfo().getName();
 
         var message = new StringTemplate(config.LEAVE_MESSAGE)
-            .add("username", username)
-            .add("server", server);
+                .add("username", username)
+                .add("server", server);
 
         sendMessage(message.toString());
 
         updateActivityPlayerAmount();
     }
+
     public void sendMessage(@Nonnull String message) {
         activeChannel.sendMessage(message).queue();
     }
 
+    private String parseMentions(String message) {
+        var msg = message;
+
+        for (var member : activeChannel.getMembers()) {
+            msg = Pattern.compile(Pattern.quote("@" + member.getUser().getName()), Pattern.CASE_INSENSITIVE)
+                    .matcher(msg)
+                    .replaceAll(member.getAsMention());
+        }
+
+        return msg;
+    }
+
     public void sendWebhookMessage(String avatar, String username, String content) {
-        WebhookMessage webhookMessage = new WebhookMessageBuilder()
+        var webhookMessage = new WebhookMessageBuilder()
                 .setAvatarUrl(avatar)
                 .setUsername(username)
                 .setContent(content)
                 .build();
+
         webhookClient.send(webhookMessage);
     }
 
     public void playerDeath(String username, DeathMessage message) {
         sendMessage(
-            new StringTemplate(config.DEATH_MESSAGE) //
-                .add("username", username) //
-                .add("death_message", message.message) //
-                .toString()
+                new StringTemplate(config.DEATH_MESSAGE) //
+                        .add("username", username) //
+                        .add("death_message", message.message) //
+                        .toString()
         );
     }
 
     public void playerAdvancement(String username, AdvancementMessage message) {
         sendMessage(
-            new StringTemplate(config.ADVANCEMENT_MESSAGE) //
-                .add("username", username) //
-                .add("advancement_title", message.title) //
-                .add("advancement_description", message.description) //
-                .toString()
+                new StringTemplate(config.ADVANCEMENT_MESSAGE) //
+                        .add("username", username) //
+                        .add("advancement_title", message.title) //
+                        .add("advancement_description", message.description) //
+                        .toString()
         );
     }
 

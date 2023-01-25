@@ -15,7 +15,7 @@ public class Config {
     private final Path dataDir;
 
     public static final String CONFIG_MAJOR_VERSION = "1";
-    public static final String CONFIG_MINOR_VERSION = "4";
+    public static final String CONFIG_MINOR_VERSION = "5";
     public static final String CONFIG_VERSION = CONFIG_MAJOR_VERSION + "." + CONFIG_MINOR_VERSION;
 
     private static final String DefaultToken = "TOKEN";
@@ -30,6 +30,7 @@ public class Config {
     public Boolean SHOW_BOT_MESSAGES = false;
     public Boolean SHOW_ATTACHMENTS = true;
     public Boolean SHOW_ACTIVITY = true;
+    public Boolean ENABLE_MENTIONS = true;
 
     // webhooks
     public Boolean DISCORD_USE_WEBHOOK = false;
@@ -118,6 +119,7 @@ public class Config {
         SHOW_BOT_MESSAGES = toml.getBoolean("discord.show_bot_messages", SHOW_BOT_MESSAGES);
         SHOW_ATTACHMENTS = toml.getBoolean("discord.show_attachments_ingame", SHOW_ATTACHMENTS);
         SHOW_ACTIVITY = toml.getBoolean("discord.show_activity", SHOW_ACTIVITY);
+        ENABLE_MENTIONS = toml.getBoolean("discord.enable_mentions", ENABLE_MENTIONS);
 
         DISCORD_USE_WEBHOOK = toml.getBoolean("discord.use_webhook", DISCORD_USE_WEBHOOK);
         WEBHOOK_URL = toml.getString("discord.webhook.webhook_url", WEBHOOK_URL);
@@ -147,7 +149,7 @@ public class Config {
         ATTACHMENT_COLOR = toml.getString("minecraft.attachment_color", ATTACHMENT_COLOR);
     }
 
-    // Say it's the first run if the config hasn't been edited or has been created this run
+    // Assume it's the first run if the config hasn't been edited or has been created this run
     public boolean isFirstRun() {
         return DISCORD_TOKEN.equals(DefaultToken) || CHANNEL_ID.equals(DefaultChannelId) || isFirstRun;
     }

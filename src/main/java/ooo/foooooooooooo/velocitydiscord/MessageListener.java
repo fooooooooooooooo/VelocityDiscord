@@ -87,20 +87,20 @@ public class MessageListener extends ListenerAdapter {
 
         // parse configured message formats
         String discord_chunk = new StringTemplate(config.DISCORD_CHUNK)
-            .add("discord_color", config.DISCORD_COLOR).toString();
+                .add("discord_color", config.DISCORD_COLOR).toString();
 
         String username_chunk = new StringTemplate(config.USERNAME_CHUNK)
-            .add("role_color", hex)
-            .add("username", author.getName())
-            .add("discriminator", author.getDiscriminator())
-            .add("nickname", member.getEffectiveName())
-            .toString();
+                .add("role_color", hex)
+                .add("username", author.getName())
+                .add("discriminator", author.getDiscriminator())
+                .add("nickname", member.getEffectiveName())
+                .toString();
 
         String attachment_chunk = config.ATTACHMENTS;
         StringTemplate message_chunk = new StringTemplate(config.MC_CHAT_MESSAGE)
-            .add("discord_chunk", discord_chunk)
-            .add("username_chunk", username_chunk)
-            .add("message", message.getContentDisplay());
+                .add("discord_chunk", discord_chunk)
+                .add("username_chunk", username_chunk)
+                .add("message", message.getContentDisplay());
 
         ArrayList<String> attachmentChunks = new ArrayList<>();
 
@@ -111,9 +111,9 @@ public class MessageListener extends ListenerAdapter {
 
         for (Message.Attachment attachment : attachments) {
             attachmentChunks.add(new StringTemplate(attachment_chunk)
-                .add("url", attachment.getUrl())
-                .add("attachment_color", config.ATTACHMENT_COLOR)
-                .toString()
+                    .add("url", attachment.getUrl())
+                    .add("attachment_color", config.ATTACHMENT_COLOR)
+                    .toString()
             );
         }
 
