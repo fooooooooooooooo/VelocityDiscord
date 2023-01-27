@@ -42,6 +42,7 @@ public class Config {
     public String DISCORD_CHAT_MESSAGE = "{username}: {message}";
     public String JOIN_MESSAGE = "**{username} joined the game**";
     public String LEAVE_MESSAGE = "**{username} left the game**";
+    public String DISCONNECT_MESSAGE = "**{username} disconnected**";
     public String SERVER_SWITCH_MESSAGE = "**{username} moved to {current} from {previous}**";
     public String DEATH_MESSAGE = "**{username} {death_message}**";
     public String ADVANCEMENT_MESSAGE = "**{username} has made the advancement __{advancement_title}__**\n_{advancement_description}_";
@@ -129,6 +130,7 @@ public class Config {
         DISCORD_CHAT_MESSAGE = toml.getString("discord.chat.message", DISCORD_CHAT_MESSAGE);
         JOIN_MESSAGE = toml.getString("discord.chat.join_message", JOIN_MESSAGE);
         LEAVE_MESSAGE = toml.getString("discord.chat.leave_message", LEAVE_MESSAGE);
+        DISCONNECT_MESSAGE = toml.getString("discord.chat.disconnect_message", DISCONNECT_MESSAGE);
         SERVER_SWITCH_MESSAGE = toml.getString("discord.chat.server_switch_message", SERVER_SWITCH_MESSAGE);
         DEATH_MESSAGE = toml.getString("discord.chat.death_message", DEATH_MESSAGE);
         ADVANCEMENT_MESSAGE = toml.getString("discord.chat.advancement_message", ADVANCEMENT_MESSAGE);
