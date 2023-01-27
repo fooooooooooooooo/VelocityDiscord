@@ -2,7 +2,6 @@ package ooo.foooooooooooo.velocitydiscord.discord;
 
 import club.minnced.discord.webhook.WebhookClient;
 import club.minnced.discord.webhook.WebhookClientBuilder;
-import club.minnced.discord.webhook.send.WebhookMessage;
 import club.minnced.discord.webhook.send.WebhookMessageBuilder;
 import com.velocitypowered.api.event.PostOrder;
 import com.velocitypowered.api.event.Subscribe;
@@ -10,12 +9,9 @@ import com.velocitypowered.api.event.connection.DisconnectEvent;
 import com.velocitypowered.api.event.player.PlayerChatEvent;
 import com.velocitypowered.api.event.player.ServerConnectedEvent;
 import com.velocitypowered.api.proxy.ProxyServer;
-import com.velocitypowered.api.proxy.ServerConnection;
-import com.velocitypowered.api.proxy.server.RegisteredServer;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Activity;
-import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.session.ReadyEvent;
@@ -36,7 +32,6 @@ import java.text.MessageFormat;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
@@ -180,12 +175,12 @@ public class Discord extends ListenerAdapter {
     public void onDisconnect(DisconnectEvent event) {
         var currentServer = event.getPlayer().getCurrentServer();
 
-        if (currentServer.isEmpty()) return;
-
         var username = event.getPlayer().getUsername();
-        var server = currentServer.get().getServerInfo().getName();
+        var server = currentServer
+                .map(serverConnection -> serverConnection.getServerInfo().getName())
+                .orElse("null");
 
-        var message = new StringTemplate(config.LEAVE_MESSAGE)
+        var message = new StringTemplate(currentServer.isPresent() ? config.LEAVE_MESSAGE : config.DISCONNECT_MESSAGE)
                 .add("username", username)
                 .add("server", server);
 

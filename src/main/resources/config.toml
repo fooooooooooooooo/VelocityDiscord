@@ -43,6 +43,9 @@ message = "{username}: {message}"
 # Placeholders {username} and {server} are available
 join_message = "**{username} joined the game**"
 leave_message = "**{username} left the game**"
+# Possible different format for timeouts or other terminating connections
+# Only placeholder {username} is available
+disconnect_message = "**{username} disconnected**"
 # Placeholders {username}, {current}, and {previous} are available
 server_switch_message = "**{username} moved to {current} from {previous}**"
 # Placeholders {username} and {death_message} are available
