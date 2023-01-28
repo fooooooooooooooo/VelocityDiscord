@@ -54,6 +54,7 @@ public class Config {
     public String DISCORD_LIST_SERVER_FORMAT = "[{server_name} {online_players}/{max_players}]";
     public String DISCORD_LIST_PLAYER_FORMAT = "- {username}";
     public String DISCORD_LIST_NO_PLAYERS = "No players online";
+    public String DISCORD_LIST_SERVER_OFFLINE = "Server offline";
     public String DISCORD_LIST_CODEBLOCK_LANG = "asciidoc";
 
     // minecraft formats
@@ -141,6 +142,7 @@ public class Config {
         DISCORD_LIST_SERVER_FORMAT = toml.getString("discord.commands.list.server_format", DISCORD_LIST_SERVER_FORMAT);
         DISCORD_LIST_PLAYER_FORMAT = toml.getString("discord.commands.list.player_format", DISCORD_LIST_PLAYER_FORMAT);
         DISCORD_LIST_NO_PLAYERS = toml.getString("discord.commands.list.no_players", DISCORD_LIST_NO_PLAYERS);
+        DISCORD_LIST_SERVER_OFFLINE = toml.getString("discord.commands.list.server_offline", DISCORD_LIST_SERVER_OFFLINE);
         DISCORD_LIST_CODEBLOCK_LANG = toml.getString("discord.commands.list.codeblock_lang", DISCORD_LIST_CODEBLOCK_LANG);
 
         DISCORD_CHUNK = toml.getString("minecraft.discord_chunk", DISCORD_CHUNK);
