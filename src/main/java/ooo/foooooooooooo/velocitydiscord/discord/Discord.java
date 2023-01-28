@@ -52,7 +52,7 @@ public class Discord extends ListenerAdapter {
         this.logger = logger;
         this.config = config;
 
-        commands.put("list", new ListCommand(server, config));
+        commands.put("list", new ListCommand(server, logger, config));
 
         var messageListener = new MessageListener(server, logger, config);
 

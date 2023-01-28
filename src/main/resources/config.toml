@@ -60,6 +60,7 @@ ephemeral = true
 server_format = "[{server_name} {online_players}/{max_players}]"
 player_format = "- {username}"
 no_players = "No players online"
+server_offline = "Server offline"
 codeblock_lang = "asciidoc"
 
 # Discord > Minecraft message formats

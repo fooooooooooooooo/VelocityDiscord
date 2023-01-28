@@ -6,13 +6,16 @@ import ooo.foooooooooooo.velocitydiscord.Config;
 import ooo.foooooooooooo.velocitydiscord.util.StringTemplate;
 
 import java.util.concurrent.ExecutionException;
+import java.util.logging.Logger;
 
 public class ListCommand implements ICommand {
     private final ProxyServer server;
+    private final Logger logger;
     private final Config config;
 
-    public ListCommand(ProxyServer server, Config config) {
+    public ListCommand(ProxyServer server, Logger logger, Config config) {
         this.server = server;
+        this.logger = logger;
         this.config = config;
     }
 
@@ -32,7 +35,9 @@ public class ListCommand implements ICommand {
             try {
                 var b = server.ping().get().asBuilder();
                 maxPlayers = b.getMaximumPlayers();
-            } catch (ExecutionException | InterruptedException e) {
+            } catch (ExecutionException e) {
+                logger.warning("Could not ping server: " + e);
+            } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
 
@@ -45,7 +50,11 @@ public class ListCommand implements ICommand {
                     .toString()
             ).append("\n");
 
-            if (playerCount == 0) {
+            if (maxPlayers == 0) {
+                if (!config.DISCORD_LIST_SERVER_OFFLINE.isEmpty()) {
+                    sb.append(config.DISCORD_LIST_SERVER_OFFLINE).append("\n");
+                }
+            } else if (playerCount == 0) {
                 if (!config.DISCORD_LIST_NO_PLAYERS.isEmpty()) {
                     sb.append(config.DISCORD_LIST_NO_PLAYERS).append("\n");
                 }
