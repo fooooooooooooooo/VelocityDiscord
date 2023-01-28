@@ -1,6 +1,32 @@
-# VelocityDiscord
+# Velocity Discord
 
-Velocity global chat/discord bridge
+Chat from all servers gets bridged with a discord channel
+
+## Features
+
+- Configurable
+- Webhooks or normal chat for messages
+- Player count in bot status
+- List command
+- Templating syntax for all messages
+
+## Installation
+
+1. Create a bot application [here](https://discordapp.com/developers/applications/)
+   - Go to the `Bot` tab and click `Add bot`
+2. Enable the `SERVER MEMBERS INTENT` and `MESSAGE CONTENT INTENT` under `Privileged Gateway Intents`
+3. Copy the bot's token, you might have to click `Reset Token` first
+4. Install the plugin on your server, start the server once, then stop the server again
+5. Open the plugin config file at `plugins/discord/config.toml`
+6. Under `[discord]`, paste your token in place of `TOKEN`
+7. Under `[discord]`, paste the channel id you want to use
+   - To get a channel id, you have to enable developer mode in Discord
+   - Open Discord settings, go to `Advanced`, then turn on `Developer Mode`
+   - Now right click the channel you want to use and click `Copy ID`
+8. Set any additional config options you want
+9. Start the server and check if it works
+
+## Configuration
 
 Default config generated on startup:
 
