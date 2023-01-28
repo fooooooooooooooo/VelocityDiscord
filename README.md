@@ -9,6 +9,9 @@ Chat from all servers gets bridged with a discord channel
 - Player count in bot status
 - List command
 - Templating syntax for all messages
+- Death and Advancement messages shown
+
+> note: this requires a [companion mod/plugin](https://github.com/fooooooooooooooo/yep) for death/advancement messages
 
 ## Installation
 
