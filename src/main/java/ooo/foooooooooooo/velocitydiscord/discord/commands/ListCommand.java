@@ -1,11 +1,14 @@
 package ooo.foooooooooooo.velocitydiscord.discord.commands;
 
 import com.velocitypowered.api.proxy.ProxyServer;
+import com.velocitypowered.api.proxy.server.RegisteredServer;
+import com.velocitypowered.api.proxy.server.ServerPing;
 import net.dv8tion.jda.api.interactions.commands.SlashCommandInteraction;
 import ooo.foooooooooooo.velocitydiscord.Config;
 import ooo.foooooooooooo.velocitydiscord.util.StringTemplate;
 
-import java.util.concurrent.ExecutionException;
+import java.util.HashMap;
+import java.util.concurrent.CompletableFuture;
 import java.util.logging.Logger;
 
 public class ListCommand implements ICommand {
@@ -22,52 +25,58 @@ public class ListCommand implements ICommand {
     @Override
     @SuppressWarnings("null")
     public void handle(SlashCommandInteraction interaction) {
-        var servers = server.getAllServers().stream().toList();
+        final var servers = server.getAllServers();
 
-        var sb = new StringBuilder();
-        sb.append("```").append(config.DISCORD_LIST_CODEBLOCK_LANG).append("\n");
+        final var sb = new StringBuilder();
+        sb.append("```").append(config.DISCORD_LIST_CODEBLOCK_LANG).append('\n');
 
-        for (var server : servers) {
-            var name = server.getServerInfo().getName();
-            var players = server.getPlayersConnected();
-            var maxPlayers = 0;
+        final var maxPlayersMap = new HashMap<RegisteredServer, Integer>(servers.size());
+        CompletableFuture.allOf(servers.parallelStream()
+                .map(server -> server.ping().handle((ping, ex) -> {
+                    if (ex != null) {
+                        logger.warning("Could not ping server: " + ex);
+                        maxPlayersMap.put(server, 0);
+                        return null;
+                    }
+                    maxPlayersMap.put(server, ping.getPlayers()
+                            .map(ServerPing.Players::getMax)
+                            .orElse(0));
+                    return null;
+                }))
+                .toArray(CompletableFuture[]::new)).join();
 
-            try {
-                var b = server.ping().get().asBuilder();
-                maxPlayers = b.getMaximumPlayers();
-            } catch (ExecutionException e) {
-                logger.warning("Could not ping server: " + e);
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
+        for (final var server : servers) {
+            final var name = server.getServerInfo().getName();
+            final var players = server.getPlayersConnected();
 
-            var playerCount = players.size();
+            final var playerCount = players.size();
+            final var maxPlayerCount = maxPlayersMap.get(server);
 
             sb.append(new StringTemplate(config.DISCORD_LIST_SERVER_FORMAT)
                     .add("server_name", name)
                     .add("online_players", playerCount)
-                    .add("max_players", maxPlayers)
+                    .add("max_players", maxPlayerCount)
                     .toString()
-            ).append("\n");
+            ).append('\n');
 
-            if (maxPlayers == 0) {
+            if (maxPlayerCount == 0) {
                 if (!config.DISCORD_LIST_SERVER_OFFLINE.isEmpty()) {
-                    sb.append(config.DISCORD_LIST_SERVER_OFFLINE).append("\n");
+                    sb.append(config.DISCORD_LIST_SERVER_OFFLINE).append('\n');
                 }
             } else if (playerCount == 0) {
                 if (!config.DISCORD_LIST_NO_PLAYERS.isEmpty()) {
-                    sb.append(config.DISCORD_LIST_NO_PLAYERS).append("\n");
+                    sb.append(config.DISCORD_LIST_NO_PLAYERS).append('\n');
                 }
             } else {
                 for (var player : players) {
                     sb.append(new StringTemplate(config.DISCORD_LIST_PLAYER_FORMAT)
                             .add("username", player.getUsername())
                             .toString()
-                    ).append("\n");
+                    ).append('\n');
                 }
             }
 
-            sb.append("\n");
+            sb.append('\n');
         }
         sb.append("```");
 
