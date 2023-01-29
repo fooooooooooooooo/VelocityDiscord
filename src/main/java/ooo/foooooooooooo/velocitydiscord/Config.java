@@ -4,7 +4,6 @@ import com.google.inject.Inject;
 import com.moandjiezana.toml.Toml;
 import com.velocitypowered.api.plugin.annotation.DataDirectory;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -80,28 +79,28 @@ public class Config {
     }
 
     private void loadFile() {
-        File dataDirectoryFile = dataDir.toFile();
-        if (!dataDirectoryFile.exists()) {
-            if (!dataDirectoryFile.mkdir()) {
-                throw new RuntimeException("Could not create data directory at " + dataDirectoryFile.getAbsolutePath());
+        if (Files.notExists(dataDir)) {
+            try {
+                Files.createDirectory(dataDir);
+            } catch (IOException e) {
+                throw new RuntimeException("Could not create data directory at " + dataDir.toAbsolutePath());
             }
         }
 
-        File dataFile = new File(dataDirectoryFile, "config.toml");
+        Path dataFile = dataDir.resolve("config.toml");
 
         // create default config if it doesn't exist
-        if (!dataFile.exists()) {
+        if (Files.notExists(dataFile)) {
             isFirstRun = true;
 
-            try {
-                InputStream in = getClass().getResourceAsStream("/config.toml");
-                Files.copy(Objects.requireNonNull(in), dataFile.toPath());
+            try (InputStream in = getClass().getResourceAsStream("/config.toml")) {
+                Files.copy(Objects.requireNonNull(in), dataFile);
             } catch (IOException e) {
                 throw new RuntimeException("ERROR: Can't write default configuration file (permissions/filesystem error?)");
             }
         }
 
-        toml = new Toml().read(dataFile);
+        toml = new Toml().read(dataFile.toFile());
 
         // make sure the config makes sense for the current plugin's version
         String version = toml.getString("config_version", CONFIG_VERSION);
