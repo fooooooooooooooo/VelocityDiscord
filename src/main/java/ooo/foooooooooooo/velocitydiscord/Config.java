@@ -8,15 +8,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.Objects;
 
+import static ooo.foooooooooooo.velocitydiscord.VelocityDiscord.PluginVersion;
+
 public class Config {
-    private final Path dataDir;
-
-    public static final String CONFIG_MAJOR_VERSION = "1";
-    public static final String CONFIG_MINOR_VERSION = "5";
-    public static final String CONFIG_VERSION = CONFIG_MAJOR_VERSION + "." + CONFIG_MINOR_VERSION;
-
     private static final String DefaultToken = "TOKEN";
     private static final String DefaultChannelId = "000000000000000000";
     private static final String DefaultWebhookUrl = "";
@@ -67,6 +64,12 @@ public class Config {
     public String DISCORD_COLOR = "#7289da";
     public String ATTACHMENT_COLOR = "#4abdff";
 
+    private final Path dataDir;
+
+    private static final String[] splitVersion = PluginVersion.split("\\.");
+    private static final String configVersion = splitVersion[0] + '.' + splitVersion[1];
+    private static final String configMajorVersion = splitVersion[0];
+
     private Toml toml;
 
     private boolean isFirstRun = false;
@@ -104,14 +107,15 @@ public class Config {
         toml = new Toml().read(dataFile.toFile());
 
         // make sure the config makes sense for the current plugin's version
-        String version = toml.getString("config_version", CONFIG_VERSION);
+        String version = toml.getString("config_version", configVersion);
+
         if (!versionCompatible(version)) {
-            throw new RuntimeException(String.format("ERROR: Can't use the existing configuration file: version mismatch (mod: %s, config: %s)", CONFIG_VERSION, version));
+            throw new RuntimeException(String.format("ERROR: Can't use the existing configuration file: version mismatch (mod: %s, config: %s)", configVersion, version));
         }
     }
 
     private boolean versionCompatible(String newVersion) {
-        return newVersion.split("\\.")[0].equals(CONFIG_MAJOR_VERSION);
+        return newVersion.split("\\.")[0].equals(configMajorVersion);
     }
 
     public void loadConfigs() {
