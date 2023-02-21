@@ -55,6 +55,8 @@ activity_text = "with {amount} players online"
 
 # Enable mentioning Discord users from Minecraft chat
 enable_mentions = true
+# Enable @everyone and @here pings from Minecraft chat
+enable_everyone_and_here = false
 
 # OPTIONAL - Use a Discord webhook to have the bot use the player's username and avatar when sending messages
 # Requires a webhook URL to be set below
