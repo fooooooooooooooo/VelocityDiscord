@@ -119,6 +119,10 @@ public class Discord extends ListenerAdapter {
             content = parseMentions(content);
         }
 
+        if (!config.ENABLE_EVERYONE_AND_HERE) {
+            content = filterEveryoneAndHere(content);
+        }
+
         if (config.DISCORD_USE_WEBHOOK) {
             var uuid = event.getPlayer().getUniqueId().toString();
 
@@ -203,6 +207,12 @@ public class Discord extends ListenerAdapter {
         }
 
         return msg;
+    }
+
+    private static final Pattern EveryoneAndHerePattern = Pattern.compile("@(?<ping>everyone|here)");
+
+    private String filterEveryoneAndHere(String message) {
+        return EveryoneAndHerePattern.matcher(message).replaceAll("@\u200B${ping}");
     }
 
     public void sendWebhookMessage(String avatar, String username, String content) {

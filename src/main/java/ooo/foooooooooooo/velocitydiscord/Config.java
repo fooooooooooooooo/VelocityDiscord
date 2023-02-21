@@ -30,6 +30,7 @@ public class Config {
     public Boolean SHOW_ATTACHMENTS = true;
     public Boolean SHOW_ACTIVITY = true;
     public Boolean ENABLE_MENTIONS = true;
+    public Boolean ENABLE_EVERYONE_AND_HERE = false;
 
     // webhooks
     public Boolean DISCORD_USE_WEBHOOK = false;
@@ -121,6 +122,7 @@ public class Config {
         SHOW_ATTACHMENTS = toml.getBoolean("discord.show_attachments_ingame", SHOW_ATTACHMENTS);
         SHOW_ACTIVITY = toml.getBoolean("discord.show_activity", SHOW_ACTIVITY);
         ENABLE_MENTIONS = toml.getBoolean("discord.enable_mentions", ENABLE_MENTIONS);
+        ENABLE_EVERYONE_AND_HERE = toml.getBoolean("discord.enable_everyone_and_here", ENABLE_EVERYONE_AND_HERE);
 
         DISCORD_USE_WEBHOOK = toml.getBoolean("discord.use_webhook", DISCORD_USE_WEBHOOK);
         WEBHOOK_URL = toml.getString("discord.webhook.webhook_url", WEBHOOK_URL);
