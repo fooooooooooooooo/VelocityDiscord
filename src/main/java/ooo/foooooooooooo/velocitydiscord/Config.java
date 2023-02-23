@@ -15,12 +15,24 @@ import static ooo.foooooooooooo.velocitydiscord.VelocityDiscord.PluginVersion;
 
 public class Config {
     private static final String DefaultToken = "TOKEN";
+
     private static final String DefaultChannelId = "000000000000000000";
+    private static final String StatusChannelId = "000000000000000000";
+    private static final String ChatChannelId = "000000000000000000";
+    private static final String ConnectionChannelId = "000000000000000000";
+    private static final String DeathChannelId = "000000000000000000";
+    private static final String AchievementChannelId = "000000000000000000";
+
     private static final String DefaultWebhookUrl = "";
     private static final String DefaultAvatarUrl = "https://crafatar.com/avatars/{uuid}?overlay";
 
     public String DISCORD_TOKEN = DefaultToken;
-    public String CHANNEL_ID = DefaultChannelId;
+    public String DEFAULT_CHANNEL_ID = DefaultChannelId;
+    public String STATUS_CHANNEL_ID = StatusChannelId;
+    public String CHAT_CHANNEL_ID = ChatChannelId;
+    public String CONNECTION_CHANNEL_ID = ConnectionChannelId;
+    public String DEATH_CHANNEL_ID = DeathChannelId;
+    public String ACHIEVEMENT_CHANNEL_ID = AchievementChannelId;
 
     // toggles
     public Boolean SHOW_BOT_MESSAGES = false;
@@ -120,7 +132,12 @@ public class Config {
 
     public void loadConfigs() {
         DISCORD_TOKEN = toml.getString("discord.token", DISCORD_TOKEN);
-        CHANNEL_ID = toml.getString("discord.channel", CHANNEL_ID);
+        DEFAULT_CHANNEL_ID = toml.getString("discord.default_channel", DEFAULT_CHANNEL_ID);
+        STATUS_CHANNEL_ID = toml.getString("discord.status_channel", STATUS_CHANNEL_ID);
+        CHAT_CHANNEL_ID = toml.getString("discord.chat_channel", CHAT_CHANNEL_ID);
+        CONNECTION_CHANNEL_ID = toml.getString("discord.connection_channel", CONNECTION_CHANNEL_ID);
+        DEATH_CHANNEL_ID = toml.getString("discord.death_channel", DEATH_CHANNEL_ID);
+        ACHIEVEMENT_CHANNEL_ID = toml.getString("discord.achievement_channel", ACHIEVEMENT_CHANNEL_ID);
 
         SHOW_BOT_MESSAGES = toml.getBoolean("discord.show_bot_messages", SHOW_BOT_MESSAGES);
         SHOW_ATTACHMENTS = toml.getBoolean("discord.show_attachments_ingame", SHOW_ATTACHMENTS);
@@ -160,6 +177,6 @@ public class Config {
 
     // Assume it's the first run if the config hasn't been edited or has been created this run
     public boolean isFirstRun() {
-        return DISCORD_TOKEN.equals(DefaultToken) || CHANNEL_ID.equals(DefaultChannelId) || isFirstRun;
+        return DISCORD_TOKEN.equals(DefaultToken) || DEFAULT_CHANNEL_ID.equals(DefaultChannelId) || isFirstRun;
     }
 }

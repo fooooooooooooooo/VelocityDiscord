@@ -5,7 +5,12 @@ config_version = "1.5"
 # Bot token from https://discordapp.com/developers/applications/
 token = "TOKEN"
 # Channel ID to send Minecraft chat messages to
-channel = "000000000000000000"
+default_channel = "000000000000000000"
+status_channel = "000000000000000000"
+chat_channel = "000000000000000000"
+connection_channel = "000000000000000000"
+death_channel = "000000000000000000"
+achievement_channel = "000000000000000000"
 
 # Show messages from bots in Minecraft chat
 show_bot_messages = false
