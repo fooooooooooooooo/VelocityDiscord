@@ -43,7 +43,12 @@ public class Discord extends ListenerAdapter {
     private final JDA jda;
     private final WebhookClient webhookClient;
     private final Map<String, ICommand> commands = new HashMap<>();
-    private TextChannel activeChannel;
+    private TextChannel defaultChannel;
+    private TextChannel chatChannel;
+    private TextChannel statusChannel;
+    private TextChannel connectionChannel;
+    private TextChannel deathChannel;
+    private TextChannel achievementChannel;
 
     private int lastPlayerCount = -1;
 
@@ -82,26 +87,60 @@ public class Discord extends ListenerAdapter {
     public void onReady(@Nonnull ReadyEvent event) {
         logger.info(MessageFormat.format("Bot ready, Guilds: {0} ({1} available)", event.getGuildTotalCount(), event.getGuildAvailableCount()));
 
-        var channel = jda.getTextChannelById(Objects.requireNonNull(config.CHANNEL_ID));
-
-        if (channel == null) {
-            logger.severe("Could not load channel with id: " + config.CHANNEL_ID);
-            throw new RuntimeException("Could not load channel id: " + config.CHANNEL_ID);
+        var default_channel = jda.getTextChannelById(Objects.requireNonNull(config.DEFAULT_CHANNEL_ID));
+        if (default_channel == null) {
+            logger.severe("Could not load 'default' channel with id: " + config.DEFAULT_CHANNEL_ID);
+            throw new RuntimeException("Could not load 'default' channel id: " + config.DEFAULT_CHANNEL_ID);
         }
+        logger.info("Loaded default channel: " + default_channel.getName());
+        defaultChannel = default_channel;
 
-        logger.info("Loaded channel: " + channel.getName());
-
-        if (!channel.canTalk()) {
-            logger.severe("Cannot talk in configured channel");
-            throw new RuntimeException("Cannot talk in configured channel");
+        var chat_channel = jda.getTextChannelById(Objects.requireNonNull(config.CHAT_CHANNEL_ID));
+        if (chat_channel == null) {
+            logger.severe("Could not load 'chat' channel with id: " + config.CHAT_CHANNEL_ID);
+            chat_channel = default_channel;
         }
+        logger.info("Loaded chat channel: " + chat_channel.getName());
+        if (!chat_channel.canTalk()) {
+            logger.severe("Cannot talk in configured chat channel");
+            throw new RuntimeException("Cannot talk in configured chat channel");
+        }
+        chatChannel = chat_channel;
 
-        activeChannel = channel;
+        var status_channel = jda.getTextChannelById(Objects.requireNonNull(config.STATUS_CHANNEL_ID));
+        if (status_channel == null) {
+            logger.severe("Could not load 'status' channel with id: " + config.STATUS_CHANNEL_ID);
+            status_channel = default_channel;
+        }
+        logger.info("Loaded status channel: " + status_channel.getName());
+        statusChannel = status_channel;
 
-        var guild = activeChannel.getGuild();
+        var connection_channel = jda.getTextChannelById(Objects.requireNonNull(config.CONNECTION_CHANNEL_ID));
+        if (connection_channel == null) {
+            logger.severe("Could not load 'connection' channel with id: " + config.CONNECTION_CHANNEL_ID);
+            connection_channel = default_channel;
+        }
+        logger.info("Loaded connection channel: " + connection_channel.getName());
+        connectionChannel = connection_channel;
 
+        var death_channel = jda.getTextChannelById(Objects.requireNonNull(config.DEATH_CHANNEL_ID));
+        if (death_channel == null) {
+            logger.severe("Could not load 'death' channel with id: " + config.DEATH_CHANNEL_ID);
+            death_channel = default_channel;
+        }
+        logger.info("Loaded death channel: " + death_channel.getName());
+        deathChannel = death_channel;
+
+        var achievement_channel = jda.getTextChannelById(Objects.requireNonNull(config.ACHIEVEMENT_CHANNEL_ID));
+        if (achievement_channel == null) {
+            logger.severe("Could not load 'achievement' channel with id: " + config.ACHIEVEMENT_CHANNEL_ID);
+            achievement_channel = default_channel;
+        }
+        logger.info("Loaded achievement channel: " + achievement_channel.getName());
+        achievementChannel = achievement_channel;
+
+        var guild = defaultChannel.getGuild();
         guild.upsertCommand("list", "list players").queue();
-
         updateActivityPlayerAmount();
     }
 
@@ -144,7 +183,7 @@ public class Discord extends ListenerAdapter {
                     .add("message", content)
                     .toString();
 
-            sendMessage(message);
+            sendMessage(message, chatChannel);
         }
     }
 
@@ -170,7 +209,7 @@ public class Discord extends ListenerAdapter {
                     .add("server", server);
         }
 
-        sendMessage(message.toString());
+        sendMessage(message.toString(), connectionChannel);
 
         updateActivityPlayerAmount();
     }
@@ -188,19 +227,19 @@ public class Discord extends ListenerAdapter {
                 .add("username", username)
                 .add("server", server);
 
-        sendMessage(message.toString());
+        sendMessage(message.toString(), connectionChannel);
 
         updateActivityPlayerAmount();
     }
 
-    public void sendMessage(@Nonnull String message) {
-        activeChannel.sendMessage(message).queue();
+    public void sendMessage(@Nonnull String message, @Nonnull TextChannel channel) {
+        channel.sendMessage(message).queue();
     }
 
     private String parseMentions(String message) {
         var msg = message;
 
-        for (var member : activeChannel.getMembers()) {
+        for (var member : defaultChannel.getMembers()) {
             msg = Pattern.compile(Pattern.quote("@" + member.getUser().getName()), Pattern.CASE_INSENSITIVE)
                     .matcher(msg)
                     .replaceAll(member.getAsMention());
@@ -230,7 +269,8 @@ public class Discord extends ListenerAdapter {
                 new StringTemplate(config.DEATH_MESSAGE) //
                         .add("username", username) //
                         .add("death_message", message.message) //
-                        .toString()
+                        .toString(),
+                deathChannel
         );
     }
 
@@ -240,7 +280,8 @@ public class Discord extends ListenerAdapter {
                         .add("username", username) //
                         .add("advancement_title", message.title) //
                         .add("advancement_description", message.description) //
-                        .toString()
+                        .toString(),
+                achievementChannel
         );
     }
 

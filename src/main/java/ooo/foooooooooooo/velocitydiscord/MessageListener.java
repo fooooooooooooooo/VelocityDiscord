@@ -58,7 +58,7 @@ public class MessageListener extends ListenerAdapter {
         }
 
         TextChannel channel = event.getChannel().asTextChannel();
-        if (!channel.getId().equals(config.CHANNEL_ID)) return;
+        if (!channel.getId().equals(config.CHAT_CHANNEL_ID)) return;
 
         User author = event.getAuthor();
         if (!config.SHOW_BOT_MESSAGES && author.isBot()) {
