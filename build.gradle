@@ -28,6 +28,7 @@ dependencies {
   implementation("club.minnced:discord-webhooks:${project.webhooks_version}")
 
   // chat
+  modImplementation include("net.kyori:adventure-platform-fabric:${project.adventure_version}")
   implementation "net.kyori:adventure-text-minimessage:${project.minimessage_version}"
 }
 

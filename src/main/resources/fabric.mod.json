@@ -5,9 +5,7 @@
 
   "name": "Velocity Discord",
   "description": "Fabric chat to Discord bridge",
-  "authors": [
-    "fooooooooooooooo"
-  ],
+  "authors": ["fooooooooooooooo"],
   "contact": {
     "homepage": "https://github.com/fooooooooooooooo/velocity-discord/tree/fabric",
     "sources": "https://github.com/fooooooooooooooo/velocity-discord/tree/fabric"
@@ -18,13 +16,9 @@
 
   "environment": "server",
   "entrypoints": {
-    "main": [
-      "ooo.foooooooooooo.velocitydiscord.VelocityDiscord"
-    ]
+    "main": ["ooo.foooooooooooo.velocitydiscord.VelocityDiscord"]
   },
-  "mixins": [
-    "velocitydiscord.mixins.json"
-  ],
+  "mixins": ["velocitydiscord.mixins.json"],
 
   "depends": {
     "fabricloader": ">=0.14.19",

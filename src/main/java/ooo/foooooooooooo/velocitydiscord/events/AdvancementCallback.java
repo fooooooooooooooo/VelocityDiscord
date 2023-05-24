@@ -14,5 +14,5 @@ public interface AdvancementCallback {
       }
     });
 
-  public void getAdvancement(ServerPlayerEntity player, Advancement advancement);
+  void getAdvancement(ServerPlayerEntity player, Advancement advancement);
 }

@@ -1,7 +1,6 @@
 package ooo.foooooooooooo.velocitydiscord;
 
 
-import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
@@ -10,9 +9,10 @@ import net.dv8tion.jda.api.entities.channel.ChannelType;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
+import net.kyori.adventure.platform.fabric.FabricServerAudiences;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
-import net.minecraft.text.Text;
+import ooo.foooooooooooo.velocitydiscord.discord.Discord;
 import ooo.foooooooooooo.velocitydiscord.util.StringTemplate;
 import org.jetbrains.annotations.NotNull;
 
@@ -27,13 +27,14 @@ import static ooo.foooooooooooo.velocitydiscord.VelocityDiscord.*;
 
 public class MessageListener extends ListenerAdapter {
   private static final Pattern WEBHOOK_ID_REGEX = Pattern.compile("^https://discord\\.com/api/webhooks/(\\d+)/.+$");
-  private final String webhookId;
-  private JDA jda;
+  private String webhookId = null;
 
   public MessageListener() {
     final Matcher matcher = WEBHOOK_ID_REGEX.matcher(CONFIG.WEBHOOK_URL);
-    this.webhookId = matcher.find() ? matcher.group(1) : null;
-    LOGGER.trace("Found webhook id: {}", webhookId);
+    if (matcher.find()) {
+      this.webhookId = matcher.group(1);
+      Logger.trace("Found webhook id: {}", webhookId);
+    }
   }
 
   @Override
@@ -41,12 +42,8 @@ public class MessageListener extends ListenerAdapter {
     @NotNull MessageReceivedEvent event
   ) {
     if (!event.isFromType(ChannelType.TEXT)) {
-      LOGGER.trace("ignoring non text channel message");
+      Logger.trace("ignoring non text channel message");
       return;
-    }
-
-    if (jda == null) {
-      jda = event.getJDA();
     }
 
     TextChannel channel = event.getChannel().asTextChannel();
@@ -54,13 +51,12 @@ public class MessageListener extends ListenerAdapter {
 
     User author = event.getAuthor();
     if (!CONFIG.SHOW_BOT_MESSAGES && author.isBot()) {
-      LOGGER.trace("ignoring bot message");
+      Logger.trace("ignoring bot message");
       return;
     }
 
-    if (author.getId().equals(jda.getSelfUser().getId()) ||
-        (Objects.nonNull(this.webhookId) && author.getId().equals(this.webhookId))) {
-      LOGGER.trace("ignoring own message");
+    if (isSelf(author.getId())) {
+      Logger.trace("ignoring own message");
       return;
     }
 
@@ -69,7 +65,7 @@ public class MessageListener extends ListenerAdapter {
 
     Member member = guild.getMember(author);
     if (member == null) {
-      LOGGER.warn("failed to get member: {}", author.getId());
+      Logger.warn("failed to get member: {}", author.getId());
       return;
     }
 
@@ -121,13 +117,21 @@ public class MessageListener extends ListenerAdapter {
     sendMessage(MiniMessage.miniMessage().deserialize(message_chunk.toString()).asComponent());
   }
 
+  private boolean isSelf(String id) {
+    if (id.equals(Discord.SelfId)) {
+      return true;
+    }
+
+    return Objects.nonNull(this.webhookId) && id.equals(this.webhookId);
+  }
+
   private void sendMessage(Component msg) {
     if (SERVER == null) {
-      LOGGER.trace("No server to send message to");
+      Logger.trace("No server to send message to");
 
       return;
     }
 
-    SERVER.getPlayerManager().broadcast((Text) msg, false);
+    SERVER.getPlayerManager().broadcast(FabricServerAudiences.of(SERVER).toNative(msg), false);
   }
 }

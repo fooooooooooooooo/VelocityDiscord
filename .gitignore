@@ -28,6 +28,7 @@
 .idea/**/libraries
 .gradle/
 build/
+run/
 
 # CMake
 cmake-build-*/

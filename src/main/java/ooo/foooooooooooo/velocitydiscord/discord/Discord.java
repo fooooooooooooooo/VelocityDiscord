@@ -34,11 +34,12 @@ import java.util.regex.Pattern;
 import static ooo.foooooooooooo.velocitydiscord.VelocityDiscord.*;
 
 public class Discord extends ListenerAdapter {
-  private final JDA jda;
+  private static final Pattern EveryoneAndHerePattern = Pattern.compile("@(?<ping>everyone|here)");
+  public static String SelfId;
+  private static JDA jda;
   private final WebhookClient webhookClient;
   private final Map<String, ICommand> commands = new HashMap<>();
   private TextChannel activeChannel;
-
   private int lastPlayerCount = -1;
 
   public Discord() {
@@ -60,8 +61,10 @@ public class Discord extends ListenerAdapter {
 
     try {
       jda = builder.build();
+
+      SelfId = jda.getSelfUser().getId();
     } catch (Exception e) {
-      LOGGER.error("Failed to login to discord: {}", e.toString());
+      Logger.error("Failed to login to discord: {}", e.toString());
       throw new RuntimeException("Failed to login to discord: ", e);
     }
 
@@ -70,19 +73,19 @@ public class Discord extends ListenerAdapter {
 
   @Override
   public void onReady(@NotNull ReadyEvent event) {
-    LOGGER.info("Bot ready, Guilds: {} ({} available)", event.getGuildTotalCount(), event.getGuildAvailableCount());
+    Logger.info("Bot ready, Guilds: {} ({} available)", event.getGuildTotalCount(), event.getGuildAvailableCount());
 
     var channel = jda.getTextChannelById(Objects.requireNonNull(CONFIG.CHANNEL_ID));
 
     if (channel == null) {
-      LOGGER.error("Could not load channel with id: {}", CONFIG.CHANNEL_ID);
+      Logger.error("Could not load channel with id: {}", CONFIG.CHANNEL_ID);
       throw new RuntimeException("Could not load channel id: " + CONFIG.CHANNEL_ID);
     }
 
-    LOGGER.info("Loaded channel: {}", channel.getName());
+    Logger.info("Loaded channel: {}", channel.getName());
 
     if (!channel.canTalk()) {
-      LOGGER.error("Cannot talk in configured channel");
+      Logger.error("Cannot talk in configured channel");
       throw new RuntimeException("Cannot talk in configured channel");
     }
 
@@ -120,7 +123,7 @@ public class Discord extends ListenerAdapter {
       var display = advancement.getDisplay();
 
       if (display == null || display.isHidden()) {
-        LOGGER.trace("Ignoring unsent display");
+        Logger.trace("Ignoring unsent display");
         return;
       }
 
@@ -131,8 +134,47 @@ public class Discord extends ListenerAdapter {
     });
   }
 
-  private static String getComponentText(Text component) {
-    return component.getString();
+  @Override
+  public void onSlashCommandInteraction(@NotNull SlashCommandInteractionEvent event) {
+    var command = event.getName();
+
+    if (!commands.containsKey(command)) {
+      return;
+    }
+
+    commands.get(command).handle(event);
+  }
+
+  public void updateActivityPlayerAmount() {
+    if (CONFIG.SHOW_ACTIVITY) {
+      final int playerCount = SERVER != null ? SERVER.getCurrentPlayerCount() : -1;
+
+      if (this.lastPlayerCount != playerCount) {
+        jda
+          .getPresence()
+          .setActivity(Activity.playing(new StringTemplate(CONFIG.DISCORD_ACTIVITY_TEXT)
+            .add("amount", playerCount)
+            .toString()));
+
+        this.lastPlayerCount = playerCount;
+      }
+    }
+  }
+
+  public void onPlayerConnect(ServerPlayerEntity player) {
+    var username = player.getName().getString();
+    var message = new StringTemplate(CONFIG.JOIN_MESSAGE).add("username", username);
+
+    sendMessage(message.toString());
+    updateActivityPlayerAmount();
+  }
+
+  public void onPlayerDisconnect(ServerPlayerEntity player) {
+    var username = player.getName().getString();
+    var message = new StringTemplate(CONFIG.LEAVE_MESSAGE).add("username", username);
+
+    sendMessage(message.toString());
+    updateActivityPlayerAmount();
   }
 
   public void onPlayerChat(SignedMessage signedMessage, ServerPlayerEntity player) {
@@ -163,20 +205,23 @@ public class Discord extends ListenerAdapter {
     }
   }
 
-  public void onPlayerConnect(ServerPlayerEntity player) {
-    var username = player.getName().getString();
-    var message = new StringTemplate(CONFIG.JOIN_MESSAGE).add("username", username);
-
-    sendMessage(message.toString());
-    updateActivityPlayerAmount();
+  private static String getComponentText(Text component) {
+    return component.getString();
   }
 
-  public void onPlayerDisconnect(ServerPlayerEntity player) {
-    var username = player.getName().getString();
-    var message = new StringTemplate(CONFIG.LEAVE_MESSAGE).add("username", username);
+  public void onPlayerDeath(String username, String message) {
+    sendMessage(new StringTemplate(CONFIG.DEATH_MESSAGE)
+      .add("username", username)
+      .add("death_message", message)
+      .toString());
+  }
 
-    sendMessage(message.toString());
-    updateActivityPlayerAmount();
+  public void onPlayerAdvancement(String username, String title, String description) {
+    sendMessage(new StringTemplate(CONFIG.ADVANCEMENT_MESSAGE)
+      .add("username", username)
+      .add("advancement_title", title)
+      .add("advancement_description", description)
+      .toString());
   }
 
   public void sendMessage(@NotNull String message) {
@@ -196,8 +241,6 @@ public class Discord extends ListenerAdapter {
     return msg;
   }
 
-  private static final Pattern EveryoneAndHerePattern = Pattern.compile("@(?<ping>everyone|here)");
-
   private String filterEveryoneAndHere(String message) {
     return EveryoneAndHerePattern.matcher(message).replaceAll("@\u200B${ping}");
   }
@@ -207,47 +250,5 @@ public class Discord extends ListenerAdapter {
       new WebhookMessageBuilder().setAvatarUrl(avatar).setUsername(username).setContent(content).build();
 
     webhookClient.send(webhookMessage);
-  }
-
-  public void onPlayerDeath(String username, String message) {
-    sendMessage(new StringTemplate(CONFIG.DEATH_MESSAGE)
-      .add("username", username)
-      .add("death_message", message)
-      .toString());
-  }
-
-  public void onPlayerAdvancement(String username, String title, String description) {
-    sendMessage(new StringTemplate(CONFIG.ADVANCEMENT_MESSAGE)
-      .add("username", username)
-      .add("advancement_title", title)
-      .add("advancement_description", description)
-      .toString());
-  }
-
-  @Override
-  public void onSlashCommandInteraction(@NotNull SlashCommandInteractionEvent event) {
-    var command = event.getName();
-
-    if (!commands.containsKey(command)) {
-      return;
-    }
-
-    commands.get(command).handle(event);
-  }
-
-  public void updateActivityPlayerAmount() {
-    if (CONFIG.SHOW_ACTIVITY) {
-      final int playerCount = SERVER != null ? SERVER.getCurrentPlayerCount() : -1;
-
-      if (this.lastPlayerCount != playerCount) {
-        jda
-          .getPresence()
-          .setActivity(Activity.playing(new StringTemplate(CONFIG.DISCORD_ACTIVITY_TEXT)
-            .add("amount", playerCount)
-            .toString()));
-
-        this.lastPlayerCount = playerCount;
-      }
-    }
   }
 }

@@ -3,10 +3,7 @@ package ooo.foooooooooooo.velocitydiscord;
 import com.moandjiezana.toml.Toml;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Objects;
 
 import static ooo.foooooooooooo.velocitydiscord.VelocityDiscord.ModVersion;
 
@@ -15,93 +12,70 @@ public class Config {
   private static final String DefaultChannelId = "000000000000000000";
   private static final String DefaultWebhookUrl = "";
   private static final String DefaultAvatarUrl = "https://crafatar.com/avatars/{uuid}?overlay";
-
+  private static final String[] splitVersion = ModVersion.split("\\.");
+  private static final String configVersion = splitVersion[0] + '.' + splitVersion[1];
+  private static final String configMajorVersion = splitVersion[0];
+  private final Path configDir;
   public String DISCORD_TOKEN = DefaultToken;
   public String CHANNEL_ID = DefaultChannelId;
-
   // toggles
   public Boolean SHOW_BOT_MESSAGES = false;
   public Boolean SHOW_ATTACHMENTS = true;
   public Boolean SHOW_ACTIVITY = true;
   public Boolean ENABLE_MENTIONS = true;
   public Boolean ENABLE_EVERYONE_AND_HERE = false;
-
   // webhooks
   public Boolean DISCORD_USE_WEBHOOK = false;
   public String WEBHOOK_URL = DefaultWebhookUrl;
   public String WEBHOOK_AVATAR_URL = DefaultAvatarUrl;
   public String WEBHOOK_USERNAME = "{username}";
-
   // discord formats
   public String DISCORD_CHAT_MESSAGE = "{username}: {message}";
   public String JOIN_MESSAGE = "**{username} joined the game**";
   public String LEAVE_MESSAGE = "**{username} left the game**";
   public String DISCONNECT_MESSAGE = "**{username} disconnected**";
-  public String SERVER_SWITCH_MESSAGE = "**{username} moved to {current} from {previous}**";
   public String DEATH_MESSAGE = "**{username} {death_message}**";
   public String ADVANCEMENT_MESSAGE =
     "**{username} has made the advancement __{advancement_title}__**\n_{advancement_description}_";
   public String DISCORD_ACTIVITY_TEXT = "with {amount} players online";
-
   // discord commands
   public Boolean DISCORD_LIST_ENABLED = true;
   public Boolean DISCORD_LIST_EPHEMERAL = true;
-  public String DISCORD_LIST_SERVER_FORMAT = "[{server_name} {online_players}/{max_players}]";
+  public String DISCORD_LIST_SERVER_FORMAT = "[{online_players}/{max_players}]";
   public String DISCORD_LIST_PLAYER_FORMAT = "- {username}";
   public String DISCORD_LIST_NO_PLAYERS = "No players online";
   public String DISCORD_LIST_SERVER_OFFLINE = "Server offline";
   public String DISCORD_LIST_CODEBLOCK_LANG = "asciidoc";
-
   // minecraft formats
   public String DISCORD_CHUNK = "<dark_gray>[<{discord_color}>Discord<dark_gray>]";
   public String USERNAME_CHUNK = "<{role_color}><hover:show_text:{username}#{discriminator}>{nickname}</hover>";
   public String MC_CHAT_MESSAGE = "{discord_chunk} {username_chunk}<dark_gray>: <white>{message} {attachments}";
   public String ATTACHMENTS = "<click:open_url:{url}>[Attachment]</click>";
-
   // colors
   public String DISCORD_COLOR = "#7289da";
   public String ATTACHMENT_COLOR = "#4abdff";
-
-  private final Path dataDir;
-
-  private static final String[] splitVersion = ModVersion.split("\\.");
-  private static final String configVersion = splitVersion[0] + '.' + splitVersion[1];
-  private static final String configMajorVersion = splitVersion[0];
-
   private Toml toml;
 
   private boolean isFirstRun = false;
 
-  public Config(Path dataDir) {
-    this.dataDir = dataDir;
+  public Config(Path configDir) {
+    this.configDir = configDir;
 
     loadFile();
     loadConfigs();
   }
 
   private void loadFile() {
-    if (Files.notExists(dataDir)) {
-      try {
-        Files.createDirectory(dataDir);
-      } catch (IOException e) {
-        throw new RuntimeException("Could not create data directory at " + dataDir.toAbsolutePath());
-      }
-    }
-
-    Path dataFile = dataDir.resolve("config.toml");
+    var configFile = configDir.resolve("config.toml").toFile();
 
     // create default config if it doesn't exist
-    if (Files.notExists(dataFile)) {
-      isFirstRun = true;
-
-      try (InputStream in = getClass().getResourceAsStream("/config.toml")) {
-        Files.copy(Objects.requireNonNull(in), dataFile);
-      } catch (IOException e) {
-        throw new RuntimeException("ERROR: Can't write default configuration file (permissions/filesystem error?)");
-      }
+    try {
+      isFirstRun = configFile.getParentFile().mkdirs() || configFile.createNewFile();
+    } catch (IOException e) {
+      throw new RuntimeException("ERROR: Can't write default configuration file (permissions/filesystem error?)");
     }
 
-    toml = new Toml().read(dataFile.toFile());
+    toml = new Toml().read(configFile);
 
     // make sure the config makes sense for the current plugin's version
     String version = toml.getString("config_version", configVersion);
@@ -113,10 +87,6 @@ public class Config {
         version
       ));
     }
-  }
-
-  private boolean versionCompatible(String newVersion) {
-    return newVersion.split("\\.")[0].equals(configMajorVersion);
   }
 
   public void loadConfigs() {
@@ -138,7 +108,6 @@ public class Config {
     JOIN_MESSAGE = toml.getString("discord.chat.join_message", JOIN_MESSAGE);
     LEAVE_MESSAGE = toml.getString("discord.chat.leave_message", LEAVE_MESSAGE);
     DISCONNECT_MESSAGE = toml.getString("discord.chat.disconnect_message", DISCONNECT_MESSAGE);
-    SERVER_SWITCH_MESSAGE = toml.getString("discord.chat.server_switch_message", SERVER_SWITCH_MESSAGE);
     DEATH_MESSAGE = toml.getString("discord.chat.death_message", DEATH_MESSAGE);
     ADVANCEMENT_MESSAGE = toml.getString("discord.chat.advancement_message", ADVANCEMENT_MESSAGE);
     DISCORD_ACTIVITY_TEXT = toml.getString("discord.activity_text", DISCORD_ACTIVITY_TEXT);
@@ -157,6 +126,10 @@ public class Config {
     ATTACHMENTS = toml.getString("minecraft.attachments", ATTACHMENTS);
     DISCORD_COLOR = toml.getString("minecraft.discord_color", DISCORD_COLOR);
     ATTACHMENT_COLOR = toml.getString("minecraft.attachment_color", ATTACHMENT_COLOR);
+  }
+
+  private boolean versionCompatible(String newVersion) {
+    return newVersion.split("\\.")[0].equals(configMajorVersion);
   }
 
   // Assume it's the first run if the config hasn't been edited or has been created this run
