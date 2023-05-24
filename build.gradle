@@ -1,0 +1,60 @@
+plugins {
+  id 'fabric-loom' version '1.2-SNAPSHOT'
+  id 'maven-publish'
+}
+
+version = project.mod_version
+group = project.maven_group
+
+repositories {
+  mavenCentral()
+}
+
+dependencies {
+  minecraft "com.mojang:minecraft:${project.minecraft_version}"
+  mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
+  modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
+
+  modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
+
+  // toml config
+  implementation "com.moandjiezana.toml:toml4j:${project.toml_version}"
+
+  // discord
+  implementation("net.dv8tion:JDA:${project.jda_version}") {
+    exclude module: 'opus-java'
+  }
+
+  implementation("club.minnced:discord-webhooks:${project.webhooks_version}")
+
+  // chat
+  implementation "net.kyori:adventure-text-minimessage:${project.minimessage_version}"
+}
+
+base {
+  archivesName = project.archives_base_name
+}
+
+processResources {
+  inputs.property "version", project.version
+
+  filesMatching("fabric.mod.json") {
+    expand "version": project.version
+  }
+}
+
+tasks.withType(JavaCompile).configureEach {
+  // Minecraft 1.18 (1.18-pre2) upwards uses Java 17.
+  it.options.release = 17
+}
+
+java {
+  sourceCompatibility = JavaVersion.VERSION_17
+  targetCompatibility = JavaVersion.VERSION_17
+}
+
+jar {
+  from("LICENSE") {
+    rename { "${it}_${base.archivesName.get()}" }
+  }
+}

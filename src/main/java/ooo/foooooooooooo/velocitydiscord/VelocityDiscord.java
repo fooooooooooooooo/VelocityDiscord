@@ -1,79 +1,52 @@
 package ooo.foooooooooooo.velocitydiscord;
 
-import com.google.inject.Inject;
-import com.velocitypowered.api.event.Subscribe;
-import com.velocitypowered.api.event.proxy.ProxyInitializeEvent;
-import com.velocitypowered.api.plugin.Plugin;
-import com.velocitypowered.api.plugin.annotation.DataDirectory;
-import com.velocitypowered.api.proxy.ProxyServer;
-import com.velocitypowered.api.proxy.messages.MinecraftChannelIdentifier;
+import net.fabricmc.api.ModInitializer;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
+import net.fabricmc.loader.api.FabricLoader;
+import net.minecraft.server.MinecraftServer;
 import ooo.foooooooooooo.velocitydiscord.discord.Discord;
-import ooo.foooooooooooo.velocitydiscord.yep.YepListener;
+import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import javax.annotation.Nullable;
-import java.nio.file.Path;
-import java.util.logging.Logger;
+public class VelocityDiscord implements ModInitializer {
+  public static final String ModId = "velocity_discord";
+  public static final String ModName = "Velocity Discord";
+  public static final String ModVersion = "1.6.0";
 
-@Plugin(id = "discord",
-        name = VelocityDiscord.PluginName,
-        description = VelocityDiscord.PluginDescription,
-        version = VelocityDiscord.PluginVersion,
-        url = VelocityDiscord.PluginUrl,
-        authors = {"fooooooooooooooo"}
-)
-public class VelocityDiscord {
-    public static final String PluginName = "Velocity Discord Bridge";
-    public static final String PluginDescription = "Velocity Discord Chat Bridge";
-    public static final String PluginVersion = "1.6.0";
-    public static final String PluginUrl = "https://github.com/fooooooooooooooo/VelocityDiscord";
+  public static final Logger LOGGER = LoggerFactory.getLogger(ModId);
 
-    public static final MinecraftChannelIdentifier YepIdentifier = MinecraftChannelIdentifier.create("velocity", "yep");
+  @Nullable
+  public static MinecraftServer SERVER;
+  public static Config CONFIG;
 
-    public static boolean pluginDisabled = false;
+  public static boolean pluginDisabled = false;
 
-    private static VelocityDiscord instance;
+  Discord discord;
 
-    private final ProxyServer server;
-    Config config;
+  @Override
+  public void onInitialize() {
 
-    @Nullable
-    private Discord discord = null;
+    LOGGER.info("Loading " + ModName + " v" + ModVersion);
 
-    @Nullable
-    private YepListener yep = null;
+    var configDir = FabricLoader.getInstance().getConfigDir();
 
-    @Inject
-    public VelocityDiscord(ProxyServer server, Logger logger, @DataDirectory Path dataDirectory) {
-        this.server = server;
+    CONFIG = new Config(configDir);
+    pluginDisabled = CONFIG.isFirstRun();
 
-        logger.info("Loading " + PluginName + " v" + PluginVersion);
+    if (pluginDisabled) {
+      LOGGER.error(
+        "This is the first time you are running this plugin. Please configure it in the config.yml file. Disabling plugin.");
+    } else {
+      ServerTickEvents.START_SERVER_TICK.register((server) -> {
+        SERVER = server;
+      });
 
-        this.config = new Config(dataDirectory);
-        pluginDisabled = config.isFirstRun();
+      ServerTickEvents.END_SERVER_TICK.register((server) -> {
+        SERVER = null;
+      });
 
-        if (pluginDisabled) {
-            logger.severe("This is the first time you are running this plugin. Please configure it in the config.yml file. Disabling plugin.");
-        } else {
-            this.discord = new Discord(this.server, logger, this.config);
-            this.yep = new YepListener(logger);
-        }
-
-        instance = this;
+      this.discord = new Discord();
     }
-
-    public static Discord getDiscord() {
-        return instance.discord;
-    }
-
-    @Subscribe
-    public void onProxyInitialization(ProxyInitializeEvent event) {
-        if (discord != null) register(discord);
-        if (yep != null) register(yep);
-
-        this.server.getChannelRegistrar().register(YepIdentifier);
-    }
-
-    private void register(Object x) {
-        this.server.getEventManager().register(this, x);
-    }
+  }
 }

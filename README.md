@@ -69,23 +69,21 @@ webhook_url = ""
 # Placeholders {uuid} and {username} are available
 avatar_url = "https://crafatar.com/avatars/{uuid}?overlay"
 # The format of the webhook's username
-# Placeholders {username} and {server} are available
+# Only placeholder {username} is available
 webhook_username = "{username}"
 
 # Minecraft > Discord message formats
 # Uses the same formatting as the Discord client
 [discord.chat]
 # The format set in the following key "discord.chat.message" is ignored when a webhook is used
-# Placeholders {username}, {server}, and {message} are available
+# Placeholders {username}, and {message} are available
 message = "{username}: {message}"
-# Placeholders {username} and {server} are available
+# Only placeholder {username} is available
 join_message = "**{username} joined the game**"
 leave_message = "**{username} left the game**"
 # Possible different format for timeouts or other terminating connections
 # Only placeholder {username} is available
 disconnect_message = "**{username} disconnected**"
-# Placeholders {username}, {current}, and {previous} are available
-server_switch_message = "**{username} moved to {current} from {previous}**"
 # Placeholders {username} and {death_message} are available
 death_message = "**{username} {death_message}**"
 # Placeholders {username}, {advancement_title}, and {advancement_description} are available
@@ -94,8 +92,8 @@ advancement_message = "**{username} has made the advancement __{advancement_titl
 [discord.commands.list]
 enabled = true
 # Ephemeral messages are only visible to the user who sent the command
-ephemeral = true
-server_format = "[{server_name} {online_players}/{max_players}]"
+ephemeral = false
+server_format = "[{online_players}/{max_players}]"
 player_format = "- {username}"
 no_players = "No players online"
 server_offline = "Server offline"

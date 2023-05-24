@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "id": "velocity_discord",
+  "version": "${version}",
+
+  "name": "Velocity Discord",
+  "description": "Fabric chat to Discord bridge",
+  "authors": [
+    "fooooooooooooooo"
+  ],
+  "contact": {
+    "homepage": "https://github.com/fooooooooooooooo/velocity-discord/tree/fabric",
+    "sources": "https://github.com/fooooooooooooooo/velocity-discord/tree/fabric"
+  },
+
+  "license": "MIT",
+  "icon": "assets/velocity_discord/icon.png",
+
+  "environment": "server",
+  "entrypoints": {
+    "main": [
+      "ooo.foooooooooooo.velocitydiscord.VelocityDiscord"
+    ]
+  },
+  "mixins": [
+    "velocitydiscord.mixins.json"
+  ],
+
+  "depends": {
+    "fabricloader": ">=0.14.19",
+    "fabric-api": "*",
+    "minecraft": "~1.19.4",
+    "java": ">=17"
+  }
+}
