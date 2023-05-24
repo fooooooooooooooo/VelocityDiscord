@@ -1,6 +1,6 @@
-# Velocity Discord
+# Velocity Discord (Fabric)
 
-Chat from all servers gets bridged with a discord channel
+Chat from Fabric gets bridged with a Discord channel
 
 ## Features
 
@@ -11,16 +11,14 @@ Chat from all servers gets bridged with a discord channel
 - Templating syntax for all messages
 - Death and Advancement messages shown
 
-> note: this requires a [companion mod/plugin](https://github.com/fooooooooooooooo/yep) for death/advancement messages
-
 ## Installation
 
 1. Create a bot application [here](https://discordapp.com/developers/applications/)
    - Go to the `Bot` tab and click `Add bot`
 2. Enable the `SERVER MEMBERS INTENT` and `MESSAGE CONTENT INTENT` under `Privileged Gateway Intents`
 3. Copy the bot's token, you might have to click `Reset Token` first
-4. Install the plugin on your server, start the server once, then stop the server again
-5. Open the plugin config file at `plugins/discord/config.toml`
+4. Install the mod on your server, start the server once, then stop the server again
+5. Open the mod config file at `config/velocity_discord/config.toml`
 6. Under `[discord]`, paste your token in place of `TOKEN`
 7. Under `[discord]`, paste the channel id you want to use
    - To get a channel id, you have to enable developer mode in Discord

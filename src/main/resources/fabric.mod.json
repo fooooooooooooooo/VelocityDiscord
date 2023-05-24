@@ -11,7 +11,7 @@
     "sources": "https://github.com/fooooooooooooooo/velocity-discord/tree/fabric"
   },
 
-  "license": "MIT",
+  "license": "LGPL 2.1",
   "icon": "assets/velocity_discord/icon.png",
 
   "environment": "server",
