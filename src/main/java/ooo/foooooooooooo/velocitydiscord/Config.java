@@ -1,10 +1,14 @@
 package ooo.foooooooooooo.velocitydiscord;
 
 import com.moandjiezana.toml.Toml;
+import net.fabricmc.loader.api.FabricLoader;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.NoSuchElementException;
 
+import static ooo.foooooooooooo.velocitydiscord.VelocityDiscord.ModId;
 import static ooo.foooooooooooo.velocitydiscord.VelocityDiscord.ModVersion;
 
 public class Config {
@@ -70,9 +74,21 @@ public class Config {
 
     // create default config if it doesn't exist
     try {
-      isFirstRun = configFile.getParentFile().mkdirs() || configFile.createNewFile();
+      var parentDirExists = !configFile.getParentFile().mkdirs();
+      var fileExists = configFile.exists();
+
+      if (!parentDirExists || !fileExists) {
+        isFirstRun = true;
+
+        var modContainer = FabricLoader.getInstance().getModContainer(ModId).orElseThrow();
+        var defaultConfig = modContainer.findPath("config.toml").orElseThrow();
+
+        Files.copy(defaultConfig, configFile.toPath());
+      }
     } catch (IOException e) {
-      throw new RuntimeException("ERROR: Can't write default configuration file (permissions/filesystem error?)");
+      throw new RuntimeException("ERROR: Can't write default configuration file", e);
+    } catch (NoSuchElementException e) {
+      throw new RuntimeException("ERROR: Can't find default configuration file in mod, report this error", e);
     }
 
     toml = new Toml().read(configFile);
