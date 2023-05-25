@@ -12,7 +12,7 @@ import org.slf4j.LoggerFactory;
 public class VelocityDiscord implements ModInitializer {
   public static final String ModId = "velocity_discord";
   public static final String ModName = "Velocity Discord";
-  public static final String ModVersion = "1.6.0";
+  public static final String ModVersion = "1.6.1";
   public static final Logger Logger = LoggerFactory.getLogger(ModId);
 
   @Nullable

@@ -1,5 +1,5 @@
 # Don't change this
-config_version = "1.5"
+config_version = "1.6"
 
 [discord]
 # Bot token from https://discordapp.com/developers/applications/
@@ -45,8 +45,6 @@ message = "{username}: {message}"
 # Only placeholder {username} is available
 join_message = "**{username} joined the game**"
 leave_message = "**{username} left the game**"
-# Possible different format for timeouts or other terminating connections
-# Only placeholder {username} is available
 disconnect_message = "**{username} disconnected**"
 # Placeholders {username} and {death_message} are available
 death_message = "**{username} {death_message}**"

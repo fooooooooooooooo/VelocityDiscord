@@ -19,20 +19,23 @@ public class Config {
   private static final String[] splitVersion = ModVersion.split("\\.");
   private static final String configVersion = splitVersion[0] + '.' + splitVersion[1];
   private static final String configMajorVersion = splitVersion[0];
-  private final Path configDir;
+
   public String DISCORD_TOKEN = DefaultToken;
   public String CHANNEL_ID = DefaultChannelId;
+
   // toggles
   public Boolean SHOW_BOT_MESSAGES = false;
   public Boolean SHOW_ATTACHMENTS = true;
   public Boolean SHOW_ACTIVITY = true;
   public Boolean ENABLE_MENTIONS = true;
   public Boolean ENABLE_EVERYONE_AND_HERE = false;
+
   // webhooks
   public Boolean DISCORD_USE_WEBHOOK = false;
   public String WEBHOOK_URL = DefaultWebhookUrl;
   public String WEBHOOK_AVATAR_URL = DefaultAvatarUrl;
   public String WEBHOOK_USERNAME = "{username}";
+
   // discord formats
   public String DISCORD_CHAT_MESSAGE = "{username}: {message}";
   public String JOIN_MESSAGE = "**{username} joined the game**";
@@ -42,6 +45,7 @@ public class Config {
   public String ADVANCEMENT_MESSAGE =
     "**{username} has made the advancement __{advancement_title}__**\n_{advancement_description}_";
   public String DISCORD_ACTIVITY_TEXT = "with {amount} players online";
+
   // discord commands
   public Boolean DISCORD_LIST_ENABLED = true;
   public Boolean DISCORD_LIST_EPHEMERAL = true;
@@ -50,16 +54,19 @@ public class Config {
   public String DISCORD_LIST_NO_PLAYERS = "No players online";
   public String DISCORD_LIST_SERVER_OFFLINE = "Server offline";
   public String DISCORD_LIST_CODEBLOCK_LANG = "asciidoc";
+
   // minecraft formats
   public String DISCORD_CHUNK = "<dark_gray>[<{discord_color}>Discord<dark_gray>]";
   public String USERNAME_CHUNK = "<{role_color}><hover:show_text:{username}#{discriminator}>{nickname}</hover>";
   public String MC_CHAT_MESSAGE = "{discord_chunk} {username_chunk}<dark_gray>: <white>{message} {attachments}";
   public String ATTACHMENTS = "<click:open_url:{url}>[Attachment]</click>";
+
   // colors
   public String DISCORD_COLOR = "#7289da";
   public String ATTACHMENT_COLOR = "#4abdff";
-  private Toml toml;
 
+  private final Path configDir;
+  private Toml toml;
   private boolean isFirstRun = false;
 
   public Config(Path configDir) {
