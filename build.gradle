@@ -1,39 +1,61 @@
+//file:noinspection GroovyAccessibility
+//file:noinspection GroovyAssignabilityCheck
+
 plugins {
   id 'fabric-loom' version '1.2-SNAPSHOT'
-  id 'maven-publish'
 }
 
-version = project.mod_version
-group = project.maven_group
+sourceCompatibility = JavaVersion.VERSION_17
+targetCompatibility = JavaVersion.VERSION_17
+
+archivesBaseName = "${mod_name}-fabric-${minecraft_version}"
+version = mod_version
+group = maven_group
 
 repositories {
   mavenCentral()
 }
 
 dependencies {
-  minecraft "com.mojang:minecraft:${project.minecraft_version}"
-  mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
-  modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
+  minecraft "com.mojang:minecraft:$minecraft_version"
+  mappings "net.fabricmc:yarn:$yarn_mappings:v2"
+  modImplementation "net.fabricmc:fabric-loader:$loader_version"
 
-  modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
+  modImplementation "net.fabricmc.fabric-api:fabric-api:$fabric_version"
 
   // toml config
-  implementation "com.moandjiezana.toml:toml4j:${project.toml_version}"
+  include implementation("com.moandjiezana.toml:toml4j:$toml_version")
 
   // discord
-  implementation("net.dv8tion:JDA:${project.jda_version}") {
+  include implementation("net.dv8tion:JDA:$jda_version") {
     exclude module: 'opus-java'
   }
 
-  implementation("club.minnced:discord-webhooks:${project.webhooks_version}")
+  include implementation("club.minnced:discord-webhooks:$webhooks_version")
+
+  // JDA deps
+  include implementation('org.apache.commons:commons-collections4:4.4')
+  include implementation('net.sf.trove4j:trove4j:3.0.3')
+  include implementation('com.neovisionaries:nv-websocket-client:2.14')
+  include implementation('com.fasterxml.jackson.core:jackson-annotations:2.14.1')
+  include implementation('com.fasterxml.jackson.core:jackson-core:2.14.1')
+  include implementation('com.fasterxml.jackson.core:jackson-databind:2.14.1')
+  include implementation('com.fasterxml.jackson:jackson-bom:2.14.1')
+
+  // discord-webhooks deps
+  include implementation('org.json:json:20210307')
+
+  // both deps
+  include implementation('com.squareup.okhttp3:okhttp:4.10.0')
+
+  // > okhttp deps
+  include implementation('com.squareup.okio:okio:3.0.0')
+  include implementation('com.squareup.okio:okio-jvm:3.0.0')
+  include implementation('org.jetbrains.kotlin:kotlin-stdlib:1.6.20')
 
   // chat
-  modImplementation include("net.kyori:adventure-platform-fabric:${project.adventure_version}")
-  implementation "net.kyori:adventure-text-minimessage:${project.minimessage_version}"
-}
-
-base {
-  archivesName = project.archives_base_name
+  include modImplementation("net.kyori:adventure-platform-fabric:$adventure_version")
+  include modImplementation("net.kyori:adventure-text-minimessage:$minimessage_version")
 }
 
 processResources {
@@ -45,17 +67,13 @@ processResources {
 }
 
 tasks.withType(JavaCompile).configureEach {
+  it.options.encoding = "UTF-8"
   // Minecraft 1.18 (1.18-pre2) upwards uses Java 17.
   it.options.release = 17
 }
 
-java {
-  sourceCompatibility = JavaVersion.VERSION_17
-  targetCompatibility = JavaVersion.VERSION_17
-}
-
 jar {
   from("LICENSE") {
-    rename { "${it}_${base.archivesName.get()}" }
+    rename { "${it}_$mod_name" }
   }
 }
