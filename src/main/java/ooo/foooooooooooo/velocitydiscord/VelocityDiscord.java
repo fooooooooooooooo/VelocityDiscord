@@ -40,8 +40,12 @@ public class VelocityDiscord implements ModInitializer {
 
     ServerLifecycleEvents.SERVER_STARTED.register((server) -> SERVER = server);
 
-    ServerLifecycleEvents.SERVER_STOPPED.register((server) -> SERVER = null);
+    ServerLifecycleEvents.SERVER_STOPPED.register((server) -> {
+      SERVER = null;
 
-    this.discord = new Discord();
+      discord.shutdown();
+    });
+
+    discord = new Discord();
   }
 }

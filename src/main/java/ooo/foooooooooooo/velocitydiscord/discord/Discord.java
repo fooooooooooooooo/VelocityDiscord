@@ -71,6 +71,10 @@ public class Discord extends ListenerAdapter {
     webhookClient = CONFIG.DISCORD_USE_WEBHOOK ? new WebhookClientBuilder(CONFIG.WEBHOOK_URL).build() : null;
   }
 
+  public void shutdown() {
+    jda.shutdown();
+  }
+
   @Override
   public void onReady(@NotNull ReadyEvent event) {
     Logger.info("Bot ready, Guilds: {} ({} available)", event.getGuildTotalCount(), event.getGuildAvailableCount());
