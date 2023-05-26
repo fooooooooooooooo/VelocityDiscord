@@ -47,7 +47,9 @@ public class MessageListener extends ListenerAdapter {
     }
 
     TextChannel channel = event.getChannel().asTextChannel();
-    if (!channel.getId().equals(CONFIG.CHANNEL_ID)) { return; }
+    if (!channel.getId().equals(CONFIG.CHANNEL_ID)) {
+      return;
+    }
 
     User author = event.getAuthor();
     if (!CONFIG.SHOW_BOT_MESSAGES && author.isBot()) {
@@ -70,12 +72,16 @@ public class MessageListener extends ListenerAdapter {
     }
 
     Color color = member.getColor();
-    if (color == null) { color = Color.white; }
+    if (color == null) {
+      color = Color.white;
+    }
+
     String hex = "#" + Integer.toHexString(color.getRGB()).substring(2);
 
     // parse configured message formats
-    String discord_chunk =
-      new StringTemplate(CONFIG.DISCORD_CHUNK).add("discord_color", CONFIG.DISCORD_COLOR).toString();
+    String discord_chunk = new StringTemplate(CONFIG.DISCORD_CHUNK)
+      .add("discord_color", CONFIG.DISCORD_COLOR)
+      .toString();
 
     String username_chunk = new StringTemplate(CONFIG.USERNAME_CHUNK)
       .add("role_color", hex)

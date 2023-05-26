@@ -71,6 +71,10 @@ public class Discord extends ListenerAdapter {
     webhookClient = CONFIG.DISCORD_USE_WEBHOOK ? new WebhookClientBuilder(CONFIG.WEBHOOK_URL).build() : null;
   }
 
+  private static String getComponentText(Text component) {
+    return component.getString();
+  }
+
   public void shutdown() {
     jda.shutdown();
   }
@@ -101,13 +105,9 @@ public class Discord extends ListenerAdapter {
 
     updateActivityPlayerAmount();
 
-    ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
-      onPlayerConnect(handler.getPlayer());
-    });
+    ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> onPlayerConnect(handler.getPlayer()));
 
-    ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {
-      onPlayerDisconnect(handler.getPlayer());
-    });
+    ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> onPlayerDisconnect(handler.getPlayer()));
 
     ServerMessageEvents.CHAT_MESSAGE.register((message, sender, params) -> {
       if (sender.isPlayer()) {
@@ -202,15 +202,13 @@ public class Discord extends ListenerAdapter {
 
       sendWebhookMessage(avatar, discordName, content);
     } else {
-      var message =
-        new StringTemplate(CONFIG.DISCORD_CHAT_MESSAGE).add("username", username).add("message", content).toString();
+      var message = new StringTemplate(CONFIG.DISCORD_CHAT_MESSAGE)
+        .add("username", username)
+        .add("message", content)
+        .toString();
 
       sendMessage(message);
     }
-  }
-
-  private static String getComponentText(Text component) {
-    return component.getString();
   }
 
   public void onPlayerDeath(String username, String message) {
@@ -250,8 +248,11 @@ public class Discord extends ListenerAdapter {
   }
 
   public void sendWebhookMessage(String avatar, String username, String content) {
-    var webhookMessage =
-      new WebhookMessageBuilder().setAvatarUrl(avatar).setUsername(username).setContent(content).build();
+    var webhookMessage = new WebhookMessageBuilder()
+      .setAvatarUrl(avatar)
+      .setUsername(username)
+      .setContent(content)
+      .build();
 
     webhookClient.send(webhookMessage);
   }

@@ -20,6 +20,8 @@ public class Config {
   private static final String configVersion = splitVersion[0] + '.' + splitVersion[1];
   private static final String configMajorVersion = splitVersion[0];
 
+  private final Path configDir;
+
   public String DISCORD_TOKEN = DefaultToken;
   public String CHANNEL_ID = DefaultChannelId;
 
@@ -42,8 +44,9 @@ public class Config {
   public String LEAVE_MESSAGE = "**{username} left the game**";
   public String DISCONNECT_MESSAGE = "**{username} disconnected**";
   public String DEATH_MESSAGE = "**{username} {death_message}**";
-  public String ADVANCEMENT_MESSAGE =
-    "**{username} has made the advancement __{advancement_title}__**\n_{advancement_description}_";
+  public String
+    ADVANCEMENT_MESSAGE
+    = "**{username} has made the advancement __{advancement_title}__**\n_{advancement_description}_";
   public String DISCORD_ACTIVITY_TEXT = "with {amount} players online";
 
   // discord commands
@@ -54,7 +57,6 @@ public class Config {
   public String DISCORD_LIST_NO_PLAYERS = "No players online";
   public String DISCORD_LIST_SERVER_OFFLINE = "Server offline";
   public String DISCORD_LIST_CODEBLOCK_LANG = "asciidoc";
-
   // minecraft formats
   public String DISCORD_CHUNK = "<dark_gray>[<{discord_color}>Discord<dark_gray>]";
   public String USERNAME_CHUNK = "<{role_color}><hover:show_text:{username}#{discriminator}>{nickname}</hover>";
@@ -65,7 +67,6 @@ public class Config {
   public String DISCORD_COLOR = "#7289da";
   public String ATTACHMENT_COLOR = "#4abdff";
 
-  private final Path configDir;
   private Toml toml;
   private boolean isFirstRun = false;
 
