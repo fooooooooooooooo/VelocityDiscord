@@ -138,6 +138,6 @@ public class MessageListener extends ListenerAdapter {
       return;
     }
 
-    SERVER.getPlayerManager().broadcast(FabricServerAudiences.of(SERVER).toNative(msg), false);
+    SERVER.execute(() -> SERVER.getPlayerManager().broadcast(FabricServerAudiences.of(SERVER).toNative(msg), false));
   }
 }
