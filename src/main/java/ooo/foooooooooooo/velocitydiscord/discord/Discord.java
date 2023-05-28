@@ -8,145 +8,64 @@ import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Activity;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
-import net.dv8tion.jda.api.events.session.ReadyEvent;
-import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.requests.GatewayIntent;
 import net.dv8tion.jda.api.utils.ChunkingFilter;
 import net.dv8tion.jda.api.utils.MemberCachePolicy;
-import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
-import net.fabricmc.fabric.api.message.v1.ServerMessageEvents;
-import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
-import net.minecraft.network.message.SignedMessage;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.text.Text;
-import ooo.foooooooooooo.velocitydiscord.MessageListener;
 import ooo.foooooooooooo.velocitydiscord.discord.commands.ICommand;
 import ooo.foooooooooooo.velocitydiscord.discord.commands.ListCommand;
-import ooo.foooooooooooo.velocitydiscord.events.AdvancementCallback;
 import ooo.foooooooooooo.velocitydiscord.util.StringTemplate;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 import java.util.regex.Pattern;
 
 import static ooo.foooooooooooo.velocitydiscord.VelocityDiscord.*;
 
-public class Discord extends ListenerAdapter {
+public class Discord extends Thread {
   private static final Pattern EveryoneAndHerePattern = Pattern.compile("@(?<ping>everyone|here)");
   public static String SelfId;
   private static JDA jda;
-  private final WebhookClient webhookClient;
-  private final Map<String, ICommand> commands = new HashMap<>();
+  private WebhookClient webhookClient;
+  private final Map<String, ICommand> commands = Map.of("list", new ListCommand());
   private TextChannel activeChannel;
   private int lastPlayerCount = -1;
 
   public Discord() {
-    commands.put("list", new ListCommand());
+    this.setDaemon(true);
+    this.setName("VelocityDiscord Thread");
+  }
 
-    var messageListener = new MessageListener();
+  @Override
+  public void run() {
+    var builder = JDABuilder.createDefault(CONFIG.DISCORD_TOKEN);
 
-    var builder = JDABuilder.createDefault(CONFIG.DISCORD_TOKEN)
-                            // this seems to download all users at bot startup and keep internal cache updated
-                            // without it, sometimes mentions miss when they shouldn't
-                            .setChunkingFilter(ChunkingFilter.ALL)
-                            .enableIntents(GatewayIntent.GUILD_MEMBERS,
-                              GatewayIntent.GUILD_MESSAGES,
-                              GatewayIntent.MESSAGE_CONTENT
-                            )
-                            // mentions always miss without this
-                            .setMemberCachePolicy(MemberCachePolicy.ALL)
-                            .addEventListeners(messageListener, this);
+    // this seems to download all users at bot startup and keep internal cache updated
+    // without it, sometimes mentions miss when they shouldn't
+    builder.setChunkingFilter(ChunkingFilter.ALL);
+
+    // mentions always miss without this
+    builder.setMemberCachePolicy(MemberCachePolicy.ALL);
+
+    builder.enableIntents(GatewayIntent.GUILD_MEMBERS, GatewayIntent.GUILD_MESSAGES, GatewayIntent.MESSAGE_CONTENT);
+    builder.addEventListeners(new MessageListener(), new DiscordEvents(this));
 
     try {
       jda = builder.build();
-
-      SelfId = jda.getSelfUser().getId();
     } catch (Exception e) {
       Logger.error("Failed to login to discord: {}", e.toString());
       throw new RuntimeException("Failed to login to discord: ", e);
     }
 
+    SelfId = jda.getSelfUser().getId();
     webhookClient = CONFIG.DISCORD_USE_WEBHOOK ? new WebhookClientBuilder(CONFIG.WEBHOOK_URL).build() : null;
   }
 
-  private static String getComponentText(Text component) {
-    return component.getString();
+  public void setActiveChannel(TextChannel newChannel) {
+    activeChannel = newChannel;
   }
 
   public void shutdown() {
     jda.shutdown();
-  }
-
-  @Override
-  public void onReady(@NotNull ReadyEvent event) {
-    Logger.info("Bot ready, Guilds: {} ({} available)", event.getGuildTotalCount(), event.getGuildAvailableCount());
-
-    var channel = jda.getTextChannelById(Objects.requireNonNull(CONFIG.CHANNEL_ID));
-
-    if (channel == null) {
-      Logger.error("Could not load channel with id: {}", CONFIG.CHANNEL_ID);
-      throw new RuntimeException("Could not load channel id: " + CONFIG.CHANNEL_ID);
-    }
-
-    Logger.info("Loaded channel: {}", channel.getName());
-
-    if (!channel.canTalk()) {
-      Logger.error("Cannot talk in configured channel");
-      throw new RuntimeException("Cannot talk in configured channel");
-    }
-
-    activeChannel = channel;
-
-    var guild = activeChannel.getGuild();
-
-    guild.upsertCommand("list", "list players").queue();
-
-    updateActivityPlayerAmount();
-
-    ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> onPlayerConnect(handler.getPlayer()));
-
-    ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> onPlayerDisconnect(handler.getPlayer()));
-
-    ServerMessageEvents.CHAT_MESSAGE.register((message, sender, params) -> {
-      if (sender.isPlayer()) {
-        onPlayerChat(message, sender);
-      }
-    });
-
-    ServerLivingEntityEvents.AFTER_DEATH.register((entity, damageSource) -> {
-      if (entity instanceof ServerPlayerEntity player) {
-        var name = player.getDisplayName().getString();
-        var message = getComponentText(damageSource.getDeathMessage(player)).replace(name + " ", "");
-
-        onPlayerDeath(name, message);
-      }
-    });
-    AdvancementCallback.EVENT.register((player, advancement) -> {
-      var display = advancement.getDisplay();
-
-      if (display == null || display.isHidden()) {
-        Logger.trace("Ignoring unsent display");
-        return;
-      }
-
-      var title = getComponentText(display.getTitle());
-      var description = getComponentText(display.getDescription());
-
-      onPlayerAdvancement(player.getName().getString(), title, description);
-    });
-  }
-
-  @Override
-  public void onSlashCommandInteraction(@NotNull SlashCommandInteractionEvent event) {
-    var command = event.getName();
-
-    if (!commands.containsKey(command)) {
-      return;
-    }
-
-    commands.get(command).handle(event);
   }
 
   public void updateActivityPlayerAmount() {
@@ -165,26 +84,29 @@ public class Discord extends ListenerAdapter {
     }
   }
 
-  public void onPlayerConnect(ServerPlayerEntity player) {
-    var username = player.getName().getString();
+  public void setupCommands() {
+    var guild = activeChannel.getGuild();
+
+    for (var command : commands.entrySet()) {
+      guild.upsertCommand(command.getKey(), command.getValue().getDescription()).queue();
+    }
+  }
+
+  public void onPlayerConnect(String username) {
     var message = new StringTemplate(CONFIG.JOIN_MESSAGE).add("username", username);
 
     sendMessage(message.toString());
     updateActivityPlayerAmount();
   }
 
-  public void onPlayerDisconnect(ServerPlayerEntity player) {
-    var username = player.getName().getString();
+  public void onPlayerDisconnect(String username) {
     var message = new StringTemplate(CONFIG.LEAVE_MESSAGE).add("username", username);
 
     sendMessage(message.toString());
     updateActivityPlayerAmount();
   }
 
-  public void onPlayerChat(SignedMessage signedMessage, ServerPlayerEntity player) {
-    var username = player.getName().getString();
-    var content = signedMessage.getContent().getString();
-
+  public void onPlayerChat(String username, String content, String uuid) {
     if (CONFIG.ENABLE_MENTIONS) {
       content = parseMentions(content);
     }
@@ -194,8 +116,6 @@ public class Discord extends ListenerAdapter {
     }
 
     if (CONFIG.DISCORD_USE_WEBHOOK) {
-      var uuid = player.getUuid().toString();
-
       var avatar = new StringTemplate(CONFIG.WEBHOOK_AVATAR_URL).add("username", username).add("uuid", uuid).toString();
 
       var discordName = new StringTemplate(CONFIG.WEBHOOK_USERNAME).add("username", username).toString();
@@ -226,7 +146,7 @@ public class Discord extends ListenerAdapter {
       .toString());
   }
 
-  public void sendMessage(@NotNull String message) {
+  private void sendMessage(@NotNull String message) {
     activeChannel.sendMessage(message).queue();
   }
 
@@ -247,7 +167,7 @@ public class Discord extends ListenerAdapter {
     return EveryoneAndHerePattern.matcher(message).replaceAll("@\u200B${ping}");
   }
 
-  public void sendWebhookMessage(String avatar, String username, String content) {
+  private void sendWebhookMessage(String avatar, String username, String content) {
     var webhookMessage = new WebhookMessageBuilder()
       .setAvatarUrl(avatar)
       .setUsername(username)
@@ -255,5 +175,17 @@ public class Discord extends ListenerAdapter {
       .build();
 
     webhookClient.send(webhookMessage);
+  }
+
+  public void handleSlashCommand(SlashCommandInteractionEvent event) {
+    var command = event.getName();
+
+    var handler = commands.get(command);
+
+    if (handler == null) {
+      return;
+    }
+
+    handler.handle(event);
   }
 }

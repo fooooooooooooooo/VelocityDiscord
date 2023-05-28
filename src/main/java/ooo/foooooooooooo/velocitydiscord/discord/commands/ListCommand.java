@@ -10,6 +10,10 @@ public class ListCommand implements ICommand {
 
   public ListCommand() { }
 
+  public String getDescription() {
+    return "List players";
+  }
+
   @Override
   public void handle(SlashCommandInteraction interaction) {
     if (SERVER == null) {

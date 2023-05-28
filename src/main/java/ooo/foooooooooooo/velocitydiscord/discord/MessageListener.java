@@ -1,4 +1,4 @@
-package ooo.foooooooooooo.velocitydiscord;
+package ooo.foooooooooooo.velocitydiscord.discord;
 
 
 import net.dv8tion.jda.api.entities.Guild;
@@ -12,7 +12,6 @@ import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.kyori.adventure.platform.fabric.FabricServerAudiences;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
-import ooo.foooooooooooo.velocitydiscord.discord.Discord;
 import ooo.foooooooooooo.velocitydiscord.util.StringTemplate;
 import org.jetbrains.annotations.NotNull;
 
@@ -31,6 +30,7 @@ public class MessageListener extends ListenerAdapter {
 
   public MessageListener() {
     final Matcher matcher = WEBHOOK_ID_REGEX.matcher(CONFIG.WEBHOOK_URL);
+
     if (matcher.find()) {
       this.webhookId = matcher.group(1);
       Logger.trace("Found webhook id: {}", webhookId);
