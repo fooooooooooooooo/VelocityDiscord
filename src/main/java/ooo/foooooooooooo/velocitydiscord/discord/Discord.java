@@ -138,12 +138,15 @@ public class Discord extends ListenerAdapter {
 
             sendWebhookMessage(avatar, discordName, content);
         } else {
-            var message = new StringTemplate(config.DISCORD_CHAT_MESSAGE)
-                    .add("username", username)
-                    .add("server", server)
-                    .add("message", content)
-                    .toString();
-
+            StringTemplate message;
+            if (Objects.isNull(config.DISCORD_CHAT_MESSAGE)) {
+                message = null;
+            } else {
+                message = new StringTemplate(config.DISCORD_CHAT_MESSAGE)
+                        .add("username", username)
+                        .add("server", server)
+                        .add("message", content);
+            }
             sendMessage(message);
         }
     }
@@ -159,18 +162,24 @@ public class Discord extends ListenerAdapter {
 
         if (previousServer.isPresent()) {
             var previous = previousServer.get().getServerInfo().getName();
-
-            message = new StringTemplate(config.SERVER_SWITCH_MESSAGE)
-                    .add("username", username)
-                    .add("current", server)
-                    .add("previous", previous);
+            if (config.SERVER_SWITCH_MESSAGE.isEmpty()) {
+                message = null;
+            } else {
+                message = new StringTemplate(config.SERVER_SWITCH_MESSAGE)
+                        .add("username", username)
+                        .add("current", server)
+                        .add("previous", previous);
+            }
         } else {
-            message = new StringTemplate(config.JOIN_MESSAGE)
-                    .add("username", username)
-                    .add("server", server);
+            if (config.JOIN_MESSAGE.isEmpty()) {
+                message = null;
+            } else {
+                message = new StringTemplate(config.JOIN_MESSAGE)
+                        .add("username", username)
+                        .add("server", server);
+            }
         }
-
-        sendMessage(message.toString());
+        sendMessage(message);
 
         updateActivityPlayerAmount();
     }
@@ -184,17 +193,26 @@ public class Discord extends ListenerAdapter {
                 .map(serverConnection -> serverConnection.getServerInfo().getName())
                 .orElse("null");
 
-        var message = new StringTemplate(currentServer.isPresent() ? config.LEAVE_MESSAGE : config.DISCONNECT_MESSAGE)
-                .add("username", username)
-                .add("server", server);
+        String configMessage = currentServer.isPresent() ? config.LEAVE_MESSAGE : config.DISCONNECT_MESSAGE;
+        StringTemplate message;
+        if (configMessage.isEmpty()) {
+            message = null;
+        } else {
+            message = new StringTemplate(configMessage)
+                    .add("username", username)
+                    .add("server", server);
+        }
 
-        sendMessage(message.toString());
+        sendMessage(message);
 
         updateActivityPlayerAmount();
     }
 
-    public void sendMessage(@Nonnull String message) {
-        activeChannel.sendMessage(message).queue();
+    public void sendMessage(StringTemplate message) {
+        if (Objects.isNull(message)) {
+            return;
+        }
+        activeChannel.sendMessage(message.toString()).queue();
     }
 
     private String parseMentions(String message) {
@@ -226,21 +244,25 @@ public class Discord extends ListenerAdapter {
     }
 
     public void playerDeath(String username, DeathMessage message) {
+        if (config.DEATH_MESSAGE.isEmpty()) {
+            return;
+        }
         sendMessage(
                 new StringTemplate(config.DEATH_MESSAGE) //
                         .add("username", username) //
                         .add("death_message", message.message) //
-                        .toString()
         );
     }
 
     public void playerAdvancement(String username, AdvancementMessage message) {
+        if (config.ADVANCEMENT_MESSAGE.isEmpty()) {
+            return;
+        }
         sendMessage(
                 new StringTemplate(config.ADVANCEMENT_MESSAGE) //
                         .add("username", username) //
                         .add("advancement_title", message.title) //
                         .add("advancement_description", message.description) //
-                        .toString()
         );
     }
 
