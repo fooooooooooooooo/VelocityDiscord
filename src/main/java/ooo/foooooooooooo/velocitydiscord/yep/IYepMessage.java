@@ -1,7 +1,7 @@
 package ooo.foooooooooooo.velocitydiscord.yep;
 
 public interface IYepMessage {
-    MessageType getType();
+  MessageType getType();
 
-    String toString();
+  String toString();
 }

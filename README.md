@@ -35,7 +35,7 @@ Default config generated on startup:
 
 ```toml
 # Don't change this
-config_version = "1.5"
+config_version = "1.6"
 
 [discord]
 # Bot token from https://discordapp.com/developers/applications/

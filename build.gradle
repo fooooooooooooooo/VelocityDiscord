@@ -1,0 +1,33 @@
+plugins {
+  id 'com.github.johnrengelman.shadow' version '8.1.1'
+  id 'java-library'
+}
+
+version = project.version
+
+repositories {
+  maven {
+    name = 'papermc'
+    url = 'https://repo.papermc.io/repository/maven-public/'
+  }
+}
+
+dependencies {
+  compileOnly "com.velocitypowered:velocity-api:$velocity_version"
+  annotationProcessor "com.velocitypowered:velocity-api:$velocity_version"
+
+  shadow implementation("net.dv8tion:JDA:$jda_version") {
+    exclude module: 'opus-java'
+  }
+
+  shadow implementation("club.minnced:discord-webhooks:$discord_webhooks_version")
+  compileOnly "net.kyori:adventure-text-minimessage:$minimessage_version"
+}
+
+shadowJar {
+  archiveFileName = "$archivesBaseName-${version}.jar"
+}
+
+build {
+  dependsOn shadowJar
+}

@@ -36,237 +36,218 @@ import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
 public class Discord extends ListenerAdapter {
-    private final ProxyServer server;
-    private final Logger logger;
-    private final Config config;
+  private final ProxyServer server;
+  private final Logger logger;
+  private final Config config;
 
-    private final JDA jda;
-    private final WebhookClient webhookClient;
-    private final Map<String, ICommand> commands = new HashMap<>();
-    private TextChannel activeChannel;
+  private final JDA jda;
+  private final WebhookClient webhookClient;
+  private final Map<String, ICommand> commands = new HashMap<>();
+  private TextChannel activeChannel;
 
-    private int lastPlayerCount = -1;
+  private int lastPlayerCount = -1;
 
-    public Discord(ProxyServer server, Logger logger, Config config) {
-        this.server = server;
-        this.logger = logger;
-        this.config = config;
+  public Discord(ProxyServer server, Logger logger, Config config) {
+    this.server = server;
+    this.logger = logger;
+    this.config = config;
 
-        commands.put("list", new ListCommand(server, logger, config));
+    commands.put("list", new ListCommand(server, logger, config));
 
-        var messageListener = new MessageListener(server, logger, config);
+    var messageListener = new MessageListener(server, logger, config);
 
-        var builder = JDABuilder
-                .createDefault(config.DISCORD_TOKEN)
-                // this seems to download all users at bot startup and keep internal cache updated
-                // without it, sometimes mentions miss when they shouldn't
-                .setChunkingFilter(ChunkingFilter.ALL)
-                .enableIntents(GatewayIntent.GUILD_MEMBERS, GatewayIntent.GUILD_MESSAGES, GatewayIntent.MESSAGE_CONTENT)
-                // mentions always miss without this
-                .setMemberCachePolicy(MemberCachePolicy.ALL)
-                .addEventListeners(messageListener, this);
+    var builder = JDABuilder.createDefault(config.DISCORD_TOKEN)
+      // this seems to download all users at bot startup and keep internal cache updated
+      // without it, sometimes mentions miss when they shouldn't
+      .setChunkingFilter(ChunkingFilter.ALL).enableIntents(GatewayIntent.GUILD_MEMBERS, GatewayIntent.GUILD_MESSAGES, GatewayIntent.MESSAGE_CONTENT)
+      // mentions always miss without this
+      .setMemberCachePolicy(MemberCachePolicy.ALL).addEventListeners(messageListener, this);
 
-        try {
-            jda = builder.build();
-        } catch (Exception e) {
-            this.logger.severe("Failed to login to discord: " + e);
-            throw new RuntimeException("Failed to login to discord: ", e);
-        }
-
-        webhookClient = config.DISCORD_USE_WEBHOOK
-                ? new WebhookClientBuilder(config.WEBHOOK_URL).build()
-                : null;
+    try {
+      jda = builder.build();
+    } catch (Exception e) {
+      this.logger.severe("Failed to login to discord: " + e);
+      throw new RuntimeException("Failed to login to discord: ", e);
     }
 
-    @Override
-    public void onReady(@Nonnull ReadyEvent event) {
-        logger.info(MessageFormat.format("Bot ready, Guilds: {0} ({1} available)", event.getGuildTotalCount(), event.getGuildAvailableCount()));
+    webhookClient = config.DISCORD_USE_WEBHOOK ? new WebhookClientBuilder(config.WEBHOOK_URL).build() : null;
+  }
 
-        var channel = jda.getTextChannelById(Objects.requireNonNull(config.CHANNEL_ID));
+  @Override
+  public void onReady(@Nonnull ReadyEvent event) {
+    logger.info(MessageFormat.format("Bot ready, Guilds: {0} ({1} available)", event.getGuildTotalCount(), event.getGuildAvailableCount()));
 
-        if (channel == null) {
-            logger.severe("Could not load channel with id: " + config.CHANNEL_ID);
-            throw new RuntimeException("Could not load channel id: " + config.CHANNEL_ID);
-        }
+    var channel = jda.getTextChannelById(Objects.requireNonNull(config.CHANNEL_ID));
 
-        logger.info("Loaded channel: " + channel.getName());
-
-        if (!channel.canTalk()) {
-            logger.severe("Cannot talk in configured channel");
-            throw new RuntimeException("Cannot talk in configured channel");
-        }
-
-        activeChannel = channel;
-
-        var guild = activeChannel.getGuild();
-
-        guild.upsertCommand("list", "list players").queue();
-
-        updateActivityPlayerAmount();
+    if (channel == null) {
+      logger.severe("Could not load channel with id: " + config.CHANNEL_ID);
+      throw new RuntimeException("Could not load channel id: " + config.CHANNEL_ID);
     }
 
-    @Subscribe(order = PostOrder.FIRST)
-    public void onPlayerChat(PlayerChatEvent event) {
-        var currentServer = event.getPlayer().getCurrentServer();
+    logger.info("Loaded channel: " + channel.getName());
 
-        if (currentServer.isEmpty()) return;
-
-        var username = event.getPlayer().getUsername();
-        var server = currentServer.get().getServerInfo().getName();
-        var content = event.getMessage();
-
-        if (config.ENABLE_MENTIONS) {
-            content = parseMentions(content);
-        }
-
-        if (!config.ENABLE_EVERYONE_AND_HERE) {
-            content = filterEveryoneAndHere(content);
-        }
-
-        if (config.DISCORD_USE_WEBHOOK) {
-            var uuid = event.getPlayer().getUniqueId().toString();
-
-            var avatar = new StringTemplate(config.WEBHOOK_AVATAR_URL)
-                    .add("username", username)
-                    .add("uuid", uuid)
-                    .toString();
-
-            var discordName = new StringTemplate(config.WEBHOOK_USERNAME)
-                    .add("username", username)
-                    .add("server", server)
-                    .toString();
-
-            sendWebhookMessage(avatar, discordName, content);
-        } else {
-            var message = new StringTemplate(config.DISCORD_CHAT_MESSAGE)
-                    .add("username", username)
-                    .add("server", server)
-                    .add("message", content)
-                    .toString();
-
-            sendMessage(message);
-        }
+    if (!channel.canTalk()) {
+      logger.severe("Cannot talk in configured channel");
+      throw new RuntimeException("Cannot talk in configured channel");
     }
 
-    @Subscribe
-    public void onConnect(ServerConnectedEvent event) {
-        var username = event.getPlayer().getUsername();
-        var server = event.getServer().getServerInfo().getName();
+    activeChannel = channel;
 
-        var previousServer = event.getPreviousServer();
+    var guild = activeChannel.getGuild();
 
-        StringTemplate message;
+    guild.upsertCommand("list", "list players").queue();
 
-        if (previousServer.isPresent()) {
-            var previous = previousServer.get().getServerInfo().getName();
+    updateActivityPlayerAmount();
+  }
 
-            message = new StringTemplate(config.SERVER_SWITCH_MESSAGE)
-                    .add("username", username)
-                    .add("current", server)
-                    .add("previous", previous);
-        } else {
-            message = new StringTemplate(config.JOIN_MESSAGE)
-                    .add("username", username)
-                    .add("server", server);
-        }
+  @Subscribe(order = PostOrder.FIRST)
+  public void onPlayerChat(PlayerChatEvent event) {
+    var currentServer = event.getPlayer().getCurrentServer();
 
-        sendMessage(message.toString());
-
-        updateActivityPlayerAmount();
+    if (currentServer.isEmpty()) {
+      return;
     }
 
-    @Subscribe
-    public void onDisconnect(DisconnectEvent event) {
-        var currentServer = event.getPlayer().getCurrentServer();
+    var username = event.getPlayer().getUsername();
+    var server = currentServer.get().getServerInfo().getName();
+    var content = event.getMessage();
 
-        var username = event.getPlayer().getUsername();
-        var server = currentServer
-                .map(serverConnection -> serverConnection.getServerInfo().getName())
-                .orElse("null");
-
-        var message = new StringTemplate(currentServer.isPresent() ? config.LEAVE_MESSAGE : config.DISCONNECT_MESSAGE)
-                .add("username", username)
-                .add("server", server);
-
-        sendMessage(message.toString());
-
-        updateActivityPlayerAmount();
+    if (config.ENABLE_MENTIONS) {
+      content = parseMentions(content);
     }
 
-    public void sendMessage(@Nonnull String message) {
-        activeChannel.sendMessage(message).queue();
+    if (!config.ENABLE_EVERYONE_AND_HERE) {
+      content = filterEveryoneAndHere(content);
     }
 
-    private String parseMentions(String message) {
-        var msg = message;
+    if (config.DISCORD_USE_WEBHOOK) {
+      var uuid = event.getPlayer().getUniqueId().toString();
 
-        for (var member : activeChannel.getMembers()) {
-            msg = Pattern.compile(Pattern.quote("@" + member.getUser().getName()), Pattern.CASE_INSENSITIVE)
-                    .matcher(msg)
-                    .replaceAll(member.getAsMention());
-        }
+      var avatar = new StringTemplate(config.WEBHOOK_AVATAR_URL)
+        .add("username", username)
+        .add("uuid", uuid).toString();
 
-        return msg;
+      var discordName = new StringTemplate(config.WEBHOOK_USERNAME)
+        .add("username", username)
+        .add("server", server).toString();
+
+      sendWebhookMessage(avatar, discordName, content);
+    } else {
+      var message = new StringTemplate(config.DISCORD_CHAT_MESSAGE)
+        .add("username", username)
+        .add("server", server)
+        .add("message", content).toString();
+
+      sendMessage(message);
+    }
+  }
+
+  @Subscribe
+  public void onConnect(ServerConnectedEvent event) {
+    var username = event.getPlayer().getUsername();
+    var server = event.getServer().getServerInfo().getName();
+
+    var previousServer = event.getPreviousServer();
+
+    StringTemplate message;
+
+    if (previousServer.isPresent()) {
+      var previous = previousServer.get().getServerInfo().getName();
+
+      message = new StringTemplate(config.SERVER_SWITCH_MESSAGE)
+        .add("username", username)
+        .add("current", server)
+        .add("previous", previous);
+    } else {
+      message = new StringTemplate(config.JOIN_MESSAGE)
+        .add("username", username)
+        .add("server", server);
     }
 
-    private static final Pattern EveryoneAndHerePattern = Pattern.compile("@(?<ping>everyone|here)");
+    sendMessage(message.toString());
 
-    private String filterEveryoneAndHere(String message) {
-        return EveryoneAndHerePattern.matcher(message).replaceAll("@\u200B${ping}");
+    updateActivityPlayerAmount();
+  }
+
+  @Subscribe
+  public void onDisconnect(DisconnectEvent event) {
+    var currentServer = event.getPlayer().getCurrentServer();
+
+    var username = event.getPlayer().getUsername();
+    var server = currentServer.map(serverConnection -> serverConnection.getServerInfo().getName()).orElse("null");
+
+    var message = new StringTemplate(currentServer.isPresent() ? config.LEAVE_MESSAGE : config.DISCONNECT_MESSAGE)
+      .add("username", username)
+      .add("server", server);
+
+    sendMessage(message.toString());
+
+    updateActivityPlayerAmount();
+  }
+
+  public void sendMessage(@Nonnull String message) {
+    activeChannel.sendMessage(message).queue();
+  }
+
+  private String parseMentions(String message) {
+    var msg = message;
+
+    for (var member : activeChannel.getMembers()) {
+      msg = Pattern.compile(Pattern.quote("@" + member.getUser().getName()), Pattern.CASE_INSENSITIVE).matcher(msg).replaceAll(member.getAsMention());
     }
 
-    public void sendWebhookMessage(String avatar, String username, String content) {
-        var webhookMessage = new WebhookMessageBuilder()
-                .setAvatarUrl(avatar)
-                .setUsername(username)
-                .setContent(content)
-                .build();
+    return msg;
+  }
 
-        webhookClient.send(webhookMessage);
+  private static final Pattern EveryoneAndHerePattern = Pattern.compile("@(?<ping>everyone|here)");
+
+  private String filterEveryoneAndHere(String message) {
+    return EveryoneAndHerePattern.matcher(message).replaceAll("@\u200B${ping}");
+  }
+
+  public void sendWebhookMessage(String avatar, String username, String content) {
+    var webhookMessage = new WebhookMessageBuilder().setAvatarUrl(avatar).setUsername(username).setContent(content).build();
+
+    webhookClient.send(webhookMessage);
+  }
+
+  public void playerDeath(String username, DeathMessage message) {
+    sendMessage(new StringTemplate(config.DEATH_MESSAGE) //
+                  .add("username", username) //
+                  .add("death_message", message.message) //
+                  .toString());
+  }
+
+  public void playerAdvancement(String username, AdvancementMessage message) {
+    sendMessage(new StringTemplate(config.ADVANCEMENT_MESSAGE) //
+                  .add("username", username) //
+                  .add("advancement_title", message.title) //
+                  .add("advancement_description", message.description) //
+                  .toString());
+  }
+
+  @Override
+  public void onSlashCommandInteraction(@Nonnull SlashCommandInteractionEvent event) {
+    var command = event.getName();
+
+    if (!commands.containsKey(command)) {
+      return;
     }
 
-    public void playerDeath(String username, DeathMessage message) {
-        sendMessage(
-                new StringTemplate(config.DEATH_MESSAGE) //
-                        .add("username", username) //
-                        .add("death_message", message.message) //
-                        .toString()
-        );
+    commands.get(command).handle(event);
+  }
+
+  public void updateActivityPlayerAmount() {
+    if (config.SHOW_ACTIVITY) {
+      final var playerCount = this.server.getPlayerCount();
+
+      if (this.lastPlayerCount != playerCount) {
+        jda
+          .getPresence()
+          .setActivity(Activity.playing(new StringTemplate(config.DISCORD_ACTIVITY_TEXT)
+                                          .add("amount", playerCount).toString()));
+        this.lastPlayerCount = playerCount;
+      }
     }
-
-    public void playerAdvancement(String username, AdvancementMessage message) {
-        sendMessage(
-                new StringTemplate(config.ADVANCEMENT_MESSAGE) //
-                        .add("username", username) //
-                        .add("advancement_title", message.title) //
-                        .add("advancement_description", message.description) //
-                        .toString()
-        );
-    }
-
-    @Override
-    public void onSlashCommandInteraction(@Nonnull SlashCommandInteractionEvent event) {
-        var command = event.getName();
-
-        if (!commands.containsKey(command)) {
-            return;
-        }
-
-        commands.get(command).handle(event);
-    }
-
-    public void updateActivityPlayerAmount() {
-        if (config.SHOW_ACTIVITY) {
-            final int playerCount = this.server.getPlayerCount();
-
-            if (this.lastPlayerCount != playerCount) {
-                jda.getPresence()
-                        .setActivity(Activity.playing(
-                                new StringTemplate(config.DISCORD_ACTIVITY_TEXT)
-                                        .add("amount", playerCount)
-                                        .toString()));
-                this.lastPlayerCount = playerCount;
-            }
-        }
-    }
+  }
 }
