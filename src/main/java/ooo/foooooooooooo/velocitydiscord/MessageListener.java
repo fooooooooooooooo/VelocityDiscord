@@ -80,14 +80,14 @@ public class MessageListener extends ListenerAdapter {
     var hex = "#" + Integer.toHexString(color.getRGB()).substring(2);
 
     // parse configured message formats
-    var discord_chunk = new StringTemplate(config.DISCORD_CHUNK).add("discord_color", config.DISCORD_COLOR).toString();
+    var discord_chunk = new StringTemplate(config.DISCORD_CHUNK)
+      .add("discord_color", config.DISCORD_COLOR).toString();
 
     var username_chunk = new StringTemplate(config.USERNAME_CHUNK)
       .add("role_color", hex)
       .add("username", author.getName())
       .add("discriminator", author.getDiscriminator())
-      .add("nickname", member.getEffectiveName())
-      .toString();
+      .add("nickname", member.getEffectiveName()).toString();
 
     var attachment_chunk = config.ATTACHMENTS;
     var message_chunk = new StringTemplate(config.MC_CHAT_MESSAGE)
@@ -103,7 +103,11 @@ public class MessageListener extends ListenerAdapter {
     }
 
     for (var attachment : attachments) {
-      attachmentChunks.add(new StringTemplate(attachment_chunk).add("url", attachment.getUrl()).add("attachment_color", config.ATTACHMENT_COLOR).toString());
+      var chunk = new StringTemplate(attachment_chunk)
+        .add("url", attachment.getUrl())
+        .add("attachment_color", config.ATTACHMENT_COLOR).toString();
+
+      attachmentChunks.add(chunk);
     }
 
     var content = message.getContentDisplay();

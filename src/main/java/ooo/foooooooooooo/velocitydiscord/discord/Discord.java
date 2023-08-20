@@ -36,15 +36,16 @@ import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
 public class Discord extends ListenerAdapter {
+  private static final Pattern EveryoneAndHerePattern = Pattern.compile("@(?<ping>everyone|here)");
+
   private final ProxyServer server;
   private final Logger logger;
   private final Config config;
-
   private final JDA jda;
   private final WebhookClient webhookClient;
   private final Map<String, ICommand> commands = new HashMap<>();
-  private TextChannel activeChannel;
 
+  private TextChannel activeChannel;
   private int lastPlayerCount = -1;
 
   public Discord(ProxyServer server, Logger logger, Config config) {
@@ -198,8 +199,6 @@ public class Discord extends ListenerAdapter {
 
     return msg;
   }
-
-  private static final Pattern EveryoneAndHerePattern = Pattern.compile("@(?<ping>everyone|here)");
 
   private String filterEveryoneAndHere(String message) {
     return EveryoneAndHerePattern.matcher(message).replaceAll("@\u200B${ping}");

@@ -16,6 +16,11 @@ public class Config {
   private static final String DefaultChannelId = "000000000000000000";
   private static final String DefaultWebhookUrl = "";
   private static final String DefaultAvatarUrl = "https://crafatar.com/avatars/{uuid}?overlay";
+  private static final String[] splitVersion = PluginVersion.split("\\.");
+  private static final String configVersion = splitVersion[0] + '.' + splitVersion[1];
+  private static final String configMajorVersion = splitVersion[0];
+
+  private final Path dataDir;
 
   public String DISCORD_TOKEN = DefaultToken;
   public String CHANNEL_ID = DefaultChannelId;
@@ -61,12 +66,6 @@ public class Config {
   // colors
   public String DISCORD_COLOR = "#7289da";
   public String ATTACHMENT_COLOR = "#4abdff";
-
-  private final Path dataDir;
-
-  private static final String[] splitVersion = PluginVersion.split("\\.");
-  private static final String configVersion = splitVersion[0] + '.' + splitVersion[1];
-  private static final String configMajorVersion = splitVersion[0];
 
   private Toml toml;
 
