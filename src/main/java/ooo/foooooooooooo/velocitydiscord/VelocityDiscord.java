@@ -25,7 +25,7 @@ import java.util.logging.Logger;
 public class VelocityDiscord {
   public static final String PluginName = "Velocity Discord Bridge";
   public static final String PluginDescription = "Velocity Discord Chat Bridge";
-  public static final String PluginVersion = "1.6.0";
+  public static final String PluginVersion = "1.7.0";
   public static final String PluginUrl = "https://github.com/fooooooooooooooo/VelocityDiscord";
 
   public static final MinecraftChannelIdentifier YepIdentifier = MinecraftChannelIdentifier.create("velocity", "yep");

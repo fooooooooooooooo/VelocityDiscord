@@ -35,7 +35,7 @@ Default config generated on startup:
 
 ```toml
 # Don't change this
-config_version = "1.6"
+config_version = "1.7"
 
 [discord]
 # Bot token from https://discordapp.com/developers/applications/
@@ -73,7 +73,8 @@ avatar_url = "https://crafatar.com/avatars/{uuid}?overlay"
 webhook_username = "{username}"
 
 # Minecraft > Discord message formats
-# Uses the same formatting as the Discord client
+# Uses the same formatting as the Discord client (a subset of markdown)
+# Messages can be disabled with empty string ("") or false
 [discord.chat]
 # The format set in the following key "discord.chat.message" is ignored when a webhook is used
 # Placeholders {username}, {server}, and {message} are available
@@ -97,7 +98,9 @@ enabled = true
 ephemeral = true
 server_format = "[{server_name} {online_players}/{max_players}]"
 player_format = "- {username}"
+# Can be disabled
 no_players = "No players online"
+# Can be disabled
 server_offline = "Server offline"
 codeblock_lang = "asciidoc"
 
