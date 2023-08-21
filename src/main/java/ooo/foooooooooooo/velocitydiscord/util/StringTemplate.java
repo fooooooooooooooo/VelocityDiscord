@@ -16,21 +16,25 @@ public class StringTemplate {
 
   public StringTemplate add(String key, String value) {
     variables.put(key, value);
+
     return this;
   }
 
   public StringTemplate add(String key, int value) {
     variables.put(key, String.valueOf(value));
+
     return this;
   }
 
   public StringTemplate add(String key, boolean value) {
     variables.put(key, String.valueOf(value));
+
     return this;
   }
 
   public StringTemplate add(String key, double value) {
     variables.put(key, String.valueOf(value));
+
     return this;
   }
 
@@ -46,6 +50,7 @@ public class StringTemplate {
 
   public StringTemplate replace(String target, String replacement) {
     template = Objects.requireNonNull(template.replace(target, replacement));
+
     return this;
   }
 }

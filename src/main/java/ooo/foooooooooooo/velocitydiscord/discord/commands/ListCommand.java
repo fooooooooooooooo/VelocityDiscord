@@ -7,6 +7,7 @@ import net.dv8tion.jda.api.interactions.commands.SlashCommandInteraction;
 import ooo.foooooooooooo.velocitydiscord.Config;
 import ooo.foooooooooooo.velocitydiscord.util.StringTemplate;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.concurrent.CompletableFuture;
 import java.util.logging.Logger;
@@ -16,6 +17,8 @@ public class ListCommand implements ICommand {
   private final Logger logger;
   private final Config config;
 
+  private final HashMap<RegisteredServer, Integer> serverMaxPlayers = new HashMap<>();
+
   public ListCommand(ProxyServer server, Logger logger, Config config) {
     this.server = server;
     this.logger = logger;
@@ -23,52 +26,39 @@ public class ListCommand implements ICommand {
   }
 
   @Override
-  @SuppressWarnings("null")
   public void handle(SlashCommandInteraction interaction) {
     final var servers = server.getAllServers();
 
     final var sb = new StringBuilder();
     sb.append("```").append(config.DISCORD_LIST_CODEBLOCK_LANG).append('\n');
 
-    final var maxPlayersMap = new HashMap<RegisteredServer, Integer>(servers.size());
-    CompletableFuture.allOf(servers.parallelStream().map(server -> server.ping().handle((ping, ex) -> {
-      if (ex != null) {
-        logger.warning("Could not ping server: " + ex);
-        maxPlayersMap.put(server, 0);
-        return null;
-      }
-      maxPlayersMap.put(server, ping.getPlayers().map(ServerPing.Players::getMax).orElse(0));
-      return null;
-    })).toArray(CompletableFuture[]::new)).join();
+    // todo: cache this longer if it ever becomes an issue
+    updateMaxPlayers(servers);
 
-    for (final var server : servers) {
-      final var name = server.getServerInfo().getName();
-      final var players = server.getPlayersConnected();
+    for (var server : servers) {
+      var name = server.getServerInfo().getName();
+      var players = server.getPlayersConnected();
 
-      final var playerCount = players.size();
-      final var maxPlayerCount = maxPlayersMap.get(server);
+      var playerCount = players.size();
+      var maxPlayerCount = serverMaxPlayers.get(server);
 
-      sb
-        .append(new StringTemplate(config.DISCORD_LIST_SERVER_FORMAT)
-                  .add("server_name", name)
-                  .add("online_players", playerCount)
-                  .add("max_players", maxPlayerCount).toString())
-        .append('\n');
+      var serverInfo = new StringTemplate(config.DISCORD_LIST_SERVER_FORMAT)
+        .add("server_name", name)
+        .add("online_players", playerCount)
+        .add("max_players", maxPlayerCount).toString();
 
-      if (maxPlayerCount == 0) {
-        if (!config.DISCORD_LIST_SERVER_OFFLINE.isEmpty()) {
-          sb.append(config.DISCORD_LIST_SERVER_OFFLINE).append('\n');
-        }
-      } else if (playerCount == 0) {
-        if (!config.DISCORD_LIST_NO_PLAYERS.isEmpty()) {
-          sb.append(config.DISCORD_LIST_NO_PLAYERS).append('\n');
-        }
+      sb.append(serverInfo).append('\n');
+
+      if (maxPlayerCount == 0 && config.DISCORD_LIST_SERVER_OFFLINE.isPresent()) {
+        sb.append(config.DISCORD_LIST_SERVER_OFFLINE.get()).append('\n');
+      } else if (playerCount == 0 && config.DISCORD_LIST_NO_PLAYERS.isPresent()) {
+        sb.append(config.DISCORD_LIST_NO_PLAYERS.get()).append('\n');
       } else {
         for (var player : players) {
-          sb
-            .append(new StringTemplate(config.DISCORD_LIST_PLAYER_FORMAT)
-                      .add("username", player.getUsername()).toString())
-            .append('\n');
+          var user = new StringTemplate(config.DISCORD_LIST_PLAYER_FORMAT)
+            .add("username", player.getUsername()).toString();
+
+          sb.append(user).append('\n');
         }
       }
 
@@ -77,5 +67,23 @@ public class ListCommand implements ICommand {
     sb.append("```");
 
     interaction.reply(sb.toString()).setEphemeral(config.DISCORD_LIST_EPHEMERAL).queue();
+  }
+
+  private void updateMaxPlayers(Collection<RegisteredServer> servers) {
+    CompletableFuture
+      .allOf(servers.parallelStream().map((server) -> server.ping().handle((ping, ex) -> handlePing(server, ping, ex))).toArray(CompletableFuture[]::new))
+      .join();
+  }
+
+  private CompletableFuture<Void> handlePing(RegisteredServer server, ServerPing ping, Throwable ex) {
+    if (ex != null) {
+      logger.warning("Could not ping server: " + ex);
+
+      serverMaxPlayers.put(server, 0);
+    } else {
+      serverMaxPlayers.put(server, ping.getPlayers().map(ServerPing.Players::getMax).orElse(0));
+    }
+
+    return null;
   }
 }

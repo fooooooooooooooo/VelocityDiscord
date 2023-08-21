@@ -134,7 +134,11 @@ public class Discord extends ListenerAdapter {
 
       sendWebhookMessage(avatar, discordName, content);
     } else {
-      var message = new StringTemplate(config.DISCORD_CHAT_MESSAGE)
+      if (config.DISCORD_CHAT_MESSAGE.isEmpty()) {
+        return;
+      }
+
+      var message = new StringTemplate(config.DISCORD_CHAT_MESSAGE.get())
         .add("username", username)
         .add("server", server)
         .add("message", content).toString();
@@ -150,22 +154,27 @@ public class Discord extends ListenerAdapter {
 
     var previousServer = event.getPreviousServer();
 
-    StringTemplate message;
+    StringTemplate message = null;
 
     if (previousServer.isPresent()) {
-      var previous = previousServer.get().getServerInfo().getName();
+      if (config.SERVER_SWITCH_MESSAGE.isPresent()) {
 
-      message = new StringTemplate(config.SERVER_SWITCH_MESSAGE)
-        .add("username", username)
-        .add("current", server)
-        .add("previous", previous);
-    } else {
-      message = new StringTemplate(config.JOIN_MESSAGE)
+        var previous = previousServer.get().getServerInfo().getName();
+
+        message = new StringTemplate(config.SERVER_SWITCH_MESSAGE.get())
+          .add("username", username)
+          .add("current", server)
+          .add("previous", previous);
+      }
+    } else if (config.JOIN_MESSAGE.isPresent()) {
+      message = new StringTemplate(config.JOIN_MESSAGE.get())
         .add("username", username)
         .add("server", server);
     }
 
-    sendMessage(message.toString());
+    if (message != null) {
+      sendMessage(message.toString());
+    }
 
     updateActivityPlayerAmount();
   }
@@ -177,11 +186,15 @@ public class Discord extends ListenerAdapter {
     var username = event.getPlayer().getUsername();
     var server = currentServer.map(serverConnection -> serverConnection.getServerInfo().getName()).orElse("null");
 
-    var message = new StringTemplate(currentServer.isPresent() ? config.LEAVE_MESSAGE : config.DISCONNECT_MESSAGE)
-      .add("username", username)
-      .add("server", server);
+    String template = currentServer.isPresent() ? config.LEAVE_MESSAGE.orElse(null) : config.DISCONNECT_MESSAGE.orElse(null);
 
-    sendMessage(message.toString());
+    if (template != null) {
+      var message = new StringTemplate(template)
+        .add("username", username)
+        .add("server", server);
+
+      sendMessage(message.toString());
+    }
 
     updateActivityPlayerAmount();
   }
@@ -210,19 +223,25 @@ public class Discord extends ListenerAdapter {
     webhookClient.send(webhookMessage);
   }
 
-  public void playerDeath(String username, DeathMessage message) {
-    sendMessage(new StringTemplate(config.DEATH_MESSAGE) //
-                  .add("username", username) //
-                  .add("death_message", message.message) //
-                  .toString());
+  public void playerDeath(String username, DeathMessage death) {
+    if (config.DEATH_MESSAGE.isPresent()) {
+      var message = new StringTemplate(config.DEATH_MESSAGE.get())
+        .add("username", username)
+        .add("death_message", death.message).toString();
+
+      sendMessage(message);
+    }
   }
 
-  public void playerAdvancement(String username, AdvancementMessage message) {
-    sendMessage(new StringTemplate(config.ADVANCEMENT_MESSAGE) //
-                  .add("username", username) //
-                  .add("advancement_title", message.title) //
-                  .add("advancement_description", message.description) //
-                  .toString());
+  public void playerAdvancement(String username, AdvancementMessage advancement) {
+    if (config.ADVANCEMENT_MESSAGE.isPresent()) {
+      var message = new StringTemplate(config.ADVANCEMENT_MESSAGE.get())
+        .add("username", username)
+        .add("advancement_title", advancement.title)
+        .add("advancement_description", advancement.description).toString();
+
+      sendMessage(message);
+    }
   }
 
   @Override
@@ -237,16 +256,19 @@ public class Discord extends ListenerAdapter {
   }
 
   public void updateActivityPlayerAmount() {
-    if (config.SHOW_ACTIVITY) {
-      final var playerCount = this.server.getPlayerCount();
+    if (!config.SHOW_ACTIVITY) {
+      return;
+    }
 
-      if (this.lastPlayerCount != playerCount) {
-        jda
-          .getPresence()
-          .setActivity(Activity.playing(new StringTemplate(config.DISCORD_ACTIVITY_TEXT)
-                                          .add("amount", playerCount).toString()));
-        this.lastPlayerCount = playerCount;
-      }
+    final var playerCount = this.server.getPlayerCount();
+
+    if (this.lastPlayerCount != playerCount) {
+      var message = new StringTemplate(config.DISCORD_ACTIVITY_TEXT)
+        .add("amount", playerCount).toString();
+
+      jda.getPresence().setActivity(Activity.playing(message));
+
+      this.lastPlayerCount = playerCount;
     }
   }
 }

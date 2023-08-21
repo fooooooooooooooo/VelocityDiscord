@@ -1,16 +1,18 @@
 package ooo.foooooooooooo.velocitydiscord;
 
+import com.electronwill.nightconfig.core.file.FileConfig;
 import com.google.inject.Inject;
-import com.moandjiezana.toml.Toml;
 import com.velocitypowered.api.plugin.annotation.DataDirectory;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Objects;
+import java.util.Optional;
 
 import static ooo.foooooooooooo.velocitydiscord.VelocityDiscord.PluginVersion;
 
+@SuppressWarnings("OptionalUsedAsFieldOrParameterType")
 public class Config {
   private static final String DefaultToken = "TOKEN";
   private static final String DefaultChannelId = "000000000000000000";
@@ -39,13 +41,13 @@ public class Config {
   public String WEBHOOK_USERNAME = "{username}";
 
   // discord formats
-  public String DISCORD_CHAT_MESSAGE = "{username}: {message}";
-  public String JOIN_MESSAGE = "**{username} joined the game**";
-  public String LEAVE_MESSAGE = "**{username} left the game**";
-  public String DISCONNECT_MESSAGE = "**{username} disconnected**";
-  public String SERVER_SWITCH_MESSAGE = "**{username} moved to {current} from {previous}**";
-  public String DEATH_MESSAGE = "**{username} {death_message}**";
-  public String ADVANCEMENT_MESSAGE = "**{username} has made the advancement __{advancement_title}__**\n_{advancement_description}_";
+  public Optional<String> DISCORD_CHAT_MESSAGE = Optional.of("{username}: {message}");
+  public Optional<String> JOIN_MESSAGE = Optional.of("**{username} joined the game**");
+  public Optional<String> LEAVE_MESSAGE = Optional.of("**{username} left the game**");
+  public Optional<String> DISCONNECT_MESSAGE = Optional.of("**{username} disconnected**");
+  public Optional<String> SERVER_SWITCH_MESSAGE = Optional.of("**{username} moved to {current} from {previous}**");
+  public Optional<String> DEATH_MESSAGE = Optional.of("**{username} {death_message}**");
+  public Optional<String> ADVANCEMENT_MESSAGE = Optional.of("**{username} has made the advancement __{advancement_title}__**\n_{advancement_description}_");
   public String DISCORD_ACTIVITY_TEXT = "with {amount} players online";
 
   // discord commands
@@ -53,8 +55,8 @@ public class Config {
   public Boolean DISCORD_LIST_EPHEMERAL = true;
   public String DISCORD_LIST_SERVER_FORMAT = "[{server_name} {online_players}/{max_players}]";
   public String DISCORD_LIST_PLAYER_FORMAT = "- {username}";
-  public String DISCORD_LIST_NO_PLAYERS = "No players online";
-  public String DISCORD_LIST_SERVER_OFFLINE = "Server offline";
+  public Optional<String> DISCORD_LIST_NO_PLAYERS = Optional.of("No players online");
+  public Optional<String> DISCORD_LIST_SERVER_OFFLINE = Optional.of("Server offline");
   public String DISCORD_LIST_CODEBLOCK_LANG = "asciidoc";
 
   // minecraft formats
@@ -67,7 +69,7 @@ public class Config {
   public String DISCORD_COLOR = "#7289da";
   public String ATTACHMENT_COLOR = "#4abdff";
 
-  private Toml toml;
+  private FileConfig config;
 
   private boolean isFirstRun = false;
 
@@ -88,23 +90,24 @@ public class Config {
       }
     }
 
-    var dataFile = dataDir.resolve("config.toml");
+    var configFile = dataDir.resolve("config.toml");
 
     // create default config if it doesn't exist
-    if (Files.notExists(dataFile)) {
+    if (Files.notExists(configFile)) {
       isFirstRun = true;
 
       try (var in = getClass().getResourceAsStream("/config.toml")) {
-        Files.copy(Objects.requireNonNull(in), dataFile);
+        Files.copy(Objects.requireNonNull(in), configFile);
       } catch (IOException e) {
         throw new RuntimeException("ERROR: Can't write default configuration file (permissions/filesystem error?)");
       }
     }
 
-    toml = new Toml().read(dataFile.toFile());
+    config = FileConfig.of(configFile);
+    config.load();
 
     // make sure the config makes sense for the current plugin's version
-    var version = toml.getString("config_version", configVersion);
+    var version = get("config_version", configVersion);
 
     if (!versionCompatible(version)) {
       var error = String.format("ERROR: Can't use the existing configuration file: version mismatch (mod: %s, config: %s)", configVersion, version);
@@ -116,44 +119,83 @@ public class Config {
     return newVersion.split("\\.")[0].equals(configMajorVersion);
   }
 
+  @SuppressWarnings("OptionalGetWithoutIsPresent")
   public void loadConfigs() {
-    DISCORD_TOKEN = toml.getString("discord.token", DISCORD_TOKEN);
-    CHANNEL_ID = toml.getString("discord.channel", CHANNEL_ID);
+    DISCORD_TOKEN = get("discord.token", DISCORD_TOKEN);
+    CHANNEL_ID = get("discord.channel", CHANNEL_ID);
 
-    SHOW_BOT_MESSAGES = toml.getBoolean("discord.show_bot_messages", SHOW_BOT_MESSAGES);
-    SHOW_ATTACHMENTS = toml.getBoolean("discord.show_attachments_ingame", SHOW_ATTACHMENTS);
-    SHOW_ACTIVITY = toml.getBoolean("discord.show_activity", SHOW_ACTIVITY);
-    ENABLE_MENTIONS = toml.getBoolean("discord.enable_mentions", ENABLE_MENTIONS);
-    ENABLE_EVERYONE_AND_HERE = toml.getBoolean("discord.enable_everyone_and_here", ENABLE_EVERYONE_AND_HERE);
+    SHOW_BOT_MESSAGES = get("discord.show_bot_messages", SHOW_BOT_MESSAGES);
+    SHOW_ATTACHMENTS = get("discord.show_attachments_ingame", SHOW_ATTACHMENTS);
+    SHOW_ACTIVITY = get("discord.show_activity", SHOW_ACTIVITY);
+    ENABLE_MENTIONS = get("discord.enable_mentions", ENABLE_MENTIONS);
+    ENABLE_EVERYONE_AND_HERE = get("discord.enable_everyone_and_here", ENABLE_EVERYONE_AND_HERE);
 
-    DISCORD_USE_WEBHOOK = toml.getBoolean("discord.use_webhook", DISCORD_USE_WEBHOOK);
-    WEBHOOK_URL = toml.getString("discord.webhook.webhook_url", WEBHOOK_URL);
-    WEBHOOK_AVATAR_URL = toml.getString("discord.webhook.avatar_url", WEBHOOK_AVATAR_URL);
-    WEBHOOK_USERNAME = toml.getString("discord.webhook.webhook_username", WEBHOOK_USERNAME);
+    DISCORD_USE_WEBHOOK = get("discord.use_webhook", DISCORD_USE_WEBHOOK);
+    WEBHOOK_URL = get("discord.webhook.webhook_url", WEBHOOK_URL);
+    WEBHOOK_AVATAR_URL = get("discord.webhook.avatar_url", WEBHOOK_AVATAR_URL);
+    WEBHOOK_USERNAME = get("discord.webhook.webhook_username", WEBHOOK_USERNAME);
 
-    DISCORD_CHAT_MESSAGE = toml.getString("discord.chat.message", DISCORD_CHAT_MESSAGE);
-    JOIN_MESSAGE = toml.getString("discord.chat.join_message", JOIN_MESSAGE);
-    LEAVE_MESSAGE = toml.getString("discord.chat.leave_message", LEAVE_MESSAGE);
-    DISCONNECT_MESSAGE = toml.getString("discord.chat.disconnect_message", DISCONNECT_MESSAGE);
-    SERVER_SWITCH_MESSAGE = toml.getString("discord.chat.server_switch_message", SERVER_SWITCH_MESSAGE);
-    DEATH_MESSAGE = toml.getString("discord.chat.death_message", DEATH_MESSAGE);
-    ADVANCEMENT_MESSAGE = toml.getString("discord.chat.advancement_message", ADVANCEMENT_MESSAGE);
-    DISCORD_ACTIVITY_TEXT = toml.getString("discord.activity_text", DISCORD_ACTIVITY_TEXT);
+    DISCORD_CHAT_MESSAGE = getOptional("discord.chat.message", DISCORD_CHAT_MESSAGE.get());
+    JOIN_MESSAGE = getOptional("discord.chat.join_message", JOIN_MESSAGE.get());
+    LEAVE_MESSAGE = getOptional("discord.chat.leave_message", LEAVE_MESSAGE.get());
+    DISCONNECT_MESSAGE = getOptional("discord.chat.disconnect_message", DISCONNECT_MESSAGE.get());
+    SERVER_SWITCH_MESSAGE = getOptional("discord.chat.server_switch_message", SERVER_SWITCH_MESSAGE.get());
+    DEATH_MESSAGE = getOptional("discord.chat.death_message", DEATH_MESSAGE.get());
+    ADVANCEMENT_MESSAGE = getOptional("discord.chat.advancement_message", ADVANCEMENT_MESSAGE.get());
+    DISCORD_ACTIVITY_TEXT = get("discord.activity_text", DISCORD_ACTIVITY_TEXT);
 
-    DISCORD_LIST_ENABLED = toml.getBoolean("discord.commands.list.enabled", DISCORD_LIST_ENABLED);
-    DISCORD_LIST_EPHEMERAL = toml.getBoolean("discord.commands.list.ephemeral", DISCORD_LIST_EPHEMERAL);
-    DISCORD_LIST_SERVER_FORMAT = toml.getString("discord.commands.list.server_format", DISCORD_LIST_SERVER_FORMAT);
-    DISCORD_LIST_PLAYER_FORMAT = toml.getString("discord.commands.list.player_format", DISCORD_LIST_PLAYER_FORMAT);
-    DISCORD_LIST_NO_PLAYERS = toml.getString("discord.commands.list.no_players", DISCORD_LIST_NO_PLAYERS);
-    DISCORD_LIST_SERVER_OFFLINE = toml.getString("discord.commands.list.server_offline", DISCORD_LIST_SERVER_OFFLINE);
-    DISCORD_LIST_CODEBLOCK_LANG = toml.getString("discord.commands.list.codeblock_lang", DISCORD_LIST_CODEBLOCK_LANG);
+    // todo: split these into a sub config if any more commands are added
+    DISCORD_LIST_ENABLED = get("discord.commands.list.enabled", DISCORD_LIST_ENABLED);
+    DISCORD_LIST_EPHEMERAL = get("discord.commands.list.ephemeral", DISCORD_LIST_EPHEMERAL);
+    DISCORD_LIST_SERVER_FORMAT = get("discord.commands.list.server_format", DISCORD_LIST_SERVER_FORMAT);
+    DISCORD_LIST_PLAYER_FORMAT = get("discord.commands.list.player_format", DISCORD_LIST_PLAYER_FORMAT);
+    DISCORD_LIST_NO_PLAYERS = getOptional("discord.commands.list.no_players", DISCORD_LIST_NO_PLAYERS.get());
+    DISCORD_LIST_SERVER_OFFLINE = getOptional("discord.commands.list.server_offline", DISCORD_LIST_SERVER_OFFLINE.get());
+    DISCORD_LIST_CODEBLOCK_LANG = get("discord.commands.list.codeblock_lang", DISCORD_LIST_CODEBLOCK_LANG);
 
-    DISCORD_CHUNK = toml.getString("minecraft.discord_chunk", DISCORD_CHUNK);
-    USERNAME_CHUNK = toml.getString("minecraft.username_chunk", USERNAME_CHUNK);
-    MC_CHAT_MESSAGE = toml.getString("minecraft.message", MC_CHAT_MESSAGE);
-    ATTACHMENTS = toml.getString("minecraft.attachments", ATTACHMENTS);
-    DISCORD_COLOR = toml.getString("minecraft.discord_color", DISCORD_COLOR);
-    ATTACHMENT_COLOR = toml.getString("minecraft.attachment_color", ATTACHMENT_COLOR);
+    DISCORD_CHUNK = get("minecraft.discord_chunk", DISCORD_CHUNK);
+    USERNAME_CHUNK = get("minecraft.username_chunk", USERNAME_CHUNK);
+    MC_CHAT_MESSAGE = get("minecraft.message", MC_CHAT_MESSAGE);
+    ATTACHMENTS = get("minecraft.attachments", ATTACHMENTS);
+    DISCORD_COLOR = get("minecraft.discord_color", DISCORD_COLOR);
+    ATTACHMENT_COLOR = get("minecraft.attachment_color", ATTACHMENT_COLOR);
+  }
+
+  <T> T get(String key, T defaultValue) {
+    return config.getOrElse(key, defaultValue);
+  }
+
+  static String invalidValueFormatString = "ERROR: `%s` is not a valid value for `%s`, acceptable values: `false`, any string";
+
+  Optional<String> getOptional(String key, String defaultValue) {
+    return getOptional(config, key, defaultValue);
+  }
+
+  public static Optional<String> getOptional(com.electronwill.nightconfig.core.Config config, String key, String defaultValue) {
+    var value = config.getRaw(key);
+
+    if (value == null) {
+      return Optional.of(defaultValue);
+    }
+
+    if (value instanceof Boolean bool) {
+      if (!bool) {
+        return Optional.empty();
+
+      } else {
+        throw new RuntimeException(String.format(invalidValueFormatString, "true", key));
+      }
+    }
+
+    if (value instanceof String str) {
+      if (str.isEmpty()) {
+        return Optional.empty();
+      }
+
+      return Optional.of(str);
+    }
+
+    throw new RuntimeException(String.format(invalidValueFormatString, value, key));
   }
 
   // Assume it's the first run if the config hasn't been edited or has been created this run

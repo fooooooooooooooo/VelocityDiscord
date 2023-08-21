@@ -22,6 +22,12 @@ dependencies {
 
   shadow implementation("club.minnced:discord-webhooks:$discord_webhooks_version")
   compileOnly "net.kyori:adventure-text-minimessage:$minimessage_version"
+
+  implementation "com.electronwill.night-config:toml:$night_config_version"
+
+  testImplementation platform("org.junit:junit-bom:$junit_version")
+  testImplementation 'org.junit.jupiter:junit-jupiter'
+  testImplementation "com.electronwill.night-config:toml:$night_config_version"
 }
 
 shadowJar {
@@ -30,4 +36,12 @@ shadowJar {
 
 build {
   dependsOn shadowJar
+}
+
+test {
+  useJUnitPlatform()
+  testLogging {
+    events "passed", "skipped", "failed"
+    showStandardStreams = true
+  }
 }
