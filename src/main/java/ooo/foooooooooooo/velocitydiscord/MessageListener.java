@@ -8,6 +8,7 @@ import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
+import ooo.foooooooooooo.velocitydiscord.config.Config;
 import ooo.foooooooooooo.velocitydiscord.util.StringTemplate;
 
 import javax.annotation.Nonnull;
@@ -32,7 +33,7 @@ public class MessageListener extends ListenerAdapter {
     this.logger = logger;
     this.config = config;
 
-    final var matcher = WEBHOOK_ID_REGEX.matcher(config.WEBHOOK_URL);
+    final var matcher = WEBHOOK_ID_REGEX.matcher(config.bot.WEBHOOK_URL);
     this.webhookId = matcher.find() ? matcher.group(1) : null;
     logger.log(Level.FINER, "Found webhook id: {0}", webhookId);
   }
@@ -49,12 +50,12 @@ public class MessageListener extends ListenerAdapter {
     }
 
     var channel = event.getChannel().asTextChannel();
-    if (!channel.getId().equals(config.CHANNEL_ID)) {
+    if (!channel.getId().equals(config.bot.CHANNEL_ID)) {
       return;
     }
 
     var author = event.getAuthor();
-    if (!config.SHOW_BOT_MESSAGES && author.isBot()) {
+    if (!config.minecraft.SHOW_BOT_MESSAGES && author.isBot()) {
       logger.finer("ignoring bot message");
       return;
     }
@@ -80,17 +81,17 @@ public class MessageListener extends ListenerAdapter {
     var hex = "#" + Integer.toHexString(color.getRGB()).substring(2);
 
     // parse configured message formats
-    var discord_chunk = new StringTemplate(config.DISCORD_CHUNK)
-      .add("discord_color", config.DISCORD_COLOR).toString();
+    var discord_chunk = new StringTemplate(config.minecraft.DISCORD_CHUNK_FORMAT)
+      .add("discord_color", config.minecraft.DISCORD_COLOR).toString();
 
-    var username_chunk = new StringTemplate(config.USERNAME_CHUNK)
+    var username_chunk = new StringTemplate(config.minecraft.USERNAME_CHUNK_FORMAT)
       .add("role_color", hex)
       .add("username", author.getName())
       .add("discriminator", author.getDiscriminator())
       .add("nickname", member.getEffectiveName()).toString();
 
-    var attachment_chunk = config.ATTACHMENTS;
-    var message_chunk = new StringTemplate(config.MC_CHAT_MESSAGE)
+    var attachment_chunk = config.minecraft.ATTACHMENT_FORMAT;
+    var message_chunk = new StringTemplate(config.minecraft.MESSAGE_FORMAT)
       .add("discord_chunk", discord_chunk)
       .add("username_chunk", username_chunk)
       .add("message", message.getContentDisplay());
@@ -98,14 +99,14 @@ public class MessageListener extends ListenerAdapter {
     var attachmentChunks = new ArrayList<String>();
 
     List<Message.Attachment> attachments = new ArrayList<>();
-    if (config.SHOW_ATTACHMENTS) {
+    if (config.minecraft.SHOW_ATTACHMENTS) {
       attachments = message.getAttachments();
     }
 
     for (var attachment : attachments) {
       var chunk = new StringTemplate(attachment_chunk)
         .add("url", attachment.getUrl())
-        .add("attachment_color", config.ATTACHMENT_COLOR).toString();
+        .add("attachment_color", config.minecraft.ATTACHMENT_COLOR).toString();
 
       attachmentChunks.add(chunk);
     }

@@ -7,6 +7,7 @@ import com.velocitypowered.api.plugin.Plugin;
 import com.velocitypowered.api.plugin.annotation.DataDirectory;
 import com.velocitypowered.api.proxy.ProxyServer;
 import com.velocitypowered.api.proxy.messages.MinecraftChannelIdentifier;
+import ooo.foooooooooooo.velocitydiscord.config.Config;
 import ooo.foooooooooooo.velocitydiscord.discord.Discord;
 import ooo.foooooooooooo.velocitydiscord.yep.YepListener;
 

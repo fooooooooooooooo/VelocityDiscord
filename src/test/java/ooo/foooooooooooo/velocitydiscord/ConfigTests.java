@@ -1,6 +1,8 @@
 package ooo.foooooooooooo.velocitydiscord;
 
+import com.electronwill.nightconfig.core.Config;
 import com.electronwill.nightconfig.core.file.FileConfig;
+import ooo.foooooooooooo.velocitydiscord.config.BaseConfig;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -16,7 +18,7 @@ public class ConfigTests {
   void getReturnsEmptyGivenFalse(@TempDir Path tempDir) {
     var toml = createConfig("test = false", tempDir);
 
-    var test = Config.getOptional(toml, "test", "default awa");
+    var test = BaseConfig.getOptional(toml, "test", "default awa");
 
     assertFalse(test.isPresent());
   }
@@ -25,7 +27,7 @@ public class ConfigTests {
   void getReturnsEmptyGivenEmptyString(@TempDir Path tempDir) {
     var toml = createConfig("test = ''", tempDir);
 
-    var test = Config.getOptional(toml, "test", "default awa");
+    var test = BaseConfig.getOptional(toml, "test", "default awa");
 
     assertFalse(test.isPresent());
   }
@@ -34,7 +36,7 @@ public class ConfigTests {
   void getReturnsValueGivenString(@TempDir Path tempDir) {
     var toml = createConfig("test = 'awa'", tempDir);
 
-    var test = Config.getOptional(toml, "test", "default awa");
+    var test = BaseConfig.getOptional(toml, "test", "default awa");
 
     assertTrue(test.isPresent());
     assertEquals(test.get(), "awa");
@@ -44,13 +46,13 @@ public class ConfigTests {
   void getReturnsDefaultValueGivenMissingKey(@TempDir Path tempDir) {
     var toml = createConfig("", tempDir);
 
-    var test = Config.getOptional(toml, "test", "default awa");
+    var test = BaseConfig.getOptional(toml, "test", "default awa");
 
     assertTrue(test.isPresent());
     assertEquals(test.get(), "default awa");
   }
 
-  FileConfig createConfig(String s, @NotNull Path tempDir) {
+  Config createConfig(String s, @NotNull Path tempDir) {
     var test = tempDir.resolve("test.toml");
 
     try (var w = new FileWriter(test.toFile())) {

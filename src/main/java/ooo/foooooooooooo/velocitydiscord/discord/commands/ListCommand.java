@@ -4,7 +4,7 @@ import com.velocitypowered.api.proxy.ProxyServer;
 import com.velocitypowered.api.proxy.server.RegisteredServer;
 import com.velocitypowered.api.proxy.server.ServerPing;
 import net.dv8tion.jda.api.interactions.commands.SlashCommandInteraction;
-import ooo.foooooooooooo.velocitydiscord.Config;
+import ooo.foooooooooooo.velocitydiscord.config.Config;
 import ooo.foooooooooooo.velocitydiscord.util.StringTemplate;
 
 import java.util.Collection;
@@ -30,7 +30,7 @@ public class ListCommand implements ICommand {
     final var servers = server.getAllServers();
 
     final var sb = new StringBuilder();
-    sb.append("```").append(config.DISCORD_LIST_CODEBLOCK_LANG).append('\n');
+    sb.append("```").append(config.listCommand.CODEBLOCK_LANG).append('\n');
 
     // todo: cache this longer if it ever becomes an issue
     updateMaxPlayers(servers);
@@ -42,20 +42,20 @@ public class ListCommand implements ICommand {
       var playerCount = players.size();
       var maxPlayerCount = serverMaxPlayers.get(server);
 
-      var serverInfo = new StringTemplate(config.DISCORD_LIST_SERVER_FORMAT)
+      var serverInfo = new StringTemplate(config.listCommand.SERVER_FORMAT)
         .add("server_name", name)
         .add("online_players", playerCount)
         .add("max_players", maxPlayerCount).toString();
 
       sb.append(serverInfo).append('\n');
 
-      if (maxPlayerCount == 0 && config.DISCORD_LIST_SERVER_OFFLINE.isPresent()) {
-        sb.append(config.DISCORD_LIST_SERVER_OFFLINE.get()).append('\n');
-      } else if (playerCount == 0 && config.DISCORD_LIST_NO_PLAYERS.isPresent()) {
-        sb.append(config.DISCORD_LIST_NO_PLAYERS.get()).append('\n');
+      if (maxPlayerCount == 0 && config.listCommand.SERVER_OFFLINE_FORMAT.isPresent()) {
+        sb.append(config.listCommand.SERVER_OFFLINE_FORMAT.get()).append('\n');
+      } else if (playerCount == 0 && config.listCommand.NO_PLAYERS_FORMAT.isPresent()) {
+        sb.append(config.listCommand.NO_PLAYERS_FORMAT.get()).append('\n');
       } else {
         for (var player : players) {
-          var user = new StringTemplate(config.DISCORD_LIST_PLAYER_FORMAT)
+          var user = new StringTemplate(config.listCommand.PLAYER_FORMAT)
             .add("username", player.getUsername()).toString();
 
           sb.append(user).append('\n');
@@ -66,7 +66,7 @@ public class ListCommand implements ICommand {
     }
     sb.append("```");
 
-    interaction.reply(sb.toString()).setEphemeral(config.DISCORD_LIST_EPHEMERAL).queue();
+    interaction.reply(sb.toString()).setEphemeral(config.listCommand.EPHEMERAL).queue();
   }
 
   private void updateMaxPlayers(Collection<RegisteredServer> servers) {

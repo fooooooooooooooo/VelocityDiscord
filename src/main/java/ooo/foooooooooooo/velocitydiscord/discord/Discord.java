@@ -19,8 +19,8 @@ import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.requests.GatewayIntent;
 import net.dv8tion.jda.api.utils.ChunkingFilter;
 import net.dv8tion.jda.api.utils.MemberCachePolicy;
-import ooo.foooooooooooo.velocitydiscord.Config;
 import ooo.foooooooooooo.velocitydiscord.MessageListener;
+import ooo.foooooooooooo.velocitydiscord.config.Config;
 import ooo.foooooooooooo.velocitydiscord.discord.commands.ICommand;
 import ooo.foooooooooooo.velocitydiscord.discord.commands.ListCommand;
 import ooo.foooooooooooo.velocitydiscord.util.StringTemplate;
@@ -57,7 +57,7 @@ public class Discord extends ListenerAdapter {
 
     var messageListener = new MessageListener(server, logger, config);
 
-    var builder = JDABuilder.createDefault(config.DISCORD_TOKEN)
+    var builder = JDABuilder.createDefault(config.bot.DISCORD_TOKEN)
       // this seems to download all users at bot startup and keep internal cache updated
       // without it, sometimes mentions miss when they shouldn't
       .setChunkingFilter(ChunkingFilter.ALL).enableIntents(GatewayIntent.GUILD_MEMBERS, GatewayIntent.GUILD_MESSAGES, GatewayIntent.MESSAGE_CONTENT)
@@ -71,18 +71,18 @@ public class Discord extends ListenerAdapter {
       throw new RuntimeException("Failed to login to discord: ", e);
     }
 
-    webhookClient = config.DISCORD_USE_WEBHOOK ? new WebhookClientBuilder(config.WEBHOOK_URL).build() : null;
+    webhookClient = config.bot.USE_WEBHOOKS ? new WebhookClientBuilder(config.bot.WEBHOOK_URL).build() : null;
   }
 
   @Override
   public void onReady(@Nonnull ReadyEvent event) {
     logger.info(MessageFormat.format("Bot ready, Guilds: {0} ({1} available)", event.getGuildTotalCount(), event.getGuildAvailableCount()));
 
-    var channel = jda.getTextChannelById(Objects.requireNonNull(config.CHANNEL_ID));
+    var channel = jda.getTextChannelById(Objects.requireNonNull(config.bot.CHANNEL_ID));
 
     if (channel == null) {
-      logger.severe("Could not load channel with id: " + config.CHANNEL_ID);
-      throw new RuntimeException("Could not load channel id: " + config.CHANNEL_ID);
+      logger.severe("Could not load channel with id: " + config.bot.CHANNEL_ID);
+      throw new RuntimeException("Could not load channel id: " + config.bot.CHANNEL_ID);
     }
 
     logger.info("Loaded channel: " + channel.getName());
@@ -113,32 +113,32 @@ public class Discord extends ListenerAdapter {
     var server = currentServer.get().getServerInfo().getName();
     var content = event.getMessage();
 
-    if (config.ENABLE_MENTIONS) {
+    if (config.bot.ENABLE_MENTIONS) {
       content = parseMentions(content);
     }
 
-    if (!config.ENABLE_EVERYONE_AND_HERE) {
+    if (!config.bot.ENABLE_EVERYONE_AND_HERE) {
       content = filterEveryoneAndHere(content);
     }
 
-    if (config.DISCORD_USE_WEBHOOK) {
+    if (config.bot.USE_WEBHOOKS) {
       var uuid = event.getPlayer().getUniqueId().toString();
 
-      var avatar = new StringTemplate(config.WEBHOOK_AVATAR_URL)
+      var avatar = new StringTemplate(config.bot.WEBHOOK_AVATAR_URL)
         .add("username", username)
         .add("uuid", uuid).toString();
 
-      var discordName = new StringTemplate(config.WEBHOOK_USERNAME)
+      var discordName = new StringTemplate(config.bot.WEBHOOK_USERNAME)
         .add("username", username)
         .add("server", server).toString();
 
       sendWebhookMessage(avatar, discordName, content);
     } else {
-      if (config.DISCORD_CHAT_MESSAGE.isEmpty()) {
+      if (config.discord.MESSAGE_FORMAT.isEmpty()) {
         return;
       }
 
-      var message = new StringTemplate(config.DISCORD_CHAT_MESSAGE.get())
+      var message = new StringTemplate(config.discord.MESSAGE_FORMAT.get())
         .add("username", username)
         .add("server", server)
         .add("message", content).toString();
@@ -157,17 +157,17 @@ public class Discord extends ListenerAdapter {
     StringTemplate message = null;
 
     if (previousServer.isPresent()) {
-      if (config.SERVER_SWITCH_MESSAGE.isPresent()) {
+      if (config.discord.SERVER_SWITCH_MESSAGE_FORMAT.isPresent()) {
 
         var previous = previousServer.get().getServerInfo().getName();
 
-        message = new StringTemplate(config.SERVER_SWITCH_MESSAGE.get())
+        message = new StringTemplate(config.discord.SERVER_SWITCH_MESSAGE_FORMAT.get())
           .add("username", username)
           .add("current", server)
           .add("previous", previous);
       }
-    } else if (config.JOIN_MESSAGE.isPresent()) {
-      message = new StringTemplate(config.JOIN_MESSAGE.get())
+    } else if (config.discord.JOIN_MESSAGE_FORMAT.isPresent()) {
+      message = new StringTemplate(config.discord.JOIN_MESSAGE_FORMAT.get())
         .add("username", username)
         .add("server", server);
     }
@@ -186,7 +186,7 @@ public class Discord extends ListenerAdapter {
     var username = event.getPlayer().getUsername();
     var server = currentServer.map(serverConnection -> serverConnection.getServerInfo().getName()).orElse("null");
 
-    String template = currentServer.isPresent() ? config.LEAVE_MESSAGE.orElse(null) : config.DISCONNECT_MESSAGE.orElse(null);
+    String template = currentServer.isPresent() ? config.discord.LEAVE_MESSAGE_FORMAT.orElse(null) : config.discord.DISCONNECT_MESSAGE_FORMAT.orElse(null);
 
     if (template != null) {
       var message = new StringTemplate(template)
@@ -224,8 +224,8 @@ public class Discord extends ListenerAdapter {
   }
 
   public void playerDeath(String username, DeathMessage death) {
-    if (config.DEATH_MESSAGE.isPresent()) {
-      var message = new StringTemplate(config.DEATH_MESSAGE.get())
+    if (config.discord.DEATH_MESSAGE_FORMAT.isPresent()) {
+      var message = new StringTemplate(config.discord.DEATH_MESSAGE_FORMAT.get())
         .add("username", username)
         .add("death_message", death.message).toString();
 
@@ -234,8 +234,8 @@ public class Discord extends ListenerAdapter {
   }
 
   public void playerAdvancement(String username, AdvancementMessage advancement) {
-    if (config.ADVANCEMENT_MESSAGE.isPresent()) {
-      var message = new StringTemplate(config.ADVANCEMENT_MESSAGE.get())
+    if (config.discord.ADVANCEMENT_MESSAGE_FORMAT.isPresent()) {
+      var message = new StringTemplate(config.discord.ADVANCEMENT_MESSAGE_FORMAT.get())
         .add("username", username)
         .add("advancement_title", advancement.title)
         .add("advancement_description", advancement.description).toString();
@@ -256,14 +256,14 @@ public class Discord extends ListenerAdapter {
   }
 
   public void updateActivityPlayerAmount() {
-    if (!config.SHOW_ACTIVITY) {
+    if (!config.bot.SHOW_ACTIVITY) {
       return;
     }
 
     final var playerCount = this.server.getPlayerCount();
 
     if (this.lastPlayerCount != playerCount) {
-      var message = new StringTemplate(config.DISCORD_ACTIVITY_TEXT)
+      var message = new StringTemplate(config.bot.ACTIVITY_FORMAT)
         .add("amount", playerCount).toString();
 
       jda.getPresence().setActivity(Activity.playing(message));
