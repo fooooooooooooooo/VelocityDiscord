@@ -11,7 +11,8 @@ Chat from all servers gets bridged with a discord channel
 - Templating syntax for all messages
 - Death and Advancement messages shown
 
-> note: this requires a [companion mod/plugin](https://github.com/fooooooooooooooo/yep) for death/advancement messages
+> **Note**
+> This requires a [companion mod/plugin](https://github.com/fooooooooooooooo/yep) for death/advancement messages
 
 ## Installation
 
