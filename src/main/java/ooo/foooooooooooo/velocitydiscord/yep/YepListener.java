@@ -47,8 +47,8 @@ public class YepListener {
     }
 
     switch (type) {
-      case DEATH -> discord.playerDeath(player, DeathMessage.fromString(message));
-      case ADVANCEMENT -> discord.playerAdvancement(player, AdvancementMessage.fromString(message));
+      case DEATH -> discord.sendPlayerDeath(player, DeathMessage.fromString(message));
+      case ADVANCEMENT -> discord.sendPlayerAdvancement(player, AdvancementMessage.fromString(message));
       default -> logger.warning("Invalid yep message type: " + parts[0]);
     }
   }

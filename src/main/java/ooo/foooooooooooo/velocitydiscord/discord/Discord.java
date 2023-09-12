@@ -19,7 +19,6 @@ import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.requests.GatewayIntent;
 import net.dv8tion.jda.api.utils.ChunkingFilter;
 import net.dv8tion.jda.api.utils.MemberCachePolicy;
-import ooo.foooooooooooo.velocitydiscord.MessageListener;
 import ooo.foooooooooooo.velocitydiscord.config.Config;
 import ooo.foooooooooooo.velocitydiscord.discord.commands.ICommand;
 import ooo.foooooooooooo.velocitydiscord.discord.commands.ListCommand;
@@ -223,7 +222,7 @@ public class Discord extends ListenerAdapter {
     webhookClient.send(webhookMessage);
   }
 
-  public void playerDeath(String username, DeathMessage death) {
+  public void sendPlayerDeath(String username, DeathMessage death) {
     if (config.discord.DEATH_MESSAGE_FORMAT.isPresent()) {
       var message = new StringTemplate(config.discord.DEATH_MESSAGE_FORMAT.get())
         .add("username", username)
@@ -233,7 +232,7 @@ public class Discord extends ListenerAdapter {
     }
   }
 
-  public void playerAdvancement(String username, AdvancementMessage advancement) {
+  public void sendPlayerAdvancement(String username, AdvancementMessage advancement) {
     if (config.discord.ADVANCEMENT_MESSAGE_FORMAT.isPresent()) {
       var message = new StringTemplate(config.discord.ADVANCEMENT_MESSAGE_FORMAT.get())
         .add("username", username)

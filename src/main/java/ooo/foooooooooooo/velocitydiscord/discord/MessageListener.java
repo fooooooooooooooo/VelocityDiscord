@@ -1,4 +1,4 @@
-package ooo.foooooooooooo.velocitydiscord;
+package ooo.foooooooooooo.velocitydiscord.discord;
 
 import com.velocitypowered.api.proxy.ProxyServer;
 import net.dv8tion.jda.api.JDA;
