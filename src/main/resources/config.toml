@@ -19,7 +19,7 @@ show_attachments_ingame = true
 # Show a text as playing activity of the bot
 show_activity = true
 # Activity text of the bot to show in Discord
-# Placeholders {amount} is available
+# Placeholder {amount} is available
 activity_text = "with {amount} players online"
 
 # Enable mentioning Discord users from Minecraft chat
