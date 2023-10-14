@@ -100,6 +100,10 @@ public class Discord extends ListenerAdapter {
     updateActivityPlayerAmount();
   }
 
+  public void shutdown() {
+    jda.shutdown();
+  }
+
   @Subscribe(order = PostOrder.FIRST)
   public void onPlayerChat(PlayerChatEvent event) {
     var currentServer = event.getPlayer().getCurrentServer();
@@ -108,8 +112,13 @@ public class Discord extends ListenerAdapter {
       return;
     }
 
-    var username = event.getPlayer().getUsername();
     var server = currentServer.get().getServerInfo().getName();
+
+    if (config.serverDisabled(server)) {
+      return;
+    }
+
+    var username = event.getPlayer().getUsername();
     var content = event.getMessage();
 
     if (config.bot.ENABLE_MENTIONS) {
@@ -151,14 +160,25 @@ public class Discord extends ListenerAdapter {
     var username = event.getPlayer().getUsername();
     var server = event.getServer().getServerInfo().getName();
 
+    if (config.serverDisabled(server)) {
+      updateActivityPlayerAmount();
+
+      return;
+    }
+
     var previousServer = event.getPreviousServer();
 
     StringTemplate message = null;
 
     if (previousServer.isPresent()) {
       if (config.discord.SERVER_SWITCH_MESSAGE_FORMAT.isPresent()) {
-
         var previous = previousServer.get().getServerInfo().getName();
+
+        if (config.serverDisabled(previous)) {
+          updateActivityPlayerAmount();
+
+          return;
+        }
 
         message = new StringTemplate(config.discord.SERVER_SWITCH_MESSAGE_FORMAT.get())
           .add("username", username)
@@ -184,6 +204,12 @@ public class Discord extends ListenerAdapter {
 
     var username = event.getPlayer().getUsername();
     var server = currentServer.map(serverConnection -> serverConnection.getServerInfo().getName()).orElse("null");
+
+    if (config.serverDisabled(server)) {
+      updateActivityPlayerAmount();
+
+      return;
+    }
 
     String template = currentServer.isPresent() ? config.discord.LEAVE_MESSAGE_FORMAT.orElse(null) : config.discord.DISCONNECT_MESSAGE_FORMAT.orElse(null);
 

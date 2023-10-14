@@ -26,7 +26,7 @@ Chat from all servers gets bridged with a discord channel
 7. Under `[discord]`, paste the channel id you want to use
    - To get a channel id, you have to enable developer mode in Discord
    - Open Discord settings, go to `Advanced`, then turn on `Developer Mode`
-   - Now right click the channel you want to use and click `Copy ID`
+   - Now right-click the channel you want to use and click `Copy ID`
 8. Set any additional config options you want
 9. Start the server and check if it works
 
@@ -36,7 +36,11 @@ Default config generated on startup:
 
 ```toml
 # Don't change this
-config_version = "1.7"
+config_version = "1.8"
+
+# Comma separated list of server names to exclude from the bridge (defined under [servers] inside your velocity.toml)
+# e.g., exclude_servers = ["lobby", "survival"]
+exclude_servers = []
 
 [discord]
 # Bot token from https://discordapp.com/developers/applications/
@@ -52,6 +56,7 @@ show_attachments_ingame = true
 # Show a text as playing activity of the bot
 show_activity = true
 # Activity text of the bot to show in Discord
+# Placeholders {amount} is available
 activity_text = "with {amount} players online"
 
 # Enable mentioning Discord users from Minecraft chat
@@ -79,25 +84,33 @@ webhook_username = "{username}"
 [discord.chat]
 # The format set in the following key "discord.chat.message" is ignored when a webhook is used
 # Placeholders {username}, {server}, and {message} are available
+# Can be disabled
 message = "{username}: {message}"
 # Placeholders {username} and {server} are available
+# Can be disabled
 join_message = "**{username} joined the game**"
 leave_message = "**{username} left the game**"
 # Possible different format for timeouts or other terminating connections
-# Only placeholder {username} is available
+# Placeholder {username} is available
+# Can be disabled
 disconnect_message = "**{username} disconnected**"
 # Placeholders {username}, {current}, and {previous} are available
+# Can be disabled
 server_switch_message = "**{username} moved to {current} from {previous}**"
 # Placeholders {username} and {death_message} are available
+# Can be disabled
 death_message = "**{username} {death_message}**"
 # Placeholders {username}, {advancement_title}, and {advancement_description} are available
+# Can be disabled
 advancement_message = "**{username} has made the advancement __{advancement_title}__**\n_{advancement_description}_"
 
 [discord.commands.list]
 enabled = true
 # Ephemeral messages are only visible to the user who sent the command
 ephemeral = true
+# Placeholders {server_name}, {online_players} and {max_players} are available
 server_format = "[{server_name} {online_players}/{max_players}]"
+# Placeholder {username} is available
 player_format = "- {username}"
 # Can be disabled
 no_players = "No players online"
@@ -108,9 +121,13 @@ codeblock_lang = "asciidoc"
 # Discord > Minecraft message formats
 # Uses XML-like formatting with https://docs.adventure.kyori.net/minimessage#format
 [minecraft]
+# Placeholder {discord} is available
 discord_chunk = "<dark_gray>[<{discord_color}>Discord<dark_gray>]<reset>"
-username_chunk = "<{role_color}><hover:show_text:{username}#{discriminator}>{nickname}</hover><reset>"
+# Placeholders {role_color}, {username} and {nickname} are available
+username_chunk = "<{role_color}><hover:show_text:{username}>{nickname}</hover><reset>"
+# Placeholders {discord_chunk}, {username_chunk}, {attachments} and {message} are available
 message = "{discord_chunk} {username_chunk}<dark_gray>: <reset>{message} {attachments}"
+# Placeholders {url} and {attachment_color} are available
 attachments = "<dark_gray><click:open_url:{url}>[<{attachment_color}>Attachment<dark_gray>]</click><reset>"
 # Colors for the <{discord_color}> and <{attachment_color}> tags
 discord_color = "#7289da"

@@ -3,6 +3,7 @@ package ooo.foooooooooooo.velocitydiscord;
 import com.google.inject.Inject;
 import com.velocitypowered.api.event.Subscribe;
 import com.velocitypowered.api.event.proxy.ProxyInitializeEvent;
+import com.velocitypowered.api.event.proxy.ProxyShutdownEvent;
 import com.velocitypowered.api.plugin.Plugin;
 import com.velocitypowered.api.plugin.annotation.DataDirectory;
 import com.velocitypowered.api.proxy.ProxyServer;
@@ -26,7 +27,7 @@ import java.util.logging.Logger;
 public class VelocityDiscord {
   public static final String PluginName = "Velocity Discord Bridge";
   public static final String PluginDescription = "Velocity Discord Chat Bridge";
-  public static final String PluginVersion = "1.7.0";
+  public static final String PluginVersion = "1.8.0";
   public static final String PluginUrl = "https://github.com/fooooooooooooooo/VelocityDiscord";
 
   public static final MinecraftChannelIdentifier YepIdentifier = MinecraftChannelIdentifier.create("velocity", "yep");
@@ -72,11 +73,19 @@ public class VelocityDiscord {
     if (discord != null) {
       register(discord);
     }
+
     if (yep != null) {
       register(yep);
     }
 
     this.server.getChannelRegistrar().register(YepIdentifier);
+  }
+
+  @Subscribe
+  public void onProxyShutdown(ProxyShutdownEvent event) {
+    if (discord != null) {
+      discord.shutdown();
+    }
   }
 
   private void register(Object x) {

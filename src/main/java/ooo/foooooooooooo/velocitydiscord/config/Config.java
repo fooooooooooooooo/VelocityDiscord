@@ -8,12 +8,13 @@ import ooo.foooooooooooo.velocitydiscord.config.commands.ListCommandConfig;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 import static ooo.foooooooooooo.velocitydiscord.VelocityDiscord.PluginVersion;
-import static ooo.foooooooooooo.velocitydiscord.config.BaseConfig.get;
 
-public class Config {
+public class Config extends BaseConfig {
   private static final String[] splitVersion = PluginVersion.split("\\.");
   private static final String configVersion = splitVersion[0] + '.' + splitVersion[1];
   private static final String configMajorVersion = splitVersion[0];
@@ -28,11 +29,15 @@ public class Config {
 
   public ListCommandConfig listCommand;
 
+  public List<String> EXCLUDED_SERVERS = new ArrayList<>();
+
   @Inject
   public Config(@DataDirectory Path dataDir) {
     this.dataDir = dataDir;
 
     var config = loadFile();
+
+    loadConfig(config);
 
     bot = new BotConfig(config);
     discord = new DiscordMessageConfig(config);
@@ -84,5 +89,14 @@ public class Config {
   // Assume it's the first run if the config hasn't been edited or has been created this run
   public boolean isFirstRun() {
     return bot.isDefaultValues() || configCreatedThisRun;
+  }
+
+  @Override
+  protected void loadConfig(com.electronwill.nightconfig.core.Config config) {
+    EXCLUDED_SERVERS = get(config, "exclude_servers", EXCLUDED_SERVERS);
+  }
+
+  public boolean serverDisabled(String name) {
+    return EXCLUDED_SERVERS.contains(name);
   }
 }

@@ -87,7 +87,6 @@ public class MessageListener extends ListenerAdapter {
     var username_chunk = new StringTemplate(config.minecraft.USERNAME_CHUNK_FORMAT)
       .add("role_color", hex)
       .add("username", author.getName())
-      .add("discriminator", author.getDiscriminator())
       .add("nickname", member.getEffectiveName()).toString();
 
     var attachment_chunk = config.minecraft.ATTACHMENT_FORMAT;
