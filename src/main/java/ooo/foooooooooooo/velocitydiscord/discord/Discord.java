@@ -1,8 +1,5 @@
 package ooo.foooooooooooo.velocitydiscord.discord;
 
-import club.minnced.discord.webhook.WebhookClient;
-import club.minnced.discord.webhook.WebhookClientBuilder;
-import club.minnced.discord.webhook.send.WebhookMessageBuilder;
 import com.velocitypowered.api.event.PostOrder;
 import com.velocitypowered.api.event.Subscribe;
 import com.velocitypowered.api.event.connection.DisconnectEvent;
@@ -12,6 +9,8 @@ import com.velocitypowered.api.proxy.ProxyServer;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Activity;
+import net.dv8tion.jda.api.entities.IncomingWebhookClient;
+import net.dv8tion.jda.api.entities.WebhookClient;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.session.ReadyEvent;
@@ -19,6 +18,7 @@ import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.requests.GatewayIntent;
 import net.dv8tion.jda.api.utils.ChunkingFilter;
 import net.dv8tion.jda.api.utils.MemberCachePolicy;
+import net.dv8tion.jda.api.utils.messages.MessageCreateBuilder;
 import ooo.foooooooooooo.velocitydiscord.config.Config;
 import ooo.foooooooooooo.velocitydiscord.discord.commands.ICommand;
 import ooo.foooooooooooo.velocitydiscord.discord.commands.ListCommand;
@@ -41,7 +41,7 @@ public class Discord extends ListenerAdapter {
   private final Logger logger;
   private final Config config;
   private final JDA jda;
-  private final WebhookClient webhookClient;
+  private final IncomingWebhookClient webhookClient;
   private final Map<String, ICommand> commands = new HashMap<>();
 
   private TextChannel activeChannel;
@@ -70,7 +70,7 @@ public class Discord extends ListenerAdapter {
       throw new RuntimeException("Failed to login to discord: ", e);
     }
 
-    webhookClient = config.bot.USE_WEBHOOKS ? new WebhookClientBuilder(config.bot.WEBHOOK_URL).build() : null;
+    webhookClient = config.bot.USE_WEBHOOKS ? WebhookClient.createClient(jda, config.bot.WEBHOOK_URL) : null;
   }
 
   @Override
@@ -243,9 +243,9 @@ public class Discord extends ListenerAdapter {
   }
 
   public void sendWebhookMessage(String avatar, String username, String content) {
-    var webhookMessage = new WebhookMessageBuilder().setAvatarUrl(avatar).setUsername(username).setContent(content).build();
+    var webhookMessage = new MessageCreateBuilder().setContent(content).build();
 
-    webhookClient.send(webhookMessage);
+    webhookClient.sendMessage(webhookMessage).setAvatarUrl(avatar).setUsername(username).queue();
   }
 
   public void sendPlayerDeath(String username, DeathMessage death) {
