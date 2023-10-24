@@ -37,6 +37,11 @@ public class ListCommand implements ICommand {
 
     for (var server : servers) {
       var name = server.getServerInfo().getName();
+
+      if (config.serverDisabled(name)) {
+        continue;
+      }
+
       var players = server.getPlayersConnected();
 
       var playerCount = players.size();
