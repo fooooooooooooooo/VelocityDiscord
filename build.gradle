@@ -30,7 +30,7 @@ dependencies {
 }
 
 shadowJar {
-  archiveFileName = "$archivesBaseName-${version}.jar"
+  archiveClassifier.set(null)
 }
 
 build {
