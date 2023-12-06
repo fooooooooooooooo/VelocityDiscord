@@ -4,6 +4,7 @@ config_version = "1.8"
 # Comma separated list of server names to exclude from the bridge (defined under [servers] inside your velocity.toml)
 # e.g., exclude_servers = ["lobby", "survival"]
 exclude_servers = []
+excluded_servers_receive_messages = false
 
 [discord]
 # Bot token from https://discordapp.com/developers/applications/

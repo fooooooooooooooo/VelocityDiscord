@@ -125,6 +125,10 @@ public class MessageListener extends ListenerAdapter {
 
   private void sendMessage(Component msg) {
     for (var server : server.getAllServers()) {
+      if (!config.EXCLUDED_SERVERS_RECEIVE_MESSAGES && config.serverDisabled(server.getServerInfo().getName())) {
+        continue;
+      }
+
       server.sendMessage(msg);
     }
   }
