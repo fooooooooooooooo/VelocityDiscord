@@ -68,16 +68,18 @@ public class MessageListener extends ListenerAdapter {
     var message = event.getMessage();
     var guild = event.getGuild();
 
+    var color = Color.white;
+    var nickname = author.getName(); // Nickname defaults to username
+
     var member = guild.getMember(author);
-    if (member == null) {
-      logger.warning("failed to get member: " + author.getId());
-      return;
+    if (member != null) {
+      color = member.getColor();
+      if (color == null) {
+        color = Color.white;
+      }
+      nickname = member.getEffectiveName();
     }
 
-    var color = member.getColor();
-    if (color == null) {
-      color = Color.white;
-    }
     var hex = "#" + Integer.toHexString(color.getRGB()).substring(2);
 
     // parse configured message formats
@@ -87,7 +89,7 @@ public class MessageListener extends ListenerAdapter {
     var username_chunk = new StringTemplate(config.minecraft.USERNAME_CHUNK_FORMAT)
       .add("role_color", hex)
       .add("username", author.getName())
-      .add("nickname", member.getEffectiveName()).toString();
+      .add("nickname", nickname).toString();
 
     var attachment_chunk = config.minecraft.ATTACHMENT_FORMAT;
     var message_chunk = new StringTemplate(config.minecraft.MESSAGE_FORMAT)
