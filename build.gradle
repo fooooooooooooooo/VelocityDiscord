@@ -5,6 +5,10 @@ plugins {
 
 version = project.version
 
+configurations {
+  shade
+}
+
 repositories {
   maven {
     name = 'papermc'
@@ -16,7 +20,7 @@ dependencies {
   compileOnly "com.velocitypowered:velocity-api:$velocity_version"
   annotationProcessor "com.velocitypowered:velocity-api:$velocity_version"
 
-  shadow implementation("net.dv8tion:JDA:$jda_version") {
+  shade implementation("net.dv8tion:JDA:$jda_version") {
     exclude module: 'opus-java'
   }
 
@@ -30,7 +34,10 @@ dependencies {
 }
 
 shadowJar {
-  archiveClassifier.set(null)
+  setArchiveClassifier(null)
+  setConfigurations([project.configurations.shade])
+  relocate("net.dv8tion", "ooo.foooooooooooo.velocitydiscord.lib.net.dv8tion")
+  minimize()
 }
 
 build {
