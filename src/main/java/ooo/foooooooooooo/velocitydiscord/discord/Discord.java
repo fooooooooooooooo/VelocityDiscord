@@ -23,8 +23,6 @@ import ooo.foooooooooooo.velocitydiscord.config.Config;
 import ooo.foooooooooooo.velocitydiscord.discord.commands.ICommand;
 import ooo.foooooooooooo.velocitydiscord.discord.commands.ListCommand;
 import ooo.foooooooooooo.velocitydiscord.util.StringTemplate;
-import ooo.foooooooooooo.velocitydiscord.yep.AdvancementMessage;
-import ooo.foooooooooooo.velocitydiscord.yep.DeathMessage;
 
 import javax.annotation.Nonnull;
 import java.text.MessageFormat;
@@ -248,22 +246,24 @@ public class Discord extends ListenerAdapter {
     webhookClient.sendMessage(webhookMessage).setAvatarUrl(avatar).setUsername(username).queue();
   }
 
-  public void sendPlayerDeath(String username, DeathMessage death) {
+  public void sendPlayerDeath(String username, String displayname, String death) {
     if (config.discord.DEATH_MESSAGE_FORMAT.isPresent()) {
       var message = new StringTemplate(config.discord.DEATH_MESSAGE_FORMAT.get())
         .add("username", username)
-        .add("death_message", death.message).toString();
+        .add("displayname", displayname)
+        .add("death_message", death).toString();
 
       sendMessage(message);
     }
   }
 
-  public void sendPlayerAdvancement(String username, AdvancementMessage advancement) {
+  public void sendPlayerAdvancement(String username, String displayname, String title, String description) {
     if (config.discord.ADVANCEMENT_MESSAGE_FORMAT.isPresent()) {
       var message = new StringTemplate(config.discord.ADVANCEMENT_MESSAGE_FORMAT.get())
         .add("username", username)
-        .add("advancement_title", advancement.title)
-        .add("advancement_description", advancement.description).toString();
+        .add("displayname", displayname)
+        .add("advancement_title", title)
+        .add("advancement_description", description).toString();
 
       sendMessage(message);
     }
