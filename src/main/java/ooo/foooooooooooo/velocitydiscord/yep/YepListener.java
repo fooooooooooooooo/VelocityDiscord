@@ -1,55 +1,24 @@
 package ooo.foooooooooooo.velocitydiscord.yep;
 
+import cc.unilock.yeplib.api.event.YepAdvancementEvent;
+import cc.unilock.yeplib.api.event.YepDeathEvent;
 import com.velocitypowered.api.event.Subscribe;
-import com.velocitypowered.api.event.connection.PluginMessageEvent;
 import ooo.foooooooooooo.velocitydiscord.VelocityDiscord;
 
-import java.nio.charset.StandardCharsets;
 import java.util.logging.Logger;
 
 public class YepListener {
-  private final Logger logger;
-
   public YepListener(Logger logger) {
-    this.logger = logger;
     logger.info("YepListener created");
   }
 
   @Subscribe
-  public void onPluginMessage(PluginMessageEvent event) {
-    if (!event.getIdentifier().equals(VelocityDiscord.YepIdentifier)) {
-      return;
-    }
+  public void onYepAdvancement(YepAdvancementEvent event) {
+    VelocityDiscord.getDiscord().sendPlayerAdvancement(event.getUsername(), event.getDisplayName(), event.getTitle(), event.getDescription());
+  }
 
-    var data = new String(event.getData(), StandardCharsets.UTF_8);
-
-    // username:type:message
-    var parts = data.split(":");
-
-    if (parts.length != 3) {
-      logger.warning("Invalid yep message: " + data);
-      return;
-    }
-
-    MessageType type = null;
-    try {
-      type = MessageType.valueOf(parts[1]);
-    } catch (IllegalArgumentException e) {
-      logger.warning("Invalid yep message type: " + parts[0]);
-    }
-
-    var player = parts[0];
-    var message = parts[2];
-    var discord = VelocityDiscord.getDiscord();
-
-    if (type == null) {
-      return;
-    }
-
-    switch (type) {
-      case DEATH -> discord.sendPlayerDeath(player, DeathMessage.fromString(message));
-      case ADVANCEMENT -> discord.sendPlayerAdvancement(player, AdvancementMessage.fromString(message));
-      default -> logger.warning("Invalid yep message type: " + parts[0]);
-    }
+  @Subscribe
+  public void onYepDeath(YepDeathEvent event) {
+    VelocityDiscord.getDiscord().sendPlayerDeath(event.getUsername(), event.getDisplayName(), event.getMessage());
   }
 }

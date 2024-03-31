@@ -14,6 +14,10 @@ repositories {
     name = 'papermc'
     url = 'https://repo.papermc.io/repository/maven-public/'
   }
+  maven {
+    name = 'jitpack'
+    url = 'https://jitpack.io'
+  }
 }
 
 dependencies {
@@ -27,6 +31,7 @@ dependencies {
   compileOnly "net.kyori:adventure-text-minimessage:$minimessage_version"
 
   implementation "com.electronwill.night-config:toml:$night_config_version"
+  implementation "com.github.unilock:yeplib:$yeplib_version"
 
   testImplementation platform("org.junit:junit-bom:$junit_version")
   testImplementation 'org.junit.jupiter:junit-jupiter'

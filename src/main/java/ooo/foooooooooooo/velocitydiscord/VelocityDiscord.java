@@ -4,6 +4,7 @@ import com.google.inject.Inject;
 import com.velocitypowered.api.event.Subscribe;
 import com.velocitypowered.api.event.proxy.ProxyInitializeEvent;
 import com.velocitypowered.api.event.proxy.ProxyShutdownEvent;
+import com.velocitypowered.api.plugin.Dependency;
 import com.velocitypowered.api.plugin.Plugin;
 import com.velocitypowered.api.plugin.annotation.DataDirectory;
 import com.velocitypowered.api.proxy.ProxyServer;
@@ -22,7 +23,8 @@ import java.util.logging.Logger;
   description = VelocityDiscord.PluginDescription,
   version = VelocityDiscord.PluginVersion,
   url = VelocityDiscord.PluginUrl,
-  authors = {"fooooooooooooooo"}
+  authors = {"fooooooooooooooo"},
+  dependencies = @Dependency(id = "yeplib", optional = true)
 )
 public class VelocityDiscord {
   public static final String PluginName = "Velocity Discord Bridge";
@@ -58,7 +60,9 @@ public class VelocityDiscord {
       logger.severe("This is the first time you are running this plugin. Please configure it in the config.yml file. Disabling plugin.");
     } else {
       this.discord = new Discord(this.server, logger, this.config);
-      this.yep = new YepListener(logger);
+      if (server.getPluginManager().isLoaded("yeplib")) {
+        this.yep = new YepListener(logger);
+      }
     }
 
     instance = this;
