@@ -61,7 +61,7 @@ public class VelocityDiscord {
     } else {
       this.discord = new Discord(this.server, logger, this.config);
       if (server.getPluginManager().isLoaded("yeplib")) {
-        this.yep = new YepListener(logger);
+        this.yep = new YepListener(logger, this.config);
       }
     }
 
