@@ -12,7 +12,7 @@ Chat from all servers gets bridged with a discord channel
 - Death and Advancement messages shown
 
 > **Note**
-> This requires a [companion mod/plugin](https://github.com/unilock/YepTwo) for death/advancement messages
+> This requires a [companion Velocity plugin](https://github.com/unilock/YepLib) and [companion backend mod/plugin](https://github.com/unilock/YepTwo) for advancement/death messages
 
 ## Installation
 
