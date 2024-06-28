@@ -6,6 +6,7 @@ import com.velocitypowered.api.event.connection.DisconnectEvent;
 import com.velocitypowered.api.event.player.PlayerChatEvent;
 import com.velocitypowered.api.event.player.ServerConnectedEvent;
 import com.velocitypowered.api.proxy.ProxyServer;
+import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Activity;
@@ -55,11 +56,10 @@ public class Discord extends ListenerAdapter {
     var messageListener = new MessageListener(server, logger, config);
 
     var builder = JDABuilder.createDefault(config.bot.DISCORD_TOKEN)
-      // this seems to download all users at bot startup and keep internal cache updated
-      // without it, sometimes mentions miss when they shouldn't
-      .setChunkingFilter(ChunkingFilter.ALL).enableIntents(GatewayIntent.GUILD_MEMBERS, GatewayIntent.GUILD_MESSAGES, GatewayIntent.MESSAGE_CONTENT)
-      // mentions always miss without this
-      .setMemberCachePolicy(MemberCachePolicy.ALL).addEventListeners(messageListener, this);
+            .setChunkingFilter(ChunkingFilter.ALL)
+            .enableIntents(GatewayIntent.GUILD_MEMBERS, GatewayIntent.GUILD_MESSAGES, GatewayIntent.MESSAGE_CONTENT)
+            .setMemberCachePolicy(MemberCachePolicy.ALL)
+            .addEventListeners(messageListener, this);
 
     try {
       jda = builder.build();
@@ -131,12 +131,12 @@ public class Discord extends ListenerAdapter {
       var uuid = event.getPlayer().getUniqueId().toString();
 
       var avatar = new StringTemplate(config.bot.WEBHOOK_AVATAR_URL)
-        .add("username", username)
-        .add("uuid", uuid).toString();
+              .add("username", username)
+              .add("uuid", uuid).toString();
 
       var discordName = new StringTemplate(config.bot.WEBHOOK_USERNAME)
-        .add("username", username)
-        .add("server", server).toString();
+              .add("username", username)
+              .add("server", server).toString();
 
       sendWebhookMessage(avatar, discordName, content);
     } else {
@@ -145,11 +145,11 @@ public class Discord extends ListenerAdapter {
       }
 
       var message = new StringTemplate(config.discord.MESSAGE_FORMAT.get())
-        .add("username", username)
-        .add("server", server)
-        .add("message", content).toString();
+              .add("username", username)
+              .add("server", server)
+              .add("message", content).toString();
 
-      sendMessage(message);
+      webhookClient.sendMessage(message);
     }
   }
 
@@ -179,18 +179,18 @@ public class Discord extends ListenerAdapter {
         }
 
         message = new StringTemplate(config.discord.SERVER_SWITCH_MESSAGE_FORMAT.get())
-          .add("username", username)
-          .add("current", server)
-          .add("previous", previous);
+                .add("username", username)
+                .add("current", server)
+                .add("previous", previous);
       }
     } else if (config.discord.JOIN_MESSAGE_FORMAT.isPresent()) {
       message = new StringTemplate(config.discord.JOIN_MESSAGE_FORMAT.get())
-        .add("username", username)
-        .add("server", server);
+              .add("username", username)
+              .add("server", server);
     }
 
     if (message != null) {
-      sendMessage(message.toString());
+      sendEmbedMessage(message.toString(), username, true);
     }
 
     updateActivityPlayerAmount();
@@ -213,17 +213,23 @@ public class Discord extends ListenerAdapter {
 
     if (template != null) {
       var message = new StringTemplate(template)
-        .add("username", username)
-        .add("server", server);
+              .add("username", username)
+              .add("server", server);
 
-      sendMessage(message.toString());
+      sendEmbedMessage(message.toString(), username, false);
     }
 
     updateActivityPlayerAmount();
   }
 
-  public void sendMessage(@Nonnull String message) {
-    activeChannel.sendMessage(message).queue();
+  public void sendEmbedMessage(@Nonnull String message, String username, boolean isJoin) {
+    int color = isJoin ? 0x00FF00 : 0xFF0000; // Зеленый для присоединения, Красный для выхода
+
+    EmbedBuilder embedBuilder = new EmbedBuilder()
+            .setAuthor(message, null, "https://cravatar.eu/helmavatar/" + username)
+            .setColor(color);
+
+    activeChannel.sendMessageEmbeds(embedBuilder.build()).queue();
   }
 
   private String parseMentions(String message) {
@@ -249,23 +255,23 @@ public class Discord extends ListenerAdapter {
   public void sendPlayerDeath(String username, String displayname, String death) {
     if (config.discord.DEATH_MESSAGE_FORMAT.isPresent()) {
       var message = new StringTemplate(config.discord.DEATH_MESSAGE_FORMAT.get())
-        .add("username", username)
-        .add("displayname", displayname)
-        .add("death_message", death).toString();
+              .add("username", username)
+              .add("displayname", displayname)
+              .add("death_message", death).toString();
 
-      sendMessage(message);
+      sendEmbedMessage(message, username, false);
     }
   }
 
   public void sendPlayerAdvancement(String username, String displayname, String title, String description) {
     if (config.discord.ADVANCEMENT_MESSAGE_FORMAT.isPresent()) {
       var message = new StringTemplate(config.discord.ADVANCEMENT_MESSAGE_FORMAT.get())
-        .add("username", username)
-        .add("displayname", displayname)
-        .add("advancement_title", title)
-        .add("advancement_description", description).toString();
+              .add("username", username)
+              .add("displayname", displayname)
+              .add("advancement_title", title)
+              .add("advancement_description", description).toString();
 
-      sendMessage(message);
+      sendEmbedMessage(message, username, true);
     }
   }
 
@@ -289,7 +295,7 @@ public class Discord extends ListenerAdapter {
 
     if (this.lastPlayerCount != playerCount) {
       var message = new StringTemplate(config.bot.ACTIVITY_FORMAT)
-        .add("amount", playerCount).toString();
+              .add("amount", playerCount).toString();
 
       jda.getPresence().setActivity(Activity.playing(message));
 

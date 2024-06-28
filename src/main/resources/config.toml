@@ -37,7 +37,7 @@ use_webhook = false
 webhook_url = ""
 # Full URL of an avatar service to get the player's avatar from
 # Placeholders {uuid} and {username} are available
-avatar_url = "https://crafatar.com/avatars/{uuid}?overlay"
+avatar_url = "https://cravatar.eu/helmavatar/{username}"
 # The format of the webhook's username
 # Placeholders {username} and {server} are available
 webhook_username = "{username}"
