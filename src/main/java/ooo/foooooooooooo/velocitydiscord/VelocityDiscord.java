@@ -39,7 +39,6 @@ public class VelocityDiscord {
   private static VelocityDiscord instance;
 
   private final ProxyServer server;
-  Config config;
 
   @Nullable
   private Discord discord = null;
@@ -53,15 +52,15 @@ public class VelocityDiscord {
 
     logger.info("Loading " + PluginName + " v" + PluginVersion);
 
-    this.config = new Config(dataDirectory);
+    var config = new Config(dataDirectory);
     pluginDisabled = config.isFirstRun();
 
     if (pluginDisabled) {
       logger.severe("This is the first time you are running this plugin. Please configure it in the config.yml file. Disabling plugin.");
     } else {
-      this.discord = new Discord(this.server, logger, this.config);
+      this.discord = new Discord(this.server, logger, config);
       if (server.getPluginManager().isLoaded("yeplib")) {
-        this.yep = new YepListener(logger, this.config);
+        this.yep = new YepListener(logger, config);
       }
     }
 

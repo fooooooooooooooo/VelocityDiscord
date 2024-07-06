@@ -23,11 +23,11 @@ public class Config extends BaseConfig {
 
   private boolean configCreatedThisRun = false;
 
-  public BotConfig bot;
-  public DiscordMessageConfig discord;
-  public MinecraftMessageConfig minecraft;
+  public final BotConfig bot;
+  public final DiscordMessageConfig discord;
+  public final MinecraftMessageConfig minecraft;
 
-  public ListCommandConfig listCommand;
+  public final ListCommandConfig listCommand;
 
   public List<String> EXCLUDED_SERVERS = new ArrayList<>();
   public boolean EXCLUDED_SERVERS_RECEIVE_MESSAGES = false;

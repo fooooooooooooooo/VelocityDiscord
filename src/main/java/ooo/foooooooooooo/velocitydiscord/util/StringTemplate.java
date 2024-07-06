@@ -3,7 +3,6 @@ package ooo.foooooooooooo.velocitydiscord.util;
 import javax.annotation.Nonnull;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 
 public class StringTemplate {
   private final Map<String, String> variables = new HashMap<>();
