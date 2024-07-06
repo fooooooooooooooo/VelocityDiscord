@@ -15,6 +15,7 @@ import ooo.foooooooooooo.velocitydiscord.yep.YepListener;
 
 import javax.annotation.Nullable;
 import java.nio.file.Path;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
 @Plugin(
@@ -39,6 +40,10 @@ public class VelocityDiscord {
   private static VelocityDiscord instance;
 
   private final ProxyServer server;
+  private final Config config;
+
+  @Nullable
+  private VelocityListener listener = null;
 
   @Nullable
   private Discord discord = null;
@@ -52,29 +57,38 @@ public class VelocityDiscord {
 
     logger.info("Loading " + PluginName + " v" + PluginVersion);
 
-    var config = new Config(dataDirectory);
-    pluginDisabled = config.isFirstRun();
+    this.config = new Config(dataDirectory);
+
+    pluginDisabled = this.config.isFirstRun();
+
+    instance = this;
 
     if (pluginDisabled) {
       logger.severe("This is the first time you are running this plugin. Please configure it in the config.yml file. Disabling plugin.");
-    } else {
-      this.discord = new Discord(this.server, logger, config);
-      if (server.getPluginManager().isLoaded("yeplib")) {
-        this.yep = new YepListener(logger, config);
-      }
+      return;
     }
 
-    instance = this;
+    this.discord = new Discord(this.server, logger, this.config);
+
+    if (server.getPluginManager().isLoaded("yeplib")) {
+      this.yep = new YepListener(logger, this.config);
+    }
+
+    this.listener = new VelocityListener(config, discord, server);
   }
 
   public static Discord getDiscord() {
     return instance.discord;
   }
 
+  public static VelocityListener getListener() {
+    return instance.listener;
+  }
+
   @Subscribe
   public void onProxyInitialization(ProxyInitializeEvent event) {
-    if (discord != null) {
-      register(discord);
+    if (listener != null) {
+      register(listener);
     }
 
     if (yep != null) {
@@ -82,6 +96,15 @@ public class VelocityDiscord {
     }
 
     this.server.getChannelRegistrar().register(YepIdentifier);
+
+    if (this.config.PING_INTERVAL > 0) {
+      server.getScheduler()
+        .buildTask(this, () -> {
+          if (this.listener != null) this.listener.checkServerHealth();
+        })
+        .repeat(this.config.PING_INTERVAL, TimeUnit.SECONDS)
+        .schedule();
+    }
   }
 
   @Subscribe

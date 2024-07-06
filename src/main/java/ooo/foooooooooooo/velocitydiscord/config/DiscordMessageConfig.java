@@ -41,6 +41,23 @@ public class DiscordMessageConfig extends BaseConfig {
   public MessageType SERVER_SWITCH_MESSAGE_TYPE = MessageType.TEXT;
   public Optional<Color> SERVER_SWITCH_MESSAGE_EMBED_COLOR = Optional.of(new Color(0x40bf4f));
 
+  // proxy start/stop, server start/stop
+  public Optional<String> PROXY_START_MESSAGE_FORMAT = Optional.of("**Proxy started**");
+  public MessageType PROXY_START_MESSAGE_TYPE = MessageType.TEXT;
+  public Optional<Color> PROXY_START_MESSAGE_EMBED_COLOR = Optional.of(new Color(0x40bf4f));
+
+  public Optional<String> PROXY_STOP_MESSAGE_FORMAT = Optional.of("**Proxy stopped**");
+  public MessageType PROXY_STOP_MESSAGE_TYPE = MessageType.TEXT;
+  public Optional<Color> PROXY_STOP_MESSAGE_EMBED_COLOR = Optional.of(new Color(0xbf4040));
+
+  public Optional<String> SERVER_START_MESSAGE_FORMAT = Optional.of("**{server} has started**");
+  public MessageType SERVER_START_MESSAGE_TYPE = MessageType.TEXT;
+  public Optional<Color> SERVER_START_MESSAGE_EMBED_COLOR = Optional.of(new Color(0x40bf4f));
+
+  public Optional<String> SERVER_STOP_MESSAGE_FORMAT = Optional.of("**{server} has stopped**");
+  public MessageType SERVER_STOP_MESSAGE_TYPE = MessageType.TEXT;
+  public Optional<Color> SERVER_STOP_MESSAGE_EMBED_COLOR = Optional.of(new Color(0xbf4040));
+
   @Override
   protected void loadConfig(Config config) {
     MESSAGE_FORMAT = getOptional(config, "discord.chat.message", MESSAGE_FORMAT);

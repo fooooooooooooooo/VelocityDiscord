@@ -6,6 +6,11 @@ config_version = "1.9"
 exclude_servers = []
 excluded_servers_receive_messages = false
 
+# How often to ping all servers to check for online status (seconds)
+# Set to 0 to disable
+# Excluded servers will not be pinged
+ping_interval = 10
+
 [discord]
 # Bot token from https://discordapp.com/developers/applications/
 token = "TOKEN"
@@ -108,6 +113,32 @@ advancement_message = "**{username} has made the advancement __{advancement_titl
 advancement_message_type = "text"
 # Can be disabled
 advancement_message_embed_color = "#40bf4f"
+
+# Can be disabled
+proxy_start_message = "**Proxy started**"
+proxy_start_message_type = "text"
+# Can be disabled
+proxy_start_message_embed_color = "#40bf4f"
+
+# Can be disabled
+proxy_stop_message = "**Proxy stopped**"
+proxy_stop_message_type = "text"
+# Can be disabled
+proxy_stop_message_embed_color = "#bf4040"
+
+# Placeholder {server} is available
+# Can be disabled
+server_start_message = "**{server} has started**"
+server_start_message_type = "text"
+# Can be disabled
+server_start_message_embed_color = "#40bf4f"
+
+# Placeholder {server} is available
+# Can be disabled
+server_stop_message = "**{server} has stopped**"
+server_stop_message_type = "text"
+# Can be disabled
+server_stop_message_embed_color = "#bf4040"
 
 [discord.commands.list]
 enabled = true

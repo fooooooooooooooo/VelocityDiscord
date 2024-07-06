@@ -1,10 +1,5 @@
 package ooo.foooooooooooo.velocitydiscord.discord;
 
-import com.velocitypowered.api.event.PostOrder;
-import com.velocitypowered.api.event.Subscribe;
-import com.velocitypowered.api.event.connection.DisconnectEvent;
-import com.velocitypowered.api.event.player.PlayerChatEvent;
-import com.velocitypowered.api.event.player.ServerConnectedEvent;
 import com.velocitypowered.api.proxy.ProxyServer;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.JDA;
@@ -38,7 +33,6 @@ import java.util.regex.Pattern;
 public class Discord extends ListenerAdapter {
   private static final Pattern EveryoneAndHerePattern = Pattern.compile("@(?<ping>everyone|here)");
 
-  private final ProxyServer server;
   private final Logger logger;
   private final Config config;
   private final JDA jda;
@@ -50,12 +44,12 @@ public class Discord extends ListenerAdapter {
 
   public boolean ready = false;
 
+  // todo: find a way to abstract away ProxyServer to remove all velocity dependencies
   public Discord(ProxyServer server, Logger logger, Config config) {
-    this.server = server;
     this.logger = logger;
     this.config = config;
 
-    commands.put("list", new ListCommand(server, logger, config));
+    commands.put("list", new ListCommand(server, config));
 
     var messageListener = new MessageListener(server, logger, config);
 
@@ -77,6 +71,12 @@ public class Discord extends ListenerAdapter {
 
     webhookClient = config.discord.isWebhookEnabled() ? WebhookClient.createClient(jda, config.bot.WEBHOOK_URL) : null;
   }
+
+  public void shutdown() {
+    jda.shutdown();
+  }
+
+  // region JDA events
 
   @Override
   public void onReady(@Nonnull ReadyEvent event) {
@@ -102,33 +102,28 @@ public class Discord extends ListenerAdapter {
 
     guild.upsertCommand("list", "list players").queue();
 
-    updateActivityPlayerAmount();
-
     this.ready = true;
   }
 
-  public void shutdown() {
-    jda.shutdown();
-  }
-
-  @Subscribe(order = PostOrder.FIRST)
-  public void onPlayerChat(PlayerChatEvent event) {
+  @Override
+  public void onSlashCommandInteraction(@Nonnull SlashCommandInteractionEvent event) {
     if (!ready) return;
 
-    var currentServer = event.getPlayer().getCurrentServer();
+    var command = event.getName();
 
-    if (currentServer.isEmpty()) {
+    if (!commands.containsKey(command)) {
       return;
     }
 
-    var server = currentServer.get().getServerInfo().getName();
+    commands.get(command).handle(event);
+  }
 
-    if (config.serverDisabled(server)) {
-      return;
-    }
+  // endregion
 
-    var username = event.getPlayer().getUsername();
-    var content = event.getMessage();
+  // region Server events
+
+  public void onPlayerChat(String username, String uuid, String server, String content) {
+    if (!ready) return;
 
     if (config.bot.ENABLE_MENTIONS) {
       content = parseMentions(content);
@@ -138,148 +133,91 @@ public class Discord extends ListenerAdapter {
       content = filterEveryoneAndHere(content);
     }
 
-
     if (config.discord.isWebhookEnabled()) {
-      var uuid = event.getPlayer().getUniqueId().toString();
-
       sendWebhookMessage(uuid, username, server, content);
 
       return;
     }
 
-    if (config.discord.MESSAGE_FORMAT.isEmpty()) {
+    if (config.discord.MESSAGE_FORMAT.isPresent()) {
+      var message = new StringTemplate(config.discord.MESSAGE_FORMAT.get())
+        .add("username", username)
+        .add("server", server)
+        .add("message", content).toString();
+
+      switch (config.discord.MESSAGE_TYPE) {
+        case EMBED -> sendEmbedMessage(message, config.discord.MESSAGE_EMBED_COLOR);
+        case TEXT -> sendMessage(message);
+      }
+    }
+  }
+
+  public void onJoin(String username, String server) {
+    if (!ready) return;
+
+    if (config.discord.JOIN_MESSAGE_FORMAT.isEmpty()) {
       return;
     }
 
-    var message = new StringTemplate(config.discord.MESSAGE_FORMAT.get())
+    var message = new StringTemplate(config.discord.JOIN_MESSAGE_FORMAT.get())
       .add("username", username)
-      .add("server", server)
-      .add("message", content).toString();
+      .add("server", server).toString();
 
-    switch (config.discord.MESSAGE_TYPE) {
-      case EMBED -> sendEmbedMessage(message, config.discord.MESSAGE_EMBED_COLOR);
+    switch (config.discord.JOIN_MESSAGE_TYPE) {
+      case EMBED -> sendEmbedMessage(message, config.discord.JOIN_MESSAGE_EMBED_COLOR);
       case TEXT -> sendMessage(message);
     }
   }
 
-  @Subscribe
-  public void onConnect(ServerConnectedEvent event) {
+  public void onServerSwitch(String username, String current, String previous) {
     if (!ready) return;
 
-    var username = event.getPlayer().getUsername();
-    var server = event.getServer().getServerInfo().getName();
-
-    if (config.serverDisabled(server)) {
-      updateActivityPlayerAmount();
-
+    if (config.discord.SERVER_SWITCH_MESSAGE_FORMAT.isEmpty()) {
       return;
     }
 
-    var previousServer = event.getPreviousServer();
-
-    String message = null;
-
-    if (previousServer.isPresent()) {
-      if (config.discord.SERVER_SWITCH_MESSAGE_FORMAT.isPresent()) {
-        var previous = previousServer.get().getServerInfo().getName();
-
-        if (config.serverDisabled(previous)) {
-          updateActivityPlayerAmount();
-
-          return;
-        }
-
-        message = new StringTemplate(config.discord.SERVER_SWITCH_MESSAGE_FORMAT.get())
-          .add("username", username)
-          .add("current", server)
-          .add("previous", previous).toString();
-      }
-    } else if (config.discord.JOIN_MESSAGE_FORMAT.isPresent()) {
-      message = new StringTemplate(config.discord.JOIN_MESSAGE_FORMAT.get())
-        .add("username", username)
-        .add("server", server).toString();
-    }
-
-    if (message != null) {
-      switch (config.discord.JOIN_MESSAGE_TYPE) {
-        case EMBED -> sendEmbedMessage(message, config.discord.JOIN_MESSAGE_EMBED_COLOR);
-        case TEXT -> sendMessage(message);
-      }
-    }
-
-    updateActivityPlayerAmount();
-  }
-
-  @Subscribe
-  public void onDisconnect(DisconnectEvent event) {
-    if (!ready) return;
-
-    var currentServer = event.getPlayer().getCurrentServer();
-
-    var username = event.getPlayer().getUsername();
-    var server = currentServer.map(serverConnection -> serverConnection.getServerInfo().getName()).orElse("null");
-
-    if (config.serverDisabled(server)) {
-      updateActivityPlayerAmount();
-
-      return;
-    }
-
-    String template = currentServer.isPresent() ? config.discord.LEAVE_MESSAGE_FORMAT.orElse(null) : config.discord.DISCONNECT_MESSAGE_FORMAT.orElse(null);
-
-    if (template != null) {
-      var message = new StringTemplate(template)
-        .add("username", username)
-        .add("server", server).toString();
-
-      switch (config.discord.LEAVE_MESSAGE_TYPE) {
-        case EMBED -> sendEmbedMessage(message, config.discord.LEAVE_MESSAGE_EMBED_COLOR);
-        case TEXT -> sendMessage(message);
-      }
-    }
-
-    updateActivityPlayerAmount();
-  }
-
-  private void sendMessage(@Nonnull String message) {
-    activeChannel.sendMessage(message).queue();
-  }
-
-  @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
-  private void sendEmbedMessage(String message, Optional<Color> color) {
-    var embed = new EmbedBuilder().setDescription(message);
-
-    color.ifPresent(embed::setColor);
-
-    activeChannel.sendMessageEmbeds(embed.build()).queue();
-  }
-
-  private String parseMentions(String message) {
-    var msg = message;
-
-    for (var member : activeChannel.getMembers()) {
-      msg = Pattern.compile(Pattern.quote("@" + member.getUser().getName()), Pattern.CASE_INSENSITIVE).matcher(msg).replaceAll(member.getAsMention());
-    }
-
-    return msg;
-  }
-
-  private String filterEveryoneAndHere(String message) {
-    return EveryoneAndHerePattern.matcher(message).replaceAll("@\u200B${ping}");
-  }
-
-  private void sendWebhookMessage(String uuid, String username, String server, String content) {
-    var avatar = new StringTemplate(config.bot.WEBHOOK_AVATAR_URL)
+    var message = new StringTemplate(config.discord.SERVER_SWITCH_MESSAGE_FORMAT.get())
       .add("username", username)
-      .add("uuid", uuid).toString();
+      .add("current", current)
+      .add("previous", previous).toString();
 
-    var discordName = new StringTemplate(config.bot.WEBHOOK_USERNAME)
+    switch (config.discord.SERVER_SWITCH_MESSAGE_TYPE) {
+      case EMBED -> sendEmbedMessage(message, config.discord.SERVER_SWITCH_MESSAGE_EMBED_COLOR);
+      case TEXT -> sendMessage(message);
+    }
+  }
+
+  public void onDisconnect(String username) {
+    if (!ready) return;
+
+    if (config.discord.DISCONNECT_MESSAGE_FORMAT.isEmpty()) {
+      return;
+    }
+
+    var message = new StringTemplate(config.discord.DISCONNECT_MESSAGE_FORMAT.get())
+      .add("username", username).toString();
+
+    switch (config.discord.LEAVE_MESSAGE_TYPE) {
+      case EMBED -> sendEmbedMessage(message, config.discord.DISCONNECT_MESSAGE_EMBED_COLOR);
+      case TEXT -> sendMessage(message);
+    }
+  }
+
+  public void onLeave(String username, String server) {
+    if (!ready) return;
+
+    if (config.discord.LEAVE_MESSAGE_FORMAT.isEmpty()) {
+      return;
+    }
+
+    var message = new StringTemplate(config.discord.LEAVE_MESSAGE_FORMAT.get())
       .add("username", username)
       .add("server", server).toString();
 
-    var webhookMessage = new MessageCreateBuilder().setContent(content).build();
-
-    webhookClient.sendMessage(webhookMessage).setAvatarUrl(avatar).setUsername(discordName).queue();
+    switch (config.discord.LEAVE_MESSAGE_TYPE) {
+      case EMBED -> sendEmbedMessage(message, config.discord.LEAVE_MESSAGE_EMBED_COLOR);
+      case TEXT -> sendMessage(message);
+    }
   }
 
   public void onPlayerDeath(String username, String displayName, String death) {
@@ -315,33 +253,119 @@ public class Discord extends ListenerAdapter {
     }
   }
 
-  @Override
-  public void onSlashCommandInteraction(@Nonnull SlashCommandInteractionEvent event) {
+  public void onProxyInitialize() {
     if (!ready) return;
 
-    var command = event.getName();
+    if (config.discord.PROXY_START_MESSAGE_FORMAT.isPresent()) {
+      var message = new StringTemplate(config.discord.PROXY_START_MESSAGE_FORMAT.get()).toString();
 
-    if (!commands.containsKey(command)) {
-      return;
+      switch (config.discord.PROXY_START_MESSAGE_TYPE) {
+        case EMBED -> sendEmbedMessage(message, config.discord.PROXY_START_MESSAGE_EMBED_COLOR);
+        case TEXT -> sendMessage(message);
+      }
     }
-
-    commands.get(command).handle(event);
   }
 
-  private void updateActivityPlayerAmount() {
+  public void onProxyShutdown() {
+    if (!ready) return;
+
+    if (config.discord.PROXY_STOP_MESSAGE_FORMAT.isPresent()) {
+      var message = new StringTemplate(config.discord.PROXY_STOP_MESSAGE_FORMAT.get()).toString();
+
+      switch (config.discord.PROXY_STOP_MESSAGE_TYPE) {
+        case EMBED -> sendEmbedMessage(message, config.discord.PROXY_STOP_MESSAGE_EMBED_COLOR);
+        case TEXT -> sendMessage(message);
+      }
+    }
+  }
+
+  public void onServerStart(String server) {
+    if (!ready) return;
+
+    if (config.discord.SERVER_START_MESSAGE_FORMAT.isPresent()) {
+      var message = new StringTemplate(config.discord.SERVER_START_MESSAGE_FORMAT.get())
+        .add("server", server).toString();
+
+      switch (config.discord.SERVER_START_MESSAGE_TYPE) {
+        case EMBED -> sendEmbedMessage(message, config.discord.SERVER_START_MESSAGE_EMBED_COLOR);
+        case TEXT -> sendMessage(message);
+      }
+    }
+  }
+
+  public void onServerStop(String server) {
+    if (!ready) return;
+
+    if (config.discord.SERVER_STOP_MESSAGE_FORMAT.isPresent()) {
+      var message = new StringTemplate(config.discord.SERVER_STOP_MESSAGE_FORMAT.get())
+        .add("server", server).toString();
+
+      switch (config.discord.SERVER_STOP_MESSAGE_TYPE) {
+        case EMBED -> sendEmbedMessage(message, config.discord.SERVER_STOP_MESSAGE_EMBED_COLOR);
+        case TEXT -> sendMessage(message);
+      }
+    }
+  }
+
+  public void updateActivityPlayerAmount(int count) {
     if (!config.bot.SHOW_ACTIVITY) {
       return;
     }
 
-    final var playerCount = this.server.getPlayerCount();
-
-    if (this.lastPlayerCount != playerCount) {
+    if (this.lastPlayerCount != count) {
       var message = new StringTemplate(config.bot.ACTIVITY_FORMAT)
-        .add("amount", playerCount).toString();
+        .add("amount", count).toString();
 
       jda.getPresence().setActivity(Activity.playing(message));
 
-      this.lastPlayerCount = playerCount;
+      this.lastPlayerCount = count;
     }
+  }
+
+  // endregion
+
+  // region Message sending
+
+  private void sendMessage(@Nonnull String message) {
+    activeChannel.sendMessage(message).queue();
+  }
+
+  @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
+  private void sendEmbedMessage(String message, Optional<Color> color) {
+    var embed = new EmbedBuilder().setDescription(message);
+
+    color.ifPresent(embed::setColor);
+
+    activeChannel.sendMessageEmbeds(embed.build()).queue();
+  }
+
+  private void sendWebhookMessage(String uuid, String username, String server, String content) {
+    var avatar = new StringTemplate(config.bot.WEBHOOK_AVATAR_URL)
+      .add("username", username)
+      .add("uuid", uuid).toString();
+
+    var discordName = new StringTemplate(config.bot.WEBHOOK_USERNAME)
+      .add("username", username)
+      .add("server", server).toString();
+
+    var webhookMessage = new MessageCreateBuilder().setContent(content).build();
+
+    webhookClient.sendMessage(webhookMessage).setAvatarUrl(avatar).setUsername(discordName).queue();
+  }
+
+  // endregion
+
+  private String parseMentions(String message) {
+    var msg = message;
+
+    for (var member : activeChannel.getMembers()) {
+      msg = Pattern.compile(Pattern.quote("@" + member.getUser().getName()), Pattern.CASE_INSENSITIVE).matcher(msg).replaceAll(member.getAsMention());
+    }
+
+    return msg;
+  }
+
+  private String filterEveryoneAndHere(String message) {
+    return EveryoneAndHerePattern.matcher(message).replaceAll("@\u200B${ping}");
   }
 }
