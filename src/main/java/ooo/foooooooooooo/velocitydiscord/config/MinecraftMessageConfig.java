@@ -12,10 +12,10 @@ public class MinecraftMessageConfig extends BaseConfig {
   public Boolean SHOW_ATTACHMENTS = true;
 
   // formats
-  public String DISCORD_CHUNK_FORMAT = "<dark_gray>[<{discord_color}>Discord<dark_gray>]";
-  public String USERNAME_CHUNK_FORMAT = "<{role_color}><hover:show_text:{username}#{discriminator}>{nickname}</hover>";
-  public String MESSAGE_FORMAT = "{discord_chunk} {username_chunk}<dark_gray>: <white>{message} {attachments}";
-  public String ATTACHMENT_FORMAT = "<click:open_url:{url}>[Attachment]</click>";
+  public String DISCORD_CHUNK_FORMAT = "<dark_gray>[<{discord_color}>Discord<dark_gray>]<reset>";
+  public String USERNAME_CHUNK_FORMAT = "<{role_color}><insert:@{username}><hover:show_text:{display_name}>{nickname}</hover></insert><reset>";
+  public String MESSAGE_FORMAT = "{discord_chunk} {username_chunk}<dark_gray>: <reset>{message} {attachments}";
+  public String ATTACHMENT_FORMAT = "<dark_gray><click:open_url:{url}>[<{attachment_color}>Attachment<dark_gray>]</click><reset>";
 
   // colors
   public String DISCORD_COLOR = "#7289da";

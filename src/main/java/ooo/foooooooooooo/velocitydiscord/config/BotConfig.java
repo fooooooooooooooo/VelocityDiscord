@@ -17,11 +17,9 @@ public class BotConfig extends BaseConfig {
   public String CHANNEL_ID = DefaultChannelId;
 
   // webhooks
-  public Boolean USE_WEBHOOKS = false;
   public String WEBHOOK_URL = DefaultWebhookUrl;
   public String WEBHOOK_AVATAR_URL = DefaultAvatarUrl;
   public String WEBHOOK_USERNAME = "{username}";
-
 
   // pings
   public Boolean ENABLE_MENTIONS = true;
@@ -39,7 +37,6 @@ public class BotConfig extends BaseConfig {
     CHANNEL_ID = get(config, "discord.channel", CHANNEL_ID);
 
     // webhooks
-    USE_WEBHOOKS = get(config, "discord.use_webhook", USE_WEBHOOKS);
     WEBHOOK_URL = get(config, "discord.webhook.webhook_url", WEBHOOK_URL);
     WEBHOOK_AVATAR_URL = get(config, "discord.webhook.avatar_url", WEBHOOK_AVATAR_URL);
     WEBHOOK_USERNAME = get(config, "discord.webhook.webhook_username", WEBHOOK_USERNAME);

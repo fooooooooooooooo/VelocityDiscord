@@ -10,6 +10,7 @@ import org.junit.jupiter.api.io.TempDir;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -18,7 +19,7 @@ public class ConfigTests {
   void getReturnsEmptyGivenFalse(@TempDir Path tempDir) {
     var toml = createConfig("test = false", tempDir);
 
-    var test = BaseConfig.getOptional(toml, "test", "default awa");
+    var test = BaseConfig.getOptional(toml, "test", Optional.of("default awa"));
 
     assertFalse(test.isPresent());
   }
@@ -27,7 +28,7 @@ public class ConfigTests {
   void getReturnsEmptyGivenEmptyString(@TempDir Path tempDir) {
     var toml = createConfig("test = ''", tempDir);
 
-    var test = BaseConfig.getOptional(toml, "test", "default awa");
+    var test = BaseConfig.getOptional(toml, "test", Optional.of("default awa"));
 
     assertFalse(test.isPresent());
   }
@@ -36,7 +37,7 @@ public class ConfigTests {
   void getReturnsValueGivenString(@TempDir Path tempDir) {
     var toml = createConfig("test = 'awa'", tempDir);
 
-    var test = BaseConfig.getOptional(toml, "test", "default awa");
+    var test = BaseConfig.getOptional(toml, "test", Optional.of("default awa"));
 
     assertTrue(test.isPresent());
     assertEquals(test.get(), "awa");
@@ -46,7 +47,7 @@ public class ConfigTests {
   void getReturnsDefaultValueGivenMissingKey(@TempDir Path tempDir) {
     var toml = createConfig("", tempDir);
 
-    var test = BaseConfig.getOptional(toml, "test", "default awa");
+    var test = BaseConfig.getOptional(toml, "test", Optional.of("default awa"));
 
     assertTrue(test.isPresent());
     assertEquals(test.get(), "default awa");

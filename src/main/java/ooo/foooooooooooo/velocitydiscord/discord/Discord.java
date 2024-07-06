@@ -6,6 +6,7 @@ import com.velocitypowered.api.event.connection.DisconnectEvent;
 import com.velocitypowered.api.event.player.PlayerChatEvent;
 import com.velocitypowered.api.event.player.ServerConnectedEvent;
 import com.velocitypowered.api.proxy.ProxyServer;
+import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Activity;
@@ -25,10 +26,12 @@ import ooo.foooooooooooo.velocitydiscord.discord.commands.ListCommand;
 import ooo.foooooooooooo.velocitydiscord.util.StringTemplate;
 
 import javax.annotation.Nonnull;
+import java.awt.*;
 import java.text.MessageFormat;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
@@ -45,6 +48,8 @@ public class Discord extends ListenerAdapter {
   private TextChannel activeChannel;
   private int lastPlayerCount = -1;
 
+  public boolean ready = false;
+
   public Discord(ProxyServer server, Logger logger, Config config) {
     this.server = server;
     this.logger = logger;
@@ -57,9 +62,11 @@ public class Discord extends ListenerAdapter {
     var builder = JDABuilder.createDefault(config.bot.DISCORD_TOKEN)
       // this seems to download all users at bot startup and keep internal cache updated
       // without it, sometimes mentions miss when they shouldn't
-      .setChunkingFilter(ChunkingFilter.ALL).enableIntents(GatewayIntent.GUILD_MEMBERS, GatewayIntent.GUILD_MESSAGES, GatewayIntent.MESSAGE_CONTENT)
+      .setChunkingFilter(ChunkingFilter.ALL) //
+      .enableIntents(GatewayIntent.GUILD_MEMBERS, GatewayIntent.GUILD_MESSAGES, GatewayIntent.MESSAGE_CONTENT)
       // mentions always miss without this
-      .setMemberCachePolicy(MemberCachePolicy.ALL).addEventListeners(messageListener, this);
+      .setMemberCachePolicy(MemberCachePolicy.ALL) //
+      .addEventListeners(messageListener, this);
 
     try {
       jda = builder.build();
@@ -68,7 +75,7 @@ public class Discord extends ListenerAdapter {
       throw new RuntimeException("Failed to login to discord: ", e);
     }
 
-    webhookClient = config.bot.USE_WEBHOOKS ? WebhookClient.createClient(jda, config.bot.WEBHOOK_URL) : null;
+    webhookClient = config.discord.isWebhookEnabled() ? WebhookClient.createClient(jda, config.bot.WEBHOOK_URL) : null;
   }
 
   @Override
@@ -96,6 +103,8 @@ public class Discord extends ListenerAdapter {
     guild.upsertCommand("list", "list players").queue();
 
     updateActivityPlayerAmount();
+
+    this.ready = true;
   }
 
   public void shutdown() {
@@ -104,6 +113,8 @@ public class Discord extends ListenerAdapter {
 
   @Subscribe(order = PostOrder.FIRST)
   public void onPlayerChat(PlayerChatEvent event) {
+    if (!ready) return;
+
     var currentServer = event.getPlayer().getCurrentServer();
 
     if (currentServer.isEmpty()) {
@@ -127,34 +138,34 @@ public class Discord extends ListenerAdapter {
       content = filterEveryoneAndHere(content);
     }
 
-    if (config.bot.USE_WEBHOOKS) {
+
+    if (config.discord.isWebhookEnabled()) {
       var uuid = event.getPlayer().getUniqueId().toString();
 
-      var avatar = new StringTemplate(config.bot.WEBHOOK_AVATAR_URL)
-        .add("username", username)
-        .add("uuid", uuid).toString();
+      sendWebhookMessage(uuid, username, server, content);
 
-      var discordName = new StringTemplate(config.bot.WEBHOOK_USERNAME)
-        .add("username", username)
-        .add("server", server).toString();
+      return;
+    }
 
-      sendWebhookMessage(avatar, discordName, content);
-    } else {
-      if (config.discord.MESSAGE_FORMAT.isEmpty()) {
-        return;
-      }
+    if (config.discord.MESSAGE_FORMAT.isEmpty()) {
+      return;
+    }
 
-      var message = new StringTemplate(config.discord.MESSAGE_FORMAT.get())
-        .add("username", username)
-        .add("server", server)
-        .add("message", content).toString();
+    var message = new StringTemplate(config.discord.MESSAGE_FORMAT.get())
+      .add("username", username)
+      .add("server", server)
+      .add("message", content).toString();
 
-      sendMessage(message);
+    switch (config.discord.MESSAGE_TYPE) {
+      case EMBED -> sendEmbedMessage(message, config.discord.MESSAGE_EMBED_COLOR);
+      case TEXT -> sendMessage(message);
     }
   }
 
   @Subscribe
   public void onConnect(ServerConnectedEvent event) {
+    if (!ready) return;
+
     var username = event.getPlayer().getUsername();
     var server = event.getServer().getServerInfo().getName();
 
@@ -166,7 +177,7 @@ public class Discord extends ListenerAdapter {
 
     var previousServer = event.getPreviousServer();
 
-    StringTemplate message = null;
+    String message = null;
 
     if (previousServer.isPresent()) {
       if (config.discord.SERVER_SWITCH_MESSAGE_FORMAT.isPresent()) {
@@ -181,16 +192,19 @@ public class Discord extends ListenerAdapter {
         message = new StringTemplate(config.discord.SERVER_SWITCH_MESSAGE_FORMAT.get())
           .add("username", username)
           .add("current", server)
-          .add("previous", previous);
+          .add("previous", previous).toString();
       }
     } else if (config.discord.JOIN_MESSAGE_FORMAT.isPresent()) {
       message = new StringTemplate(config.discord.JOIN_MESSAGE_FORMAT.get())
         .add("username", username)
-        .add("server", server);
+        .add("server", server).toString();
     }
 
     if (message != null) {
-      sendMessage(message.toString());
+      switch (config.discord.JOIN_MESSAGE_TYPE) {
+        case EMBED -> sendEmbedMessage(message, config.discord.JOIN_MESSAGE_EMBED_COLOR);
+        case TEXT -> sendMessage(message);
+      }
     }
 
     updateActivityPlayerAmount();
@@ -198,6 +212,8 @@ public class Discord extends ListenerAdapter {
 
   @Subscribe
   public void onDisconnect(DisconnectEvent event) {
+    if (!ready) return;
+
     var currentServer = event.getPlayer().getCurrentServer();
 
     var username = event.getPlayer().getUsername();
@@ -214,16 +230,28 @@ public class Discord extends ListenerAdapter {
     if (template != null) {
       var message = new StringTemplate(template)
         .add("username", username)
-        .add("server", server);
+        .add("server", server).toString();
 
-      sendMessage(message.toString());
+      switch (config.discord.LEAVE_MESSAGE_TYPE) {
+        case EMBED -> sendEmbedMessage(message, config.discord.LEAVE_MESSAGE_EMBED_COLOR);
+        case TEXT -> sendMessage(message);
+      }
     }
 
     updateActivityPlayerAmount();
   }
 
-  public void sendMessage(@Nonnull String message) {
+  private void sendMessage(@Nonnull String message) {
     activeChannel.sendMessage(message).queue();
+  }
+
+  @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
+  private void sendEmbedMessage(String message, Optional<Color> color) {
+    var embed = new EmbedBuilder().setDescription(message);
+
+    color.ifPresent(embed::setColor);
+
+    activeChannel.sendMessageEmbeds(embed.build()).queue();
   }
 
   private String parseMentions(String message) {
@@ -240,24 +268,39 @@ public class Discord extends ListenerAdapter {
     return EveryoneAndHerePattern.matcher(message).replaceAll("@\u200B${ping}");
   }
 
-  public void sendWebhookMessage(String avatar, String username, String content) {
+  private void sendWebhookMessage(String uuid, String username, String server, String content) {
+    var avatar = new StringTemplate(config.bot.WEBHOOK_AVATAR_URL)
+      .add("username", username)
+      .add("uuid", uuid).toString();
+
+    var discordName = new StringTemplate(config.bot.WEBHOOK_USERNAME)
+      .add("username", username)
+      .add("server", server).toString();
+
     var webhookMessage = new MessageCreateBuilder().setContent(content).build();
 
-    webhookClient.sendMessage(webhookMessage).setAvatarUrl(avatar).setUsername(username).queue();
+    webhookClient.sendMessage(webhookMessage).setAvatarUrl(avatar).setUsername(discordName).queue();
   }
 
-  public void sendPlayerDeath(String username, String displayname, String death) {
+  public void onPlayerDeath(String username, String displayName, String death) {
+    if (!ready) return;
+
     if (config.discord.DEATH_MESSAGE_FORMAT.isPresent()) {
       var message = new StringTemplate(config.discord.DEATH_MESSAGE_FORMAT.get())
         .add("username", username)
-        .add("displayname", displayname)
+        .add("displayname", displayName)
         .add("death_message", death).toString();
 
-      sendMessage(message);
+      switch (config.discord.DEATH_MESSAGE_TYPE) {
+        case EMBED -> sendEmbedMessage(message, config.discord.DEATH_MESSAGE_EMBED_COLOR);
+        case TEXT -> sendMessage(message);
+      }
     }
   }
 
-  public void sendPlayerAdvancement(String username, String displayname, String title, String description) {
+  public void onPlayerAdvancement(String username, String displayname, String title, String description) {
+    if (!ready) return;
+
     if (config.discord.ADVANCEMENT_MESSAGE_FORMAT.isPresent()) {
       var message = new StringTemplate(config.discord.ADVANCEMENT_MESSAGE_FORMAT.get())
         .add("username", username)
@@ -265,12 +308,17 @@ public class Discord extends ListenerAdapter {
         .add("advancement_title", title)
         .add("advancement_description", description).toString();
 
-      sendMessage(message);
+      switch (config.discord.ADVANCEMENT_MESSAGE_TYPE) {
+        case EMBED -> sendEmbedMessage(message, config.discord.ADVANCEMENT_MESSAGE_EMBED_COLOR);
+        case TEXT -> sendMessage(message);
+      }
     }
   }
 
   @Override
   public void onSlashCommandInteraction(@Nonnull SlashCommandInteractionEvent event) {
+    if (!ready) return;
+
     var command = event.getName();
 
     if (!commands.containsKey(command)) {
@@ -280,7 +328,7 @@ public class Discord extends ListenerAdapter {
     commands.get(command).handle(event);
   }
 
-  public void updateActivityPlayerAmount() {
+  private void updateActivityPlayerAmount() {
     if (!config.bot.SHOW_ACTIVITY) {
       return;
     }
