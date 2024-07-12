@@ -32,6 +32,9 @@ enable_everyone_and_here = false
 # Requires a webhook URL to be set below
 use_webhook = false
 
+# OPTIONAL - Update the channel topic (disable with <10)
+update_channel_topic_interval = -1
+
 [discord.webhook]
 # Full webhook URL to send more fancy Minecraft chat messages to
 webhook_url = ""
