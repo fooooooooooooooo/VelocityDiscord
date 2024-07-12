@@ -103,10 +103,13 @@ public class Discord extends ListenerAdapter {
     updateActivityPlayerAmount();
 
     this.scheduler = server.getScheduler();
-
-    this.updateTask = scheduler.buildTask(this, this::updateChannelTopic)
-        .repeat(1, TimeUnit.HOURS)
-        .schedule();
+    
+    if (config.bot.UPDATE_CHANNEL_TOPIC_INTERVAL > 10) {
+          // Schedule the task to update the channel topic at the specified interval
+          this.updateTask = scheduler.buildTask(this, this::updateChannelTopic)
+              .repeat(config.bot.UPDATE_CHANNEL_TOPIC_INTERVAL, TimeUnit.MINUTES)
+              .schedule();
+        }
   }
 
   public void shutdown() {
