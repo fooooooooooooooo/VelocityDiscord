@@ -6,6 +6,9 @@ import com.velocitypowered.api.event.connection.DisconnectEvent;
 import com.velocitypowered.api.event.player.PlayerChatEvent;
 import com.velocitypowered.api.event.player.ServerConnectedEvent;
 import com.velocitypowered.api.proxy.ProxyServer;
+import com.velocitypowered.api.scheduler.ScheduledTask;
+import com.velocitypowered.api.scheduler.Scheduler;
+import com.velocitypowered.api.scheduler.TaskStatus;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Activity;
@@ -41,9 +44,11 @@ public class Discord extends ListenerAdapter {
   private final JDA jda;
   private final IncomingWebhookClient webhookClient;
   private final Map<String, ICommand> commands = new HashMap<>();
-
+  private final Scheduler scheduler;
+  
   private TextChannel activeChannel;
   private int lastPlayerCount = -1;
+  private ScheduledTask updateTask;
 
   public Discord(ProxyServer server, Logger logger, Config config) {
     this.server = server;
@@ -96,10 +101,19 @@ public class Discord extends ListenerAdapter {
     guild.upsertCommand("list", "list players").queue();
 
     updateActivityPlayerAmount();
+
+    this.scheduler = server.getScheduler();
+
+    this.updateTask = scheduler.buildTask(this, this::updateChannelTopic)
+        .repeat(1, TimeUnit.HOURS)
+        .schedule();
   }
 
   public void shutdown() {
     jda.shutdown();
+    if (updateTask != null && !updateTask.isCancelled()) {
+      updateTask.cancel();
+    }
   }
 
   @Subscribe(order = PostOrder.FIRST)
@@ -294,6 +308,15 @@ public class Discord extends ListenerAdapter {
       jda.getPresence().setActivity(Activity.playing(message));
 
       this.lastPlayerCount = playerCount;
+    }
+  }
+  
+  private void updateChannelTopic() {
+    if (activeChannel != null) {
+      int playerCount = server.getPlayerCount();
+      String newTopic = "Current player count: " + playerCount;
+
+      activeChannel.getManager().setTopic(newTopic).queue()
     }
   }
 }
