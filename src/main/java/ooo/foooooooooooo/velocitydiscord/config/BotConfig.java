@@ -72,6 +72,6 @@ public class BotConfig extends BaseConfig {
   }
 
   public boolean isDefaultValues() {
-    return DISCORD_TOKEN.equals(DefaultToken) || CHANNEL_ID.equals(DefaultChannelId);
+    return DISCORD_TOKEN.equals(DefaultToken) || SERVERS.get(0).CHANNEL_ID.equals(ServerConfig.DefaultChannelId);
   }
 }

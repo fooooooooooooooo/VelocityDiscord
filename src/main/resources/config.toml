@@ -35,8 +35,11 @@ use_webhook = false
 server_names = "server1, server2, server3"
 
 server1.channel = "000000000000000001"
+server1.webhook_url = "https://discord.com/api/webhooks/x/y"
 server2.channel = "000000000000000002"
+server2.webhook_url = "https://discord.com/api/webhooks/x/y"
 server3.channel = "000000000000000003"
+server3.webhook_url = "https://discord.com/api/webhooks/x/y"
 
 [discord.webhook]
 # Full webhook URL to send more fancy Minecraft chat messages to

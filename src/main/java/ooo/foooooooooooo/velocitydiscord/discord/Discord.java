@@ -9,6 +9,7 @@ import com.velocitypowered.api.proxy.ProxyServer;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Activity;
+import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.IncomingWebhookClient;
 import net.dv8tion.jda.api.entities.WebhookClient;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
@@ -20,6 +21,7 @@ import net.dv8tion.jda.api.utils.ChunkingFilter;
 import net.dv8tion.jda.api.utils.MemberCachePolicy;
 import net.dv8tion.jda.api.utils.messages.MessageCreateBuilder;
 import ooo.foooooooooooo.velocitydiscord.config.Config;
+import ooo.foooooooooooo.velocitydiscord.config.ServerConfig;
 import ooo.foooooooooooo.velocitydiscord.discord.commands.ICommand;
 import ooo.foooooooooooo.velocitydiscord.discord.commands.ListCommand;
 import ooo.foooooooooooo.velocitydiscord.util.StringTemplate;
@@ -41,7 +43,7 @@ public class Discord extends ListenerAdapter {
   private final JDA jda;
   private final IncomingWebhookClient webhookClient;
   private final Map<String, ICommand> commands = new HashMap<>();
-
+  private final Map<ServerConfig, TextChannel> channels = new HashMap<>();
   private TextChannel activeChannel;
   private int lastPlayerCount = -1;
 
@@ -75,27 +77,28 @@ public class Discord extends ListenerAdapter {
   public void onReady(@Nonnull ReadyEvent event) {
     logger.info(MessageFormat.format("Bot ready, Guilds: {0} ({1} available)", event.getGuildTotalCount(), event.getGuildAvailableCount()));
 
-    var channel = jda.getTextChannelById(Objects.requireNonNull(config.bot.CHANNEL_ID));
-
-    if (channel == null) {
-      logger.severe("Could not load channel with id: " + config.bot.CHANNEL_ID);
-      throw new RuntimeException("Could not load channel id: " + config.bot.CHANNEL_ID);
+    for (ServerConfig serverConfig : config.bot.SERVERS) {
+      TextChannel channel = getChannel(serverConfig.CHANNEL_ID);
+      channels.put(serverConfig, channel);
     }
+    activeChannel = getChannel(config.bot.CHANNEL_ID);
+    updateActivityPlayerAmount();
+  }
 
-    logger.info("Loaded channel: " + channel.getName());
-
+  private TextChannel getChannel(String channelId) {
+    TextChannel channel = jda.getTextChannelById(Objects.requireNonNull(channelId));
+    if (channel == null) {
+      logger.severe("Could not load channel with id: " + channelId);
+      throw new RuntimeException("Could not load channel id: " + channelId);
+    }
     if (!channel.canTalk()) {
       logger.severe("Cannot talk in configured channel");
       throw new RuntimeException("Cannot talk in configured channel");
     }
-
-    activeChannel = channel;
-
-    var guild = activeChannel.getGuild();
-
+    logger.info("Loaded channel: " + channel.getName());
+    Guild guild = channel.getGuild();
     guild.upsertCommand("list", "list players").queue();
-
-    updateActivityPlayerAmount();
+    return channel;
   }
 
   public void shutdown() {
@@ -111,16 +114,17 @@ public class Discord extends ListenerAdapter {
     }
 
     var server = currentServer.get().getServerInfo().getName();
-
+    logger.info("Server: " + server);
     if (config.serverDisabled(server)) {
       return;
     }
+    TextChannel channel = getTextChannel(server);
 
     var username = event.getPlayer().getUsername();
     var content = event.getMessage();
 
     if (config.bot.ENABLE_MENTIONS) {
-      content = parseMentions(content);
+      content = parseMentions(content, channel);
     }
 
     if (!config.bot.ENABLE_EVERYONE_AND_HERE) {
@@ -149,9 +153,11 @@ public class Discord extends ListenerAdapter {
         .add("server", server)
         .add("message", content).toString();
 
-      sendMessage(message);
+      sendMessage(message, channel);
     }
   }
+
+
 
   @Subscribe
   public void onConnect(ServerConnectedEvent event) {
@@ -188,9 +194,8 @@ public class Discord extends ListenerAdapter {
         .add("username", username)
         .add("server", server);
     }
-
     if (message != null) {
-      sendMessage(message.toString());
+      sendMessage(message.toString(), server);
     }
 
     updateActivityPlayerAmount();
@@ -216,20 +221,32 @@ public class Discord extends ListenerAdapter {
         .add("username", username)
         .add("server", server);
 
-      sendMessage(message.toString());
+      sendMessage(message.toString(), server);
     }
 
     updateActivityPlayerAmount();
   }
-
-  public void sendMessage(@Nonnull String message) {
-    activeChannel.sendMessage(message).queue();
+  public void sendMessage(@Nonnull String message, String server) {
+    var channel = getTextChannel(server);
+    sendMessage(message, channel);
+  }
+  public void sendMessage(@Nonnull String message, TextChannel channel) {
+    channel.sendMessage(message).queue();
   }
 
-  private String parseMentions(String message) {
+  private TextChannel getTextChannel(String server) {
+    TextChannel channel = activeChannel;
+    ServerConfig serverConfig = config.getServerConfigByName(server);
+    if (serverConfig != null) {
+      channel = channels.get(serverConfig);
+    }
+    return channel;
+  }
+
+  private String parseMentions(String message, TextChannel channel) {
     var msg = message;
 
-    for (var member : activeChannel.getMembers()) {
+    for (var member : channel.getMembers()) {
       msg = Pattern.compile(Pattern.quote("@" + member.getUser().getName()), Pattern.CASE_INSENSITIVE).matcher(msg).replaceAll(member.getAsMention());
     }
 
@@ -246,18 +263,18 @@ public class Discord extends ListenerAdapter {
     webhookClient.sendMessage(webhookMessage).setAvatarUrl(avatar).setUsername(username).queue();
   }
 
-  public void sendPlayerDeath(String username, String displayname, String death) {
+  public void sendPlayerDeath(String username, String displayname, String death, String serverName) {
     if (config.discord.DEATH_MESSAGE_FORMAT.isPresent()) {
       var message = new StringTemplate(config.discord.DEATH_MESSAGE_FORMAT.get())
         .add("username", username)
         .add("displayname", displayname)
         .add("death_message", death).toString();
 
-      sendMessage(message);
+      sendMessage(message, serverName);
     }
   }
 
-  public void sendPlayerAdvancement(String username, String displayname, String title, String description) {
+  public void sendPlayerAdvancement(String username, String displayname, String title, String description, String serverName) {
     if (config.discord.ADVANCEMENT_MESSAGE_FORMAT.isPresent()) {
       var message = new StringTemplate(config.discord.ADVANCEMENT_MESSAGE_FORMAT.get())
         .add("username", username)
@@ -265,7 +282,7 @@ public class Discord extends ListenerAdapter {
         .add("advancement_title", title)
         .add("advancement_description", description).toString();
 
-      sendMessage(message);
+      sendMessage(message, serverName);
     }
   }
 

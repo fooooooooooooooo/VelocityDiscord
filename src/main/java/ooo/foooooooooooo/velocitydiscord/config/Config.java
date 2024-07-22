@@ -13,23 +13,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.logging.Logger;
 
-import com.google.inject.Inject;
-import com.velocitypowered.api.event.Subscribe;
-import com.velocitypowered.api.event.proxy.ProxyInitializeEvent;
-import com.velocitypowered.api.event.proxy.ProxyShutdownEvent;
-import com.velocitypowered.api.plugin.Dependency;
-import com.velocitypowered.api.plugin.Plugin;
-import com.velocitypowered.api.plugin.annotation.DataDirectory;
-import com.velocitypowered.api.proxy.ProxyServer;
-import com.velocitypowered.api.proxy.messages.MinecraftChannelIdentifier;
-import ooo.foooooooooooo.velocitydiscord.config.Config;
-import ooo.foooooooooooo.velocitydiscord.discord.Discord;
-import ooo.foooooooooooo.velocitydiscord.yep.YepListener;
-
-import javax.annotation.Nullable;
-import java.nio.file.Path;
-import java.util.logging.Logger;
-
 import static ooo.foooooooooooo.velocitydiscord.VelocityDiscord.PluginVersion;
 
 public class Config extends BaseConfig {
@@ -118,5 +101,12 @@ public class Config extends BaseConfig {
 
   public boolean serverDisabled(String name) {
     return EXCLUDED_SERVERS.contains(name);
+  }
+
+  public ServerConfig getServerConfigByName(String server) {
+    return bot.SERVERS.stream()
+            .filter(s -> s.SERVER_NAME.equalsIgnoreCase(server))
+            .findFirst()
+            .orElse(null);
   }
 }

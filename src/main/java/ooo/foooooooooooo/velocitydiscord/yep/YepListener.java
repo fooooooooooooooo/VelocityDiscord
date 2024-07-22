@@ -18,13 +18,15 @@ public class YepListener {
 
   @Subscribe
   public void onYepAdvancement(YepAdvancementEvent event) {
-    if (config.serverDisabled(event.getSource().getServer().getServerInfo().getName())) return;
-    VelocityDiscord.getDiscord().sendPlayerAdvancement(event.getUsername(), event.getDisplayName(), event.getTitle(), event.getDescription());
+    String serverName = event.getSource().getServer().getServerInfo().getName();
+    if (config.serverDisabled(serverName)) return;
+    VelocityDiscord.getDiscord().sendPlayerAdvancement(event.getUsername(), event.getDisplayName(), event.getTitle(), event.getDescription(), serverName);
   }
 
   @Subscribe
   public void onYepDeath(YepDeathEvent event) {
-    if (config.serverDisabled(event.getSource().getServer().getServerInfo().getName())) return;
-    VelocityDiscord.getDiscord().sendPlayerDeath(event.getUsername(), event.getDisplayName(), event.getMessage());
+    String serverName = event.getSource().getServer().getServerInfo().getName();
+    if (config.serverDisabled(serverName)) return;
+    VelocityDiscord.getDiscord().sendPlayerDeath(event.getUsername(), event.getDisplayName(), event.getMessage(), serverName);
   }
 }
