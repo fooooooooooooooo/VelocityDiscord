@@ -24,6 +24,12 @@ public class DiscordMessageConfig extends BaseConfig {
   public Optional<String> DISCONNECT_MESSAGE_FORMAT = Optional.of("**{username} disconnected**");
   public Optional<String> SERVER_SWITCH_MESSAGE_FORMAT = Optional.of("**{username} moved to {current} from {previous}**");
 
+  // channel topic
+  public Optional<String> TOPIC_FORMAT = Optional.of("Player count: {playerCount} | Players: {playerList} | Pings: {playerPingList} | "
+    + "Server count: {serverCount} | Servers: {serverList} | Hostname: {hostname} | Port: {port} | Query MOTD: {queryMotd} | "
+    + "Query map: {queryMap} | Query port: {queryPort} | Max players: {queryMaxPlayers} | "
+    + "Plugin count: {pluginCount} | Plugins: {pluginList} | Version: {version}");
+
   @SuppressWarnings("OptionalGetWithoutIsPresent")
   @Override
   protected void loadConfig(Config config) {
@@ -36,6 +42,8 @@ public class DiscordMessageConfig extends BaseConfig {
     LEAVE_MESSAGE_FORMAT = getOptional(config, "discord.chat.leave_message", LEAVE_MESSAGE_FORMAT.get());
     DISCONNECT_MESSAGE_FORMAT = getOptional(config, "discord.chat.disconnect_message", DISCONNECT_MESSAGE_FORMAT.get());
     SERVER_SWITCH_MESSAGE_FORMAT = getOptional(config, "discord.chat.server_switch_message", SERVER_SWITCH_MESSAGE_FORMAT.get());
+
+    TOPIC_FORMAT = getOptional(config, "discord.topic_format", TOPIC_FORMAT.get());
   }
 
 }

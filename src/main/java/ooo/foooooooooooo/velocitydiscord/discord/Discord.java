@@ -21,6 +21,7 @@ import net.dv8tion.jda.api.requests.GatewayIntent;
 import net.dv8tion.jda.api.utils.ChunkingFilter;
 import net.dv8tion.jda.api.utils.MemberCachePolicy;
 import net.dv8tion.jda.api.utils.messages.MessageCreateBuilder;
+import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import ooo.foooooooooooo.velocitydiscord.VelocityDiscord;
 import ooo.foooooooooooo.velocitydiscord.config.Config;
 import ooo.foooooooooooo.velocitydiscord.discord.commands.ICommand;
@@ -30,11 +31,14 @@ import ooo.foooooooooooo.velocitydiscord.util.StringTemplate;
 import javax.annotation.Nonnull;
 import java.text.MessageFormat;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 public class Discord extends ListenerAdapter {
   private static final Pattern EveryoneAndHerePattern = Pattern.compile("@(?<ping>everyone|here)");
@@ -316,12 +320,60 @@ public class Discord extends ListenerAdapter {
     }
   }
   
-  private void updateChannelTopic() {
-    if (activeChannel != null) {
-      int playerCount = server.getPlayerCount();
-      String newTopic = "Current player count: " + playerCount;
+  public void updateChannelTopic() {
+    if (config.discord.TOPIC_FORMAT.isPresent()) {
+        // Collect additional information
+        int playerCount = this.server.getPlayerCount();
+        List<String> playerList = this.server.getAllPlayers().stream()
+            .map(player -> player.getUsername())
+            .collect(Collectors.toList());
+        List<String> playerPingList = this.server.getAllPlayers().stream()
+            .map(player -> String.valueOf(player.getUsername()+ " (" + player.getPing() + "ms)"))
+            .collect(Collectors.toList());
+        int serverCount = this.server.getAllServers().size();
+        List<String> serverList = this.server.getAllServers().stream()
+            .map(registeredServer -> registeredServer.getServerInfo().getName())
+            .collect(Collectors.toList());
+        List<String> serverOnlineList = this.server.getAllServers().stream()
+            .map(registeredServer -> String.valueOf(registeredServer.getServerInfo().getName() + " (" + registeredServer.getPlayersConnected().size() + " players)"))
+            .collect(Collectors.toList());
+        String hostname = this.server.getBoundAddress().getHostName();
+        String port = String.valueOf(this.server.getBoundAddress().getPort());
+        String queryMotd = PlainTextComponentSerializer.plainText().serialize(this.server.getConfiguration().getMotd());
+        String queryMap = this.server.getConfiguration().getQueryMap();
+        int queryPort = this.server.getConfiguration().getQueryPort();
+        int queryMaxPlayers = this.server.getConfiguration().getShowMaxPlayers();
+        int pluginCount = this.server.getPluginManager().getPlugins().size();
+        List<String> pluginList = this.server.getPluginManager().getPlugins().stream()
+            .map(plugin -> plugin.getDescription().getName())
+            .flatMap(Optional::stream)
+            .collect(Collectors.toList());
+        String version = this.server.getVersion().getVersion();
+        String software = this.server.getVersion().getName();
 
-      activeChannel.getManager().setTopic(newTopic).queue();
+        // Build the message
+        var message = new StringTemplate(config.discord.TOPIC_FORMAT.get())
+            .add("playerCount", playerCount)
+            .add("playerList", String.join(", ", playerList))
+            .add("playerPingList", String.join(", ", playerPingList))
+            .add("serverCount", serverCount)
+            .add("serverList", String.join(", ", serverList))
+            .add("serverOnlineList", String.join(", ", serverOnlineList))
+            .add("hostname", hostname)
+            .add("port", port)
+            .add("queryMotd", queryMotd)
+            .add("queryMap", queryMap.toString())
+            .add("queryPort", queryPort)
+            .add("queryMaxPlayers", queryMaxPlayers)
+            .add("pluginCount", pluginCount)
+            .add("pluginList", String.join(", ", pluginList))
+            .add("version", version)
+            .add("software", software)
+            
+            .toString();
+
+        // Update the channel topic
+        activeChannel.getManager().setTopic(message).queue();
     }
   }
 }

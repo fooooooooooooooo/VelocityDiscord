@@ -34,6 +34,7 @@ use_webhook = false
 
 # OPTIONAL - Update the channel topic (disable with <10)
 update_channel_topic_interval = -1
+topic_format = "Player count: {playerCount} | Players: {playerList} | Pings: {playerPingList} | Server count: {serverCount} | Servers: {serverList} | Hostname: {hostname} | MOTD: {motd} | Query map: {queryMap} | Query port: {queryPort} | Max players: {queryMaxPlayers} | Plugin count: {pluginCount} | Plugins: {pluginList} | Version: {version}"
 
 [discord.webhook]
 # Full webhook URL to send more fancy Minecraft chat messages to
