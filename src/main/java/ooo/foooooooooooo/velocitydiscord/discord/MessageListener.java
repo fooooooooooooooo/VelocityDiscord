@@ -9,13 +9,13 @@ import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import ooo.foooooooooooo.velocitydiscord.config.Config;
+import ooo.foooooooooooo.velocitydiscord.config.ServerConfig;
 import ooo.foooooooooooo.velocitydiscord.util.StringTemplate;
 
 import javax.annotation.Nonnull;
 import java.awt.*;
-import java.util.ArrayList;
+import java.util.*;
 import java.util.List;
-import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
@@ -23,6 +23,7 @@ import java.util.regex.Pattern;
 public class MessageListener extends ListenerAdapter {
   private static final Pattern WEBHOOK_ID_REGEX = Pattern.compile("^https://discord\\.com/api/webhooks/(\\d+)/.+$");
   private final String webhookId;
+  private final Map<ServerConfig, String> webhookIds = new HashMap<>();
   private final ProxyServer server;
   private final Logger logger;
   private final Config config;
@@ -36,6 +37,13 @@ public class MessageListener extends ListenerAdapter {
     final var matcher = WEBHOOK_ID_REGEX.matcher(config.bot.WEBHOOK_URL);
     this.webhookId = matcher.find() ? matcher.group(1) : null;
     logger.log(Level.FINER, "Found webhook id: {0}", webhookId);
+    for (var serverConfig : config.bot.SERVERS) {
+      final var webhookUrl = serverConfig.WEBHOOK_URL;
+      final var serverName = serverConfig.SERVER_NAME;
+      final var serverWebhookId = WEBHOOK_ID_REGEX.matcher(webhookUrl).find() ? webhookUrl : null;
+      webhookIds.put(serverConfig, serverWebhookId);
+      logger.log(Level.FINER, "Found webhook id for server {0}: {1}", new Object[]{serverName, serverWebhookId});
+    }
   }
 
   @Override
@@ -60,7 +68,9 @@ public class MessageListener extends ListenerAdapter {
       return;
     }
 
-    if (author.getId().equals(jda.getSelfUser().getId()) || (Objects.nonNull(this.webhookId) && author.getId().equals(this.webhookId))) {
+    if (author.getId().equals(jda.getSelfUser().getId())
+            || (Objects.nonNull(this.webhookId) && author.getId().equals(this.webhookId))
+            || webhookIds.containsValue(author.getId())) {
       logger.finer("ignoring own message");
       return;
     }

@@ -44,6 +44,7 @@ public class Discord extends ListenerAdapter {
   private final IncomingWebhookClient webhookClient;
   private final Map<String, ICommand> commands = new HashMap<>();
   private final Map<ServerConfig, TextChannel> channels = new HashMap<>();
+  private final Map<ServerConfig, IncomingWebhookClient> webhooks = new HashMap<>();
   private TextChannel activeChannel;
   private int lastPlayerCount = -1;
 
@@ -71,6 +72,13 @@ public class Discord extends ListenerAdapter {
     }
 
     webhookClient = config.bot.USE_WEBHOOKS ? WebhookClient.createClient(jda, config.bot.WEBHOOK_URL) : null;
+    for (ServerConfig serverConfig : config.bot.SERVERS) {
+      if (serverConfig.WEBHOOK_URL.isEmpty()) {
+        continue;
+      }
+      var webhook = WebhookClient.createClient(jda, serverConfig.WEBHOOK_URL);
+      webhooks.put(serverConfig, webhook);
+    }
   }
 
   @Override
@@ -119,6 +127,7 @@ public class Discord extends ListenerAdapter {
       return;
     }
     TextChannel channel = getTextChannel(server);
+    IncomingWebhookClient webhook = webhooks.get(config.getServerConfigByName(server));
 
     var username = event.getPlayer().getUsername();
     var content = event.getMessage();
@@ -142,7 +151,7 @@ public class Discord extends ListenerAdapter {
         .add("username", username)
         .add("server", server).toString();
 
-      sendWebhookMessage(avatar, discordName, content);
+      sendWebhookMessage(avatar, discordName, content, webhook);
     } else {
       if (config.discord.MESSAGE_FORMAT.isEmpty()) {
         return;
@@ -257,10 +266,14 @@ public class Discord extends ListenerAdapter {
     return EveryoneAndHerePattern.matcher(message).replaceAll("@\u200B${ping}");
   }
 
-  public void sendWebhookMessage(String avatar, String username, String content) {
+  public void sendWebhookMessage(String avatar, String username, String content, IncomingWebhookClient webhook) {
+    IncomingWebhookClient client = webhookClient;
+    if (webhook != null) {
+      client = webhook;
+    }
     var webhookMessage = new MessageCreateBuilder().setContent(content).build();
 
-    webhookClient.sendMessage(webhookMessage).setAvatarUrl(avatar).setUsername(username).queue();
+    client.sendMessage(webhookMessage).setAvatarUrl(avatar).setUsername(username).queue();
   }
 
   public void sendPlayerDeath(String username, String displayname, String death, String serverName) {
