@@ -122,7 +122,6 @@ public class Discord extends ListenerAdapter {
     }
 
     var server = currentServer.get().getServerInfo().getName();
-    logger.info("Server: " + server);
     if (config.serverDisabled(server)) {
       return;
     }
