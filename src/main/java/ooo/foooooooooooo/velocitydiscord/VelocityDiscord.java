@@ -53,7 +53,7 @@ public class VelocityDiscord {
 
     logger.info("Loading " + PluginName + " v" + PluginVersion);
 
-    this.config = new Config(dataDirectory);
+    this.config = new Config(dataDirectory, logger);
     pluginDisabled = config.isFirstRun();
 
     if (pluginDisabled) {

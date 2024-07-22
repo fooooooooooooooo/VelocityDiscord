@@ -11,6 +11,24 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.logging.Logger;
+
+import com.google.inject.Inject;
+import com.velocitypowered.api.event.Subscribe;
+import com.velocitypowered.api.event.proxy.ProxyInitializeEvent;
+import com.velocitypowered.api.event.proxy.ProxyShutdownEvent;
+import com.velocitypowered.api.plugin.Dependency;
+import com.velocitypowered.api.plugin.Plugin;
+import com.velocitypowered.api.plugin.annotation.DataDirectory;
+import com.velocitypowered.api.proxy.ProxyServer;
+import com.velocitypowered.api.proxy.messages.MinecraftChannelIdentifier;
+import ooo.foooooooooooo.velocitydiscord.config.Config;
+import ooo.foooooooooooo.velocitydiscord.discord.Discord;
+import ooo.foooooooooooo.velocitydiscord.yep.YepListener;
+
+import javax.annotation.Nullable;
+import java.nio.file.Path;
+import java.util.logging.Logger;
 
 import static ooo.foooooooooooo.velocitydiscord.VelocityDiscord.PluginVersion;
 
@@ -33,14 +51,14 @@ public class Config extends BaseConfig {
   public boolean EXCLUDED_SERVERS_RECEIVE_MESSAGES = false;
 
   @Inject
-  public Config(@DataDirectory Path dataDir) {
+  public Config(@DataDirectory Path dataDir, Logger logger) {
     this.dataDir = dataDir;
 
     var config = loadFile();
 
     loadConfig(config);
 
-    bot = new BotConfig(config);
+    bot = new BotConfig(config, logger);
     discord = new DiscordMessageConfig(config);
     minecraft = new MinecraftMessageConfig(config);
 

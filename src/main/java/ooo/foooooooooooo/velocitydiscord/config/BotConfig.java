@@ -2,8 +2,14 @@ package ooo.foooooooooooo.velocitydiscord.config;
 
 import com.electronwill.nightconfig.core.Config;
 
+import java.util.*;
+import java.util.logging.Logger;
+
 public class BotConfig extends BaseConfig {
-  public BotConfig(Config config) {
+
+  private final Logger logger;
+  public BotConfig(Config config, Logger logger) {
+    this.logger = logger;
     loadConfig(config);
   }
 
@@ -31,6 +37,7 @@ public class BotConfig extends BaseConfig {
   public Boolean SHOW_ACTIVITY = true;
   public String ACTIVITY_FORMAT = "with {amount} players online";
 
+  public List<ServerConfig> SERVERS = new ArrayList<>();
 
   @Override
   protected void loadConfig(com.electronwill.nightconfig.core.Config config) {
@@ -51,6 +58,17 @@ public class BotConfig extends BaseConfig {
     // bot activity
     SHOW_ACTIVITY = get(config, "discord.show_activity", SHOW_ACTIVITY);
     ACTIVITY_FORMAT = get(config, "discord.activity_text", ACTIVITY_FORMAT);
+
+    String serverNames = "";
+    serverNames = get(config, "discord.server_names", serverNames);
+    logger.info("Loaded server names: " + serverNames);
+    List<String> serverNamesList = Arrays.stream(serverNames.split(","))
+            .map(String::strip)
+            .toList();
+    for (String serverName : serverNamesList) {
+      logger.info("Loading server config for " + serverName);
+        SERVERS.add(new ServerConfig(config, serverName, logger));
+    }
   }
 
   public boolean isDefaultValues() {
