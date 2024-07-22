@@ -6,6 +6,8 @@ import com.velocitypowered.api.event.connection.DisconnectEvent;
 import com.velocitypowered.api.event.player.PlayerChatEvent;
 import com.velocitypowered.api.event.player.ServerConnectedEvent;
 import com.velocitypowered.api.proxy.ProxyServer;
+import com.velocitypowered.api.proxy.server.RegisteredServer;
+import com.velocitypowered.api.proxy.server.ServerPing;
 import com.velocitypowered.api.scheduler.ScheduledTask;
 import com.velocitypowered.api.scheduler.TaskStatus;
 import net.dv8tion.jda.api.JDA;
@@ -29,12 +31,14 @@ import ooo.foooooooooooo.velocitydiscord.discord.commands.ListCommand;
 import ooo.foooooooooooo.velocitydiscord.util.StringTemplate;
 
 import javax.annotation.Nonnull;
+import java.lang.management.ManagementFactory;
 import java.text.MessageFormat;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
@@ -328,14 +332,11 @@ public class Discord extends ListenerAdapter {
             .map(player -> player.getUsername())
             .collect(Collectors.toList());
         List<String> playerPingList = this.server.getAllPlayers().stream()
-            .map(player -> String.valueOf(player.getUsername()+ " (" + player.getPing() + "ms)"))
+            .map(player -> String.valueOf(player.getUsername() + " (" + player.getPing() + "ms)"))
             .collect(Collectors.toList());
         int serverCount = this.server.getAllServers().size();
         List<String> serverList = this.server.getAllServers().stream()
             .map(registeredServer -> registeredServer.getServerInfo().getName())
-            .collect(Collectors.toList());
-        List<String> serverOnlineList = this.server.getAllServers().stream()
-            .map(registeredServer -> String.valueOf(registeredServer.getServerInfo().getName() + " (" + registeredServer.getPlayersConnected().size() + " players)"))
             .collect(Collectors.toList());
         String hostname = this.server.getBoundAddress().getHostName();
         String port = String.valueOf(this.server.getBoundAddress().getPort());
@@ -351,30 +352,66 @@ public class Discord extends ListenerAdapter {
         String version = this.server.getVersion().getVersion();
         String software = this.server.getVersion().getName();
 
+        // Calculate average ping
+        double averagePing = this.server.getAllPlayers().stream()
+            .mapToLong(player -> player.getPing())
+            .average()
+            .orElse(0.0);
+
+        // Get server uptime
+        long uptimeMillis = ManagementFactory.getRuntimeMXBean().getUptime();
+        long uptimeHours = TimeUnit.MILLISECONDS.toHours(uptimeMillis);
+        long uptimeMinutes = TimeUnit.MILLISECONDS.toMinutes(uptimeMillis) % 60;
+
+        // Ping each server and get status
+        Map<String, String> serverStatuses = new HashMap<>();
+        for (RegisteredServer registeredServer : server.getAllServers()) {
+            try {
+                CompletableFuture<ServerPing> ping = registeredServer.ping();
+                ping.thenAccept(serverPing -> {
+                    ServerPing.Players players = serverPing.getPlayers().get();
+                    String serverStatus = registeredServer.getServerInfo().getName() + " - " +
+                    players.getOnline() + "/" + players.getMax() + " players," +
+                    " Version: " + serverPing.getVersion().getName() + " (" + serverPing.getVersion().getProtocol() + ") | " +  
+                    PlainTextComponentSerializer.plainText().serialize(serverPing.getDescriptionComponent());
+                    serverStatuses.put(registeredServer.getServerInfo().getName(), serverStatus);
+                }).get(5, TimeUnit.SECONDS);
+            } catch (Exception e) {
+                serverStatuses.put(registeredServer.getServerInfo().getName(), registeredServer.getServerInfo().getName() + " - Offline");
+            }
+        }
+
         // Build the message
-        var message = new StringTemplate(config.discord.TOPIC_FORMAT.get())
+        StringTemplate template = new StringTemplate(config.discord.TOPIC_FORMAT.get())
             .add("playerCount", playerCount)
             .add("playerList", String.join(", ", playerList))
             .add("playerPingList", String.join(", ", playerPingList))
             .add("serverCount", serverCount)
             .add("serverList", String.join(", ", serverList))
-            .add("serverOnlineList", String.join(", ", serverOnlineList))
             .add("hostname", hostname)
             .add("port", port)
             .add("queryMotd", queryMotd)
-            .add("queryMap", queryMap.toString())
+            .add("queryMap", queryMap)
             .add("queryPort", queryPort)
             .add("queryMaxPlayers", queryMaxPlayers)
             .add("pluginCount", pluginCount)
             .add("pluginList", String.join(", ", pluginList))
             .add("version", version)
             .add("software", software)
-            
-            .toString();
+            .add("averagePing", String.format("%.2f ms", averagePing))
+            .add("uptime", String.format("%dh %dm", uptimeHours, uptimeMinutes));
+
+        // Add server-specific details with server[SERVERNAME] placeholders
+        for (Map.Entry<String, String> entry : serverStatuses.entrySet()) {
+            template.add("server[" + entry.getKey() + "]", entry.getValue());
+        }
+
+        String message = template.toString();
 
         if (message.length() > 1024) {
-          message = message.substring(0, 1000) + "...";
+            message = message.substring(0, 1000) + "...";
         }
+
         // Update the channel topic
         activeChannel.getManager().setTopic(message).queue();
     }
