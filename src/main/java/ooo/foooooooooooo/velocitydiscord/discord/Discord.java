@@ -372,6 +372,9 @@ public class Discord extends ListenerAdapter {
             
             .toString();
 
+        if (message.length() > 1024) {
+          message = message.substring(0, 1000) + "...";
+        }
         // Update the channel topic
         activeChannel.getManager().setTopic(message).queue();
     }
