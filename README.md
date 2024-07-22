@@ -69,6 +69,22 @@ enable_everyone_and_here = false
 # Requires a webhook URL to be set below
 use_webhook = false
 
+# OPTIONAL - Diferenciate messages from different servers to different channels and webhooks
+# Make sure the names in server_names match the ones in your velocity.toml and before channel and webhook_url
+# Servers that are not listed here will use the default channel and webhook_url
+# If you use custom channels than the default one is required to be set
+# If you use only custom channels than webhook_url is not required
+# If you use webhooks than the default webhook_url is required to be set
+# channelIds and webhookUrls can be used multiple times
+server_names = "server1, server2, server3"
+
+server1.channel = "000000000000000001"
+server1.webhook_url = "https://discord.com/api/webhooks/x/y"
+server2.channel = "000000000000000002"
+server2.webhook_url = "https://discord.com/api/webhooks/x/y"
+server3.channel = "000000000000000003"
+server3.webhook_url = "https://discord.com/api/webhooks/x/y"
+
 [discord.webhook]
 # Full webhook URL to send more fancy Minecraft chat messages to
 webhook_url = ""
