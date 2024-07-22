@@ -7,7 +7,6 @@ import com.velocitypowered.api.event.player.PlayerChatEvent;
 import com.velocitypowered.api.event.player.ServerConnectedEvent;
 import com.velocitypowered.api.proxy.ProxyServer;
 import com.velocitypowered.api.scheduler.ScheduledTask;
-import com.velocitypowered.api.scheduler.Scheduler;
 import com.velocitypowered.api.scheduler.TaskStatus;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
@@ -22,6 +21,7 @@ import net.dv8tion.jda.api.requests.GatewayIntent;
 import net.dv8tion.jda.api.utils.ChunkingFilter;
 import net.dv8tion.jda.api.utils.MemberCachePolicy;
 import net.dv8tion.jda.api.utils.messages.MessageCreateBuilder;
+import ooo.foooooooooooo.velocitydiscord.VelocityDiscord;
 import ooo.foooooooooooo.velocitydiscord.config.Config;
 import ooo.foooooooooooo.velocitydiscord.discord.commands.ICommand;
 import ooo.foooooooooooo.velocitydiscord.discord.commands.ListCommand;
@@ -32,6 +32,7 @@ import java.text.MessageFormat;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
@@ -41,19 +42,20 @@ public class Discord extends ListenerAdapter {
   private final ProxyServer server;
   private final Logger logger;
   private final Config config;
+  private final VelocityDiscord plugin;
   private final JDA jda;
   private final IncomingWebhookClient webhookClient;
   private final Map<String, ICommand> commands = new HashMap<>();
-  private final Scheduler scheduler;
-  
+
   private TextChannel activeChannel;
   private int lastPlayerCount = -1;
   private ScheduledTask updateTask;
 
-  public Discord(ProxyServer server, Logger logger, Config config) {
+  public Discord(ProxyServer server, Logger logger, Config config, VelocityDiscord plugin) {
     this.server = server;
     this.logger = logger;
     this.config = config;
+    this.plugin = plugin;
 
     commands.put("list", new ListCommand(server, logger, config));
 
@@ -102,19 +104,19 @@ public class Discord extends ListenerAdapter {
 
     updateActivityPlayerAmount();
 
-    this.scheduler = server.getScheduler();
     
-    if (config.bot.UPDATE_CHANNEL_TOPIC_INTERVAL > 10) {
+    if (config.bot.UPDATE_CHANNEL_TOPIC_INTERVAL >= 10) {
           // Schedule the task to update the channel topic at the specified interval
-          this.updateTask = scheduler.buildTask(this, this::updateChannelTopic)
+          this.updateTask = server.getScheduler().buildTask(plugin, this::updateChannelTopic)
               .repeat(config.bot.UPDATE_CHANNEL_TOPIC_INTERVAL, TimeUnit.MINUTES)
               .schedule();
+          logger.info("Scheduled task to update channel topic every " + config.bot.UPDATE_CHANNEL_TOPIC_INTERVAL + " minutes");
         }
   }
 
   public void shutdown() {
     jda.shutdown();
-    if (updateTask != null && !updateTask.isCancelled()) {
+    if (updateTask != null && !updateTask.status().equals(TaskStatus.CANCELLED)) {
       updateTask.cancel();
     }
   }
@@ -319,7 +321,7 @@ public class Discord extends ListenerAdapter {
       int playerCount = server.getPlayerCount();
       String newTopic = "Current player count: " + playerCount;
 
-      activeChannel.getManager().setTopic(newTopic).queue()
+      activeChannel.getManager().setTopic(newTopic).queue();
     }
   }
 }
