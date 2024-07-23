@@ -36,7 +36,6 @@ public class BotConfig extends BaseConfig {
   // bot activity
   public Boolean SHOW_ACTIVITY = true;
   public String ACTIVITY_FORMAT = "with {amount} players online";
-
   public List<ServerConfig> SERVERS = new ArrayList<>();
 
   @Override
@@ -61,13 +60,16 @@ public class BotConfig extends BaseConfig {
 
     String serverNames = "";
     serverNames = get(config, "discord.server_names", serverNames);
-    logger.info("Loaded server names: " + serverNames);
+    //logger.info("Loaded server names: " + serverNames);
     List<String> serverNamesList = Arrays.stream(serverNames.split(","))
             .map(String::strip)
             .toList();
+    if (serverNamesList.size() == 3 && serverNamesList.get(0).equals("server1") && serverNamesList.get(1).equals("server2") && serverNamesList.get(2).equals("server3")) {
+        serverNamesList = new ArrayList<>();
+    }
     for (String serverName : serverNamesList) {
-      logger.info("Loading server config for " + serverName);
-        SERVERS.add(new ServerConfig(config, serverName, logger));
+      //logger.info("Loading server config for " + serverName);
+      SERVERS.add(new ServerConfig(config, serverName, logger));
     }
   }
 

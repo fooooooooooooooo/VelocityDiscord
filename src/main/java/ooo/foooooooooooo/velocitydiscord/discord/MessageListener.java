@@ -58,7 +58,8 @@ public class MessageListener extends ListenerAdapter {
     }
 
     var channel = event.getChannel().asTextChannel();
-    if (!channel.getId().equals(config.bot.CHANNEL_ID)) {
+    if (!channel.getId().equals(config.bot.CHANNEL_ID) && config.bot.SERVERS.stream().noneMatch(serverConfig -> serverConfig.CHANNEL_ID.equals(channel.getId()))) {
+      logger.info("ignoring message from channel " + channel.getId() + " not in config");
       return;
     }
 
@@ -132,10 +133,43 @@ public class MessageListener extends ListenerAdapter {
     message_chunk.add("message", content);
     message_chunk.add("attachments", String.join(" ", attachmentChunks));
 
-    sendMessage(MiniMessage.miniMessage().deserialize(message_chunk.toString()).asComponent());
+    var messageToSend = MiniMessage.miniMessage().deserialize(message_chunk.toString()).asComponent();
+
+    if (config.bot.SERVERS.stream().anyMatch(serverConfig -> serverConfig.CHANNEL_ID.equals(channel.getId()))) {
+      //logger.info("Sending message to specific server channel");
+      sendSpecificMessage(messageToSend, channel.getId());
+    } else if (config.bot.CHANNEL_ID.equals(channel.getId())) {
+      //logger.info("Sending message to all servers");
+      sendGlobalMessage(messageToSend);
+    }
   }
 
-  private void sendMessage(Component msg) {
+  private void sendSpecificMessage(Component messageToSend, String id) {
+    boolean found = false;
+    //logger.info("Looking for server with channel id " + id);
+    for (var server : server.getAllServers()) {
+      var serverName = server.getServerInfo().getName();
+      if (!config.serverDisabled(serverName)) {
+        //logger.info("Checking server " + serverName);
+        for (var serverConfig : config.bot.SERVERS) {
+          //logger.info("Checking server config " + serverConfig.SERVER_NAME + " with channel id " + serverConfig.CHANNEL_ID);
+          if (serverName.equalsIgnoreCase(serverConfig.SERVER_NAME) && serverConfig.CHANNEL_ID.equals(id)) {
+            server.sendMessage(messageToSend);
+            found = true;
+            break;
+          }
+        }
+        if (found) {
+          break;
+        }
+      }
+    }
+    if (!found) {
+      logger.warning("Could not find server with channel id " + id);
+    }
+  }
+
+  private void sendGlobalMessage(Component msg) {
     for (var server : server.getAllServers()) {
       if (!config.EXCLUDED_SERVERS_RECEIVE_MESSAGES && config.serverDisabled(server.getServerInfo().getName())) {
         continue;
