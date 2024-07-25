@@ -35,41 +35,58 @@ public class Discord extends ListenerAdapter {
 
   private final Logger logger;
   private final Config config;
-  private final JDA jda;
-  private final IncomingWebhookClient webhookClient;
+  private JDA jda;
+  private final ProxyServer server;
+
+  private String lastToken;
+  private IncomingWebhookClient webhookClient;
   private final Map<String, ICommand> commands = new HashMap<>();
 
   private TextChannel activeChannel;
   private int lastPlayerCount = -1;
 
+  // todo: buffer messages until ready
   public boolean ready = false;
 
   // todo: find a way to abstract away ProxyServer to remove all velocity dependencies
   public Discord(ProxyServer server, Logger logger, Config config) {
     this.logger = logger;
     this.config = config;
+    this.server = server;
 
+    configReloaded();
+  }
+
+  public void configReloaded() {
     commands.put("list", new ListCommand(server, config));
 
     var messageListener = new MessageListener(server, logger, config);
 
-    var builder = JDABuilder.createDefault(config.bot.DISCORD_TOKEN)
-      // this seems to download all users at bot startup and keep internal cache updated
-      // without it, sometimes mentions miss when they shouldn't
-      .setChunkingFilter(ChunkingFilter.ALL) //
-      .enableIntents(GatewayIntent.GUILD_MEMBERS, GatewayIntent.GUILD_MESSAGES, GatewayIntent.MESSAGE_CONTENT)
-      // mentions always miss without this
-      .setMemberCachePolicy(MemberCachePolicy.ALL) //
-      .addEventListeners(messageListener, this);
+    if (!config.bot.DISCORD_TOKEN.equals(lastToken)) {
+      if (jda != null) {
+        shutdown();
+      }
 
-    try {
-      jda = builder.build();
-    } catch (Exception e) {
-      this.logger.severe("Failed to login to discord: " + e);
-      throw new RuntimeException("Failed to login to discord: ", e);
+      var builder = JDABuilder.createDefault(config.bot.DISCORD_TOKEN)
+        // this seems to download all users at bot startup and keep internal cache updated
+        // without it, sometimes mentions miss when they shouldn't
+        .setChunkingFilter(ChunkingFilter.ALL) //
+        .enableIntents(GatewayIntent.GUILD_MEMBERS, GatewayIntent.GUILD_MESSAGES, GatewayIntent.MESSAGE_CONTENT)
+        // mentions always miss without this
+        .setMemberCachePolicy(MemberCachePolicy.ALL) //
+        .addEventListeners(messageListener, this);
+
+      try {
+        jda = builder.build();
+        this.lastToken = config.bot.DISCORD_TOKEN;
+      } catch (Exception e) {
+        this.logger.severe("Failed to login to discord: " + e);
+      }
     }
 
-    webhookClient = config.discord.isWebhookEnabled() ? WebhookClient.createClient(jda, config.bot.WEBHOOK_URL) : null;
+    if (jda != null && !config.bot.WEBHOOK_URL.isEmpty()) {
+      webhookClient = config.discord.isWebhookEnabled() ? WebhookClient.createClient(jda, config.bot.WEBHOOK_URL) : null;
+    }
   }
 
   public void shutdown() {
@@ -86,14 +103,14 @@ public class Discord extends ListenerAdapter {
 
     if (channel == null) {
       logger.severe("Could not load channel with id: " + config.bot.CHANNEL_ID);
-      throw new RuntimeException("Could not load channel id: " + config.bot.CHANNEL_ID);
+      return;
     }
 
     logger.info("Loaded channel: " + channel.getName());
 
     if (!channel.canTalk()) {
       logger.severe("Cannot talk in configured channel");
-      throw new RuntimeException("Cannot talk in configured channel");
+      return;
     }
 
     activeChannel = channel;
@@ -340,6 +357,11 @@ public class Discord extends ListenerAdapter {
   }
 
   private void sendWebhookMessage(String uuid, String username, String server, String content) {
+    if (webhookClient == null) {
+      logger.fine("Webhook client was not created due to configuration error, skipping sending message");
+      return;
+    }
+
     var avatar = new StringTemplate(config.bot.WEBHOOK_AVATAR_URL)
       .add("username", username)
       .add("uuid", uuid).toString();

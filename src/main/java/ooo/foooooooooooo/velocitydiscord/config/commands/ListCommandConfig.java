@@ -20,7 +20,7 @@ public class ListCommandConfig extends BaseConfig {
   public String CODEBLOCK_LANG = "asciidoc";
 
   @Override
-  protected void loadConfig(Config config) {
+  public void loadConfig(Config config) {
     DISCORD_LIST_ENABLED = get(config, "discord.commands.list.enabled", DISCORD_LIST_ENABLED);
     EPHEMERAL = get(config, "discord.commands.list.ephemeral", EPHEMERAL);
     SERVER_FORMAT = get(config, "discord.commands.list.server_format", SERVER_FORMAT);

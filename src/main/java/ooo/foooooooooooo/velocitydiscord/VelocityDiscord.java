@@ -9,6 +9,8 @@ import com.velocitypowered.api.plugin.Plugin;
 import com.velocitypowered.api.plugin.annotation.DataDirectory;
 import com.velocitypowered.api.proxy.ProxyServer;
 import com.velocitypowered.api.proxy.messages.MinecraftChannelIdentifier;
+import com.velocitypowered.api.scheduler.ScheduledTask;
+import ooo.foooooooooooo.velocitydiscord.commands.ReloadCommand;
 import ooo.foooooooooooo.velocitydiscord.config.Config;
 import ooo.foooooooooooo.velocitydiscord.discord.Discord;
 import ooo.foooooooooooo.velocitydiscord.yep.YepListener;
@@ -40,7 +42,9 @@ public class VelocityDiscord {
   private static VelocityDiscord instance;
 
   private final ProxyServer server;
-  private final Config config;
+  private final Logger logger;
+  private final Path dataDirectory;
+  private Config config = null;
 
   @Nullable
   private VelocityListener listener = null;
@@ -50,21 +54,22 @@ public class VelocityDiscord {
 
   @Nullable
   private YepListener yep = null;
+  private ScheduledTask pingScheduler = null;
+
 
   @Inject
   public VelocityDiscord(ProxyServer server, Logger logger, @DataDirectory Path dataDirectory) {
     this.server = server;
+    this.logger = logger;
+    this.dataDirectory = dataDirectory;
 
     logger.info("Loading " + PluginName + " v" + PluginVersion);
 
-    this.config = new Config(dataDirectory);
-
-    pluginDisabled = this.config.isFirstRun();
+    reloadConfig();
 
     instance = this;
 
-    if (pluginDisabled) {
-      logger.severe("This is the first time you are running this plugin. Please configure it in the config.yml file. Disabling plugin.");
+    if (pluginDisabled || this.config == null) {
       return;
     }
 
@@ -85,6 +90,10 @@ public class VelocityDiscord {
     return instance.listener;
   }
 
+  public static VelocityDiscord getInstance() {
+    return instance;
+  }
+
   @Subscribe
   public void onProxyInitialization(ProxyInitializeEvent event) {
     if (listener != null) {
@@ -97,14 +106,16 @@ public class VelocityDiscord {
 
     this.server.getChannelRegistrar().register(YepIdentifier);
 
-    if (this.config.PING_INTERVAL > 0) {
-      server.getScheduler()
-        .buildTask(this, () -> {
-          if (this.listener != null) this.listener.checkServerHealth();
-        })
-        .repeat(this.config.PING_INTERVAL, TimeUnit.SECONDS)
-        .schedule();
+    if (this.config != null) {
+      tryStartPingScheduler();
     }
+
+    var commandManager = server.getCommandManager();
+
+    var reload = ReloadCommand.create();
+    var reloadMeta = commandManager.metaBuilder(reload).plugin(this).build();
+
+    commandManager.register(reloadMeta, reload);
   }
 
   @Subscribe
@@ -116,5 +127,54 @@ public class VelocityDiscord {
 
   private void register(Object x) {
     this.server.getEventManager().register(this, x);
+  }
+
+  public String reloadConfig() {
+    String error = null;
+
+    if (this.config == null) {
+      this.config = new Config(this.dataDirectory, this.logger);
+    } else {
+      this.logger.info("Reloading config");
+
+      error = this.config.reloadConfig(this.dataDirectory);
+
+      // disable server ping scheduler if it was disabled
+      if (this.config.PING_INTERVAL == 0 && this.pingScheduler != null) {
+        this.pingScheduler.cancel();
+        this.pingScheduler = null;
+      }
+
+      tryStartPingScheduler();
+
+      if (this.discord != null) {
+        this.discord.configReloaded();
+      }
+
+      if (error != null) {
+        this.logger.severe("Error reloading config: " + error);
+      }
+
+      this.logger.info("Config reloaded");
+    }
+
+    pluginDisabled = this.config.isFirstRun();
+
+    if (pluginDisabled) {
+      this.logger.severe("This is the first time you are running this plugin. Please configure it in the config.toml file. Disabling plugin.");
+    }
+
+    return error;
+  }
+
+  private void tryStartPingScheduler() {
+    if (this.config.PING_INTERVAL > 0 || this.pingScheduler != null) {
+      this.pingScheduler = server.getScheduler()
+        .buildTask(this, () -> {
+          if (this.listener != null) this.listener.checkServerHealth();
+        })
+        .repeat(this.config.PING_INTERVAL, TimeUnit.SECONDS)
+        .schedule();
+    }
   }
 }
