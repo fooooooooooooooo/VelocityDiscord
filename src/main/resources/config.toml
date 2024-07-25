@@ -32,6 +32,33 @@ enable_everyone_and_here = false
 # Requires a webhook URL to be set below
 use_webhook = false
 
+# OPTIONAL - Configuration for updating the Discord channel topic
+# Set the interval (in minutes) for updating the channel topic.
+# Use a value less than 10 to disable this feature.
+update_channel_topic_interval = -1
+
+# Template for the channel topic.
+# Available placeholders:
+# {playerCount} - Total number of players online
+# {playerList} - List of player usernames
+# {playerPingList} - List of player pings with latency
+# {serverCount} - Number of servers
+# {serverList} - List of server names
+# {hostname} - Server hostname
+# {port} - Server port
+# {queryMotd} - Message of the Day (MOTD)
+# {queryMap} - Custom key-value pairs for the server
+# {queryPort} - Query port
+# {queryMaxPlayers} - Maximum number of players
+# {pluginCount} - Number of plugins
+# {pluginList} - List of plugin names
+# {version} - Server version
+# {software} - Software name
+# {averagePing} - Average ping of all players
+# {uptime} - Server uptime in hours and minutes
+# {server[SERVERNAME]} - Dynamic placeholder for each server's name and status (e.g., {server[MyServer]}, {server[AnotherServer]}, {server[Lobby]}, etc.)
+topic_format = "Player count: {playerCount} | Players: {playerList} | Pings: {playerPingList} | Server count: {serverCount} | Servers: {serverList} | {server[lobby]} | {server[survival]} | Hostname: {hostname} | Port: {port} | MOTD: {queryMotd} | Query map: {queryMap} | Query port: {queryPort} | Max players: {queryMaxPlayers} | Plugin count: {pluginCount} | Plugins: {pluginList} | Version: {version} | Software: {software} | Average ping: {averagePing} | Uptime: {uptime}"
+
 [discord.webhook]
 # Full webhook URL to send more fancy Minecraft chat messages to
 webhook_url = ""

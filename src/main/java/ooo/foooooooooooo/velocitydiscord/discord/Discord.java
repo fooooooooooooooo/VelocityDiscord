@@ -6,6 +6,10 @@ import com.velocitypowered.api.event.connection.DisconnectEvent;
 import com.velocitypowered.api.event.player.PlayerChatEvent;
 import com.velocitypowered.api.event.player.ServerConnectedEvent;
 import com.velocitypowered.api.proxy.ProxyServer;
+import com.velocitypowered.api.proxy.server.RegisteredServer;
+import com.velocitypowered.api.proxy.server.ServerPing;
+import com.velocitypowered.api.scheduler.ScheduledTask;
+import com.velocitypowered.api.scheduler.TaskStatus;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Activity;
@@ -19,18 +23,26 @@ import net.dv8tion.jda.api.requests.GatewayIntent;
 import net.dv8tion.jda.api.utils.ChunkingFilter;
 import net.dv8tion.jda.api.utils.MemberCachePolicy;
 import net.dv8tion.jda.api.utils.messages.MessageCreateBuilder;
+import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
+import ooo.foooooooooooo.velocitydiscord.VelocityDiscord;
 import ooo.foooooooooooo.velocitydiscord.config.Config;
 import ooo.foooooooooooo.velocitydiscord.discord.commands.ICommand;
 import ooo.foooooooooooo.velocitydiscord.discord.commands.ListCommand;
 import ooo.foooooooooooo.velocitydiscord.util.StringTemplate;
 
 import javax.annotation.Nonnull;
+import java.lang.management.ManagementFactory;
 import java.text.MessageFormat;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 public class Discord extends ListenerAdapter {
   private static final Pattern EveryoneAndHerePattern = Pattern.compile("@(?<ping>everyone|here)");
@@ -38,17 +50,20 @@ public class Discord extends ListenerAdapter {
   private final ProxyServer server;
   private final Logger logger;
   private final Config config;
+  private final VelocityDiscord plugin;
   private final JDA jda;
   private final IncomingWebhookClient webhookClient;
   private final Map<String, ICommand> commands = new HashMap<>();
 
   private TextChannel activeChannel;
   private int lastPlayerCount = -1;
+  private ScheduledTask updateTask;
 
-  public Discord(ProxyServer server, Logger logger, Config config) {
+  public Discord(ProxyServer server, Logger logger, Config config, VelocityDiscord plugin) {
     this.server = server;
     this.logger = logger;
     this.config = config;
+    this.plugin = plugin;
 
     commands.put("list", new ListCommand(server, logger, config));
 
@@ -96,10 +111,22 @@ public class Discord extends ListenerAdapter {
     guild.upsertCommand("list", "list players").queue();
 
     updateActivityPlayerAmount();
+
+    
+    if (config.bot.UPDATE_CHANNEL_TOPIC_INTERVAL >= 10) {
+          // Schedule the task to update the channel topic at the specified interval
+          this.updateTask = server.getScheduler().buildTask(plugin, this::updateChannelTopic)
+              .repeat(config.bot.UPDATE_CHANNEL_TOPIC_INTERVAL, TimeUnit.MINUTES)
+              .schedule();
+          logger.info("Scheduled task to update channel topic every " + config.bot.UPDATE_CHANNEL_TOPIC_INTERVAL + " minutes");
+        }
   }
 
   public void shutdown() {
     jda.shutdown();
+    if (updateTask != null && !updateTask.status().equals(TaskStatus.CANCELLED)) {
+      updateTask.cancel();
+    }
   }
 
   @Subscribe(order = PostOrder.FIRST)
@@ -294,6 +321,99 @@ public class Discord extends ListenerAdapter {
       jda.getPresence().setActivity(Activity.playing(message));
 
       this.lastPlayerCount = playerCount;
+    }
+  }
+  
+  public void updateChannelTopic() {
+    if (config.discord.TOPIC_FORMAT.isPresent()) {
+        // Collect additional information
+        int playerCount = this.server.getPlayerCount();
+        List<String> playerList = this.server.getAllPlayers().stream()
+            .map(player -> player.getUsername())
+            .collect(Collectors.toList());
+        List<String> playerPingList = this.server.getAllPlayers().stream()
+            .map(player -> String.valueOf(player.getUsername() + " (" + player.getPing() + "ms)"))
+            .collect(Collectors.toList());
+        int serverCount = this.server.getAllServers().size();
+        List<String> serverList = this.server.getAllServers().stream()
+            .map(registeredServer -> registeredServer.getServerInfo().getName())
+            .collect(Collectors.toList());
+        String hostname = this.server.getBoundAddress().getHostName();
+        String port = String.valueOf(this.server.getBoundAddress().getPort());
+        String queryMotd = PlainTextComponentSerializer.plainText().serialize(this.server.getConfiguration().getMotd());
+        String queryMap = this.server.getConfiguration().getQueryMap();
+        int queryPort = this.server.getConfiguration().getQueryPort();
+        int queryMaxPlayers = this.server.getConfiguration().getShowMaxPlayers();
+        int pluginCount = this.server.getPluginManager().getPlugins().size();
+        List<String> pluginList = this.server.getPluginManager().getPlugins().stream()
+            .map(plugin -> plugin.getDescription().getName())
+            .flatMap(Optional::stream)
+            .collect(Collectors.toList());
+        String version = this.server.getVersion().getVersion();
+        String software = this.server.getVersion().getName();
+
+        // Calculate average ping
+        double averagePing = this.server.getAllPlayers().stream()
+            .mapToLong(player -> player.getPing())
+            .average()
+            .orElse(0.0);
+
+        // Get server uptime
+        long uptimeMillis = ManagementFactory.getRuntimeMXBean().getUptime();
+        long uptimeHours = TimeUnit.MILLISECONDS.toHours(uptimeMillis);
+        long uptimeMinutes = TimeUnit.MILLISECONDS.toMinutes(uptimeMillis) % 60;
+
+        // Ping each server and get status
+        Map<String, String> serverStatuses = new HashMap<>();
+        for (RegisteredServer registeredServer : server.getAllServers()) {
+            try {
+                CompletableFuture<ServerPing> ping = registeredServer.ping();
+                ping.thenAccept(serverPing -> {
+                    ServerPing.Players players = serverPing.getPlayers().get();
+                    String serverStatus = registeredServer.getServerInfo().getName() + " - " +
+                    players.getOnline() + "/" + players.getMax() + " players," +
+                    " Version: " + serverPing.getVersion().getName() + " (" + serverPing.getVersion().getProtocol() + ") | " +  
+                    PlainTextComponentSerializer.plainText().serialize(serverPing.getDescriptionComponent());
+                    serverStatuses.put(registeredServer.getServerInfo().getName(), serverStatus);
+                }).get(5, TimeUnit.SECONDS);
+            } catch (Exception e) {
+                serverStatuses.put(registeredServer.getServerInfo().getName(), registeredServer.getServerInfo().getName() + " - Offline");
+            }
+        }
+
+        // Build the message
+        StringTemplate template = new StringTemplate(config.discord.TOPIC_FORMAT.get())
+            .add("playerCount", playerCount)
+            .add("playerList", String.join(", ", playerList))
+            .add("playerPingList", String.join(", ", playerPingList))
+            .add("serverCount", serverCount)
+            .add("serverList", String.join(", ", serverList))
+            .add("hostname", hostname)
+            .add("port", port)
+            .add("queryMotd", queryMotd)
+            .add("queryMap", queryMap)
+            .add("queryPort", queryPort)
+            .add("queryMaxPlayers", queryMaxPlayers)
+            .add("pluginCount", pluginCount)
+            .add("pluginList", String.join(", ", pluginList))
+            .add("version", version)
+            .add("software", software)
+            .add("averagePing", String.format("%.2f ms", averagePing))
+            .add("uptime", String.format("%dh %dm", uptimeHours, uptimeMinutes));
+
+        // Add server-specific details with server[SERVERNAME] placeholders
+        for (Map.Entry<String, String> entry : serverStatuses.entrySet()) {
+            template.add("server[" + entry.getKey() + "]", entry.getValue());
+        }
+
+        String message = template.toString();
+
+        if (message.length() > 1024) {
+            message = message.substring(0, 1000) + "...";
+        }
+
+        // Update the channel topic
+        activeChannel.getManager().setTopic(message).queue();
     }
   }
 }

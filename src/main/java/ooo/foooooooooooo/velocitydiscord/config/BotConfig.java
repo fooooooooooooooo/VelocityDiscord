@@ -31,6 +31,9 @@ public class BotConfig extends BaseConfig {
   public Boolean SHOW_ACTIVITY = true;
   public String ACTIVITY_FORMAT = "with {amount} players online";
 
+  // update channel topic
+  public int UPDATE_CHANNEL_TOPIC_INTERVAL = -1;
+
 
   @Override
   protected void loadConfig(com.electronwill.nightconfig.core.Config config) {
@@ -51,6 +54,10 @@ public class BotConfig extends BaseConfig {
     // bot activity
     SHOW_ACTIVITY = get(config, "discord.show_activity", SHOW_ACTIVITY);
     ACTIVITY_FORMAT = get(config, "discord.activity_text", ACTIVITY_FORMAT);
+
+    // update channel topic
+    UPDATE_CHANNEL_TOPIC_INTERVAL = get(config, "discord.update_channel_topic_interval", UPDATE_CHANNEL_TOPIC_INTERVAL);
+
   }
 
   public boolean isDefaultValues() {
