@@ -5,11 +5,11 @@ import com.velocitypowered.api.event.Subscribe;
 import com.velocitypowered.api.event.connection.DisconnectEvent;
 import com.velocitypowered.api.event.player.PlayerChatEvent;
 import com.velocitypowered.api.event.player.ServerConnectedEvent;
+import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.proxy.ProxyServer;
 import com.velocitypowered.api.proxy.server.RegisteredServer;
 import com.velocitypowered.api.proxy.server.ServerPing;
-import com.velocitypowered.api.scheduler.ScheduledTask;
-import com.velocitypowered.api.scheduler.TaskStatus;
+import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Activity;
@@ -24,17 +24,16 @@ import net.dv8tion.jda.api.utils.ChunkingFilter;
 import net.dv8tion.jda.api.utils.MemberCachePolicy;
 import net.dv8tion.jda.api.utils.messages.MessageCreateBuilder;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
-import ooo.foooooooooooo.velocitydiscord.VelocityDiscord;
 import ooo.foooooooooooo.velocitydiscord.config.Config;
 import ooo.foooooooooooo.velocitydiscord.discord.commands.ICommand;
 import ooo.foooooooooooo.velocitydiscord.discord.commands.ListCommand;
 import ooo.foooooooooooo.velocitydiscord.util.StringTemplate;
 
 import javax.annotation.Nonnull;
+import java.awt.*;
 import java.lang.management.ManagementFactory;
 import java.text.MessageFormat;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -47,44 +46,67 @@ import java.util.stream.Collectors;
 public class Discord extends ListenerAdapter {
   private static final Pattern EveryoneAndHerePattern = Pattern.compile("@(?<ping>everyone|here)");
 
-  private final ProxyServer server;
   private final Logger logger;
   private final Config config;
-  private final VelocityDiscord plugin;
-  private final JDA jda;
-  private final IncomingWebhookClient webhookClient;
+  private JDA jda;
+  private final ProxyServer server;
+
+  private String lastToken;
+  private IncomingWebhookClient webhookClient;
   private final Map<String, ICommand> commands = new HashMap<>();
 
   private TextChannel activeChannel;
   private int lastPlayerCount = -1;
-  private ScheduledTask updateTask;
 
-  public Discord(ProxyServer server, Logger logger, Config config, VelocityDiscord plugin) {
-    this.server = server;
+  // todo: buffer messages until ready
+  public boolean ready = false;
+
+  // todo: find a way to abstract away ProxyServer to remove all velocity dependencies
+  public Discord(ProxyServer server, Logger logger, Config config) {
     this.logger = logger;
     this.config = config;
-    this.plugin = plugin;
+    this.server = server;
 
-    commands.put("list", new ListCommand(server, logger, config));
+    configReloaded();
+  }
+
+  public void configReloaded() {
+    commands.put("list", new ListCommand(server, config));
 
     var messageListener = new MessageListener(server, logger, config);
 
-    var builder = JDABuilder.createDefault(config.bot.DISCORD_TOKEN)
-      // this seems to download all users at bot startup and keep internal cache updated
-      // without it, sometimes mentions miss when they shouldn't
-      .setChunkingFilter(ChunkingFilter.ALL).enableIntents(GatewayIntent.GUILD_MEMBERS, GatewayIntent.GUILD_MESSAGES, GatewayIntent.MESSAGE_CONTENT)
-      // mentions always miss without this
-      .setMemberCachePolicy(MemberCachePolicy.ALL).addEventListeners(messageListener, this);
+    if (!config.bot.DISCORD_TOKEN.equals(lastToken)) {
+      if (jda != null) {
+        shutdown();
+      }
 
-    try {
-      jda = builder.build();
-    } catch (Exception e) {
-      this.logger.severe("Failed to login to discord: " + e);
-      throw new RuntimeException("Failed to login to discord: ", e);
+      var builder = JDABuilder.createDefault(config.bot.DISCORD_TOKEN)
+        // this seems to download all users at bot startup and keep internal cache updated
+        // without it, sometimes mentions miss when they shouldn't
+        .setChunkingFilter(ChunkingFilter.ALL) //
+        .enableIntents(GatewayIntent.GUILD_MEMBERS, GatewayIntent.GUILD_MESSAGES, GatewayIntent.MESSAGE_CONTENT)
+        // mentions always miss without this
+        .setMemberCachePolicy(MemberCachePolicy.ALL) //
+        .addEventListeners(messageListener, this);
+
+      try {
+        jda = builder.build();
+        this.lastToken = config.bot.DISCORD_TOKEN;
+      } catch (Exception e) {
+        this.logger.severe("Failed to login to discord: " + e);
+      }
     }
 
-    webhookClient = config.bot.USE_WEBHOOKS ? WebhookClient.createClient(jda, config.bot.WEBHOOK_URL) : null;
+    if (jda != null && !config.bot.WEBHOOK_URL.isEmpty()) {
+      webhookClient = config.discord.isWebhookEnabled() ? WebhookClient.createClient(jda, config.bot.WEBHOOK_URL) : null;
+    }
   }
+
+  public void shutdown() {
+    jda.shutdown();
+  }
+
+  // region JDA events
 
   @Override
   public void onReady(@Nonnull ReadyEvent event) {
@@ -94,14 +116,14 @@ public class Discord extends ListenerAdapter {
 
     if (channel == null) {
       logger.severe("Could not load channel with id: " + config.bot.CHANNEL_ID);
-      throw new RuntimeException("Could not load channel id: " + config.bot.CHANNEL_ID);
+      return;
     }
 
     logger.info("Loaded channel: " + channel.getName());
 
     if (!channel.canTalk()) {
       logger.severe("Cannot talk in configured channel");
-      throw new RuntimeException("Cannot talk in configured channel");
+      return;
     }
 
     activeChannel = channel;
@@ -110,41 +132,28 @@ public class Discord extends ListenerAdapter {
 
     guild.upsertCommand("list", "list players").queue();
 
-    updateActivityPlayerAmount();
-
-    
-    if (config.bot.UPDATE_CHANNEL_TOPIC_INTERVAL >= 10) {
-          // Schedule the task to update the channel topic at the specified interval
-          this.updateTask = server.getScheduler().buildTask(plugin, this::updateChannelTopic)
-              .repeat(config.bot.UPDATE_CHANNEL_TOPIC_INTERVAL, TimeUnit.MINUTES)
-              .schedule();
-          logger.info("Scheduled task to update channel topic every " + config.bot.UPDATE_CHANNEL_TOPIC_INTERVAL + " minutes");
-        }
+    this.ready = true;
   }
 
-  public void shutdown() {
-    jda.shutdown();
-    if (updateTask != null && !updateTask.status().equals(TaskStatus.CANCELLED)) {
-      updateTask.cancel();
-    }
-  }
+  @Override
+  public void onSlashCommandInteraction(@Nonnull SlashCommandInteractionEvent event) {
+    if (!ready) return;
 
-  @Subscribe(order = PostOrder.FIRST)
-  public void onPlayerChat(PlayerChatEvent event) {
-    var currentServer = event.getPlayer().getCurrentServer();
+    var command = event.getName();
 
-    if (currentServer.isEmpty()) {
+    if (!commands.containsKey(command)) {
       return;
     }
 
-    var server = currentServer.get().getServerInfo().getName();
+    commands.get(command).handle(event);
+  }
 
-    if (config.serverDisabled(server)) {
-      return;
-    }
+  // endregion
 
-    var username = event.getPlayer().getUsername();
-    var content = event.getMessage();
+  // region Server events
+
+  public void onPlayerChat(String username, String uuid, String server, String content) {
+    if (!ready) return;
 
     if (config.bot.ENABLE_MENTIONS) {
       content = parseMentions(content);
@@ -154,104 +163,330 @@ public class Discord extends ListenerAdapter {
       content = filterEveryoneAndHere(content);
     }
 
-    if (config.bot.USE_WEBHOOKS) {
-      var uuid = event.getPlayer().getUniqueId().toString();
+    if (config.discord.isWebhookEnabled()) {
+      sendWebhookMessage(uuid, username, server, content);
 
-      var avatar = new StringTemplate(config.bot.WEBHOOK_AVATAR_URL)
-        .add("username", username)
-        .add("uuid", uuid).toString();
+      return;
+    }
 
-      var discordName = new StringTemplate(config.bot.WEBHOOK_USERNAME)
-        .add("username", username)
-        .add("server", server).toString();
-
-      sendWebhookMessage(avatar, discordName, content);
-    } else {
-      if (config.discord.MESSAGE_FORMAT.isEmpty()) {
-        return;
-      }
-
+    if (config.discord.MESSAGE_FORMAT.isPresent()) {
       var message = new StringTemplate(config.discord.MESSAGE_FORMAT.get())
         .add("username", username)
         .add("server", server)
         .add("message", content).toString();
 
-      sendMessage(message);
-    }
-  }
-
-  @Subscribe
-  public void onConnect(ServerConnectedEvent event) {
-    var username = event.getPlayer().getUsername();
-    var server = event.getServer().getServerInfo().getName();
-
-    if (config.serverDisabled(server)) {
-      updateActivityPlayerAmount();
-
-      return;
-    }
-
-    var previousServer = event.getPreviousServer();
-
-    StringTemplate message = null;
-
-    if (previousServer.isPresent()) {
-      if (config.discord.SERVER_SWITCH_MESSAGE_FORMAT.isPresent()) {
-        var previous = previousServer.get().getServerInfo().getName();
-
-        if (config.serverDisabled(previous)) {
-          updateActivityPlayerAmount();
-
-          return;
-        }
-
-        message = new StringTemplate(config.discord.SERVER_SWITCH_MESSAGE_FORMAT.get())
-          .add("username", username)
-          .add("current", server)
-          .add("previous", previous);
+      switch (config.discord.MESSAGE_TYPE) {
+        case EMBED -> sendEmbedMessage(message, config.discord.MESSAGE_EMBED_COLOR);
+        case TEXT -> sendMessage(message);
       }
-    } else if (config.discord.JOIN_MESSAGE_FORMAT.isPresent()) {
-      message = new StringTemplate(config.discord.JOIN_MESSAGE_FORMAT.get())
-        .add("username", username)
-        .add("server", server);
     }
-
-    if (message != null) {
-      sendMessage(message.toString());
-    }
-
-    updateActivityPlayerAmount();
   }
 
-  @Subscribe
-  public void onDisconnect(DisconnectEvent event) {
-    var currentServer = event.getPlayer().getCurrentServer();
+  public void onJoin(String username, String server) {
+    if (!ready) return;
 
-    var username = event.getPlayer().getUsername();
-    var server = currentServer.map(serverConnection -> serverConnection.getServerInfo().getName()).orElse("null");
-
-    if (config.serverDisabled(server)) {
-      updateActivityPlayerAmount();
-
+    if (config.discord.JOIN_MESSAGE_FORMAT.isEmpty()) {
       return;
     }
 
-    String template = currentServer.isPresent() ? config.discord.LEAVE_MESSAGE_FORMAT.orElse(null) : config.discord.DISCONNECT_MESSAGE_FORMAT.orElse(null);
+    var message = new StringTemplate(config.discord.JOIN_MESSAGE_FORMAT.get())
+      .add("username", username)
+      .add("server", server).toString();
 
-    if (template != null) {
-      var message = new StringTemplate(template)
-        .add("username", username)
-        .add("server", server);
-
-      sendMessage(message.toString());
+    switch (config.discord.JOIN_MESSAGE_TYPE) {
+      case EMBED -> sendEmbedMessage(message, config.discord.JOIN_MESSAGE_EMBED_COLOR);
+      case TEXT -> sendMessage(message);
     }
-
-    updateActivityPlayerAmount();
   }
 
-  public void sendMessage(@Nonnull String message) {
+  public void onServerSwitch(String username, String current, String previous) {
+    if (!ready) return;
+
+    if (config.discord.SERVER_SWITCH_MESSAGE_FORMAT.isEmpty()) {
+      return;
+    }
+
+    var message = new StringTemplate(config.discord.SERVER_SWITCH_MESSAGE_FORMAT.get())
+      .add("username", username)
+      .add("current", current)
+      .add("previous", previous).toString();
+
+    switch (config.discord.SERVER_SWITCH_MESSAGE_TYPE) {
+      case EMBED -> sendEmbedMessage(message, config.discord.SERVER_SWITCH_MESSAGE_EMBED_COLOR);
+      case TEXT -> sendMessage(message);
+    }
+  }
+
+  public void onDisconnect(String username) {
+    if (!ready) return;
+
+    if (config.discord.DISCONNECT_MESSAGE_FORMAT.isEmpty()) {
+      return;
+    }
+
+    var message = new StringTemplate(config.discord.DISCONNECT_MESSAGE_FORMAT.get())
+      .add("username", username).toString();
+
+    switch (config.discord.LEAVE_MESSAGE_TYPE) {
+      case EMBED -> sendEmbedMessage(message, config.discord.DISCONNECT_MESSAGE_EMBED_COLOR);
+      case TEXT -> sendMessage(message);
+    }
+  }
+
+  public void onLeave(String username, String server) {
+    if (!ready) return;
+
+    if (config.discord.LEAVE_MESSAGE_FORMAT.isEmpty()) {
+      return;
+    }
+
+    var message = new StringTemplate(config.discord.LEAVE_MESSAGE_FORMAT.get())
+      .add("username", username)
+      .add("server", server).toString();
+
+    switch (config.discord.LEAVE_MESSAGE_TYPE) {
+      case EMBED -> sendEmbedMessage(message, config.discord.LEAVE_MESSAGE_EMBED_COLOR);
+      case TEXT -> sendMessage(message);
+    }
+  }
+
+  public void onPlayerDeath(String username, String displayName, String death) {
+    if (!ready) return;
+
+    if (config.discord.DEATH_MESSAGE_FORMAT.isPresent()) {
+      var message = new StringTemplate(config.discord.DEATH_MESSAGE_FORMAT.get())
+        .add("username", username)
+        .add("displayname", displayName)
+        .add("death_message", death).toString();
+
+      switch (config.discord.DEATH_MESSAGE_TYPE) {
+        case EMBED -> sendEmbedMessage(message, config.discord.DEATH_MESSAGE_EMBED_COLOR);
+        case TEXT -> sendMessage(message);
+      }
+    }
+  }
+
+  public void onPlayerAdvancement(String username, String displayname, String title, String description) {
+    if (!ready) return;
+
+    if (config.discord.ADVANCEMENT_MESSAGE_FORMAT.isPresent()) {
+      var message = new StringTemplate(config.discord.ADVANCEMENT_MESSAGE_FORMAT.get())
+        .add("username", username)
+        .add("displayname", displayname)
+        .add("advancement_title", title)
+        .add("advancement_description", description).toString();
+
+      switch (config.discord.ADVANCEMENT_MESSAGE_TYPE) {
+        case EMBED -> sendEmbedMessage(message, config.discord.ADVANCEMENT_MESSAGE_EMBED_COLOR);
+        case TEXT -> sendMessage(message);
+      }
+    }
+  }
+
+  public void onProxyInitialize() {
+    if (!ready) return;
+
+    if (config.discord.PROXY_START_MESSAGE_FORMAT.isPresent()) {
+      var message = new StringTemplate(config.discord.PROXY_START_MESSAGE_FORMAT.get()).toString();
+
+      switch (config.discord.PROXY_START_MESSAGE_TYPE) {
+        case EMBED -> sendEmbedMessage(message, config.discord.PROXY_START_MESSAGE_EMBED_COLOR);
+        case TEXT -> sendMessage(message);
+      }
+    }
+  }
+
+  public void onProxyShutdown() {
+    if (!ready) return;
+
+    if (config.discord.PROXY_STOP_MESSAGE_FORMAT.isPresent()) {
+      var message = new StringTemplate(config.discord.PROXY_STOP_MESSAGE_FORMAT.get()).toString();
+
+      switch (config.discord.PROXY_STOP_MESSAGE_TYPE) {
+        case EMBED -> sendEmbedMessage(message, config.discord.PROXY_STOP_MESSAGE_EMBED_COLOR);
+        case TEXT -> sendMessage(message);
+      }
+    }
+  }
+
+  public void onServerStart(String server) {
+    if (!ready) return;
+
+    if (config.discord.SERVER_START_MESSAGE_FORMAT.isPresent()) {
+      var message = new StringTemplate(config.discord.SERVER_START_MESSAGE_FORMAT.get())
+        .add("server", server).toString();
+
+      switch (config.discord.SERVER_START_MESSAGE_TYPE) {
+        case EMBED -> sendEmbedMessage(message, config.discord.SERVER_START_MESSAGE_EMBED_COLOR);
+        case TEXT -> sendMessage(message);
+      }
+    }
+  }
+
+  public void onServerStop(String server) {
+    if (!ready) return;
+
+    if (config.discord.SERVER_STOP_MESSAGE_FORMAT.isPresent()) {
+      var message = new StringTemplate(config.discord.SERVER_STOP_MESSAGE_FORMAT.get())
+        .add("server", server).toString();
+
+      switch (config.discord.SERVER_STOP_MESSAGE_TYPE) {
+        case EMBED -> sendEmbedMessage(message, config.discord.SERVER_STOP_MESSAGE_EMBED_COLOR);
+        case TEXT -> sendMessage(message);
+      }
+    }
+  }
+
+  public void updateActivityPlayerAmount(int count) {
+    if (!config.bot.SHOW_ACTIVITY) {
+      return;
+    }
+
+    if (this.lastPlayerCount != count) {
+      var message = new StringTemplate(config.bot.ACTIVITY_FORMAT)
+        .add("amount", count).toString();
+
+      jda.getPresence().setActivity(Activity.playing(message));
+
+      this.lastPlayerCount = count;
+    }
+  }
+
+  public void updateChannelTopic() {
+    if (config.discord.TOPIC_FORMAT.isEmpty() || !ready) {
+      return;
+    }
+
+    // Collect additional information
+    var playerCount = this.server.getPlayerCount();
+    var playerList = this.server.getAllPlayers().stream()
+      .map(Player::getUsername)
+      .toList();
+    var playerPingList = this.server.getAllPlayers().stream()
+      .map(player -> String.valueOf(player.getUsername() + " (" + player.getPing() + "ms)"))
+      .toList();
+    var serverCount = this.server.getAllServers().size();
+    var serverList = this.server.getAllServers().stream()
+      .map(registeredServer -> registeredServer.getServerInfo().getName())
+      .toList();
+    var hostname = this.server.getBoundAddress().getHostName();
+    var port = String.valueOf(this.server.getBoundAddress().getPort());
+    var queryMotd = PlainTextComponentSerializer.plainText().serialize(this.server.getConfiguration().getMotd());
+    var queryMap = this.server.getConfiguration().getQueryMap();
+    var queryPort = this.server.getConfiguration().getQueryPort();
+    var queryMaxPlayers = this.server.getConfiguration().getShowMaxPlayers();
+    var pluginCount = this.server.getPluginManager().getPlugins().size();
+    var pluginList = this.server.getPluginManager().getPlugins().stream()
+      .map(plugin -> plugin.getDescription().getName())
+      .flatMap(Optional::stream)
+      .toList();
+    var version = this.server.getVersion().getVersion();
+    var software = this.server.getVersion().getName();
+
+    // Calculate average ping
+    var averagePing = this.server.getAllPlayers().stream()
+      .mapToLong(Player::getPing)
+      .average()
+      .orElse(0.0);
+
+
+    // Get server uptime
+    var uptimeMillis = ManagementFactory.getRuntimeMXBean().getUptime();
+    var uptimeHours = TimeUnit.MILLISECONDS.toHours(uptimeMillis);
+    var uptimeMinutes = TimeUnit.MILLISECONDS.toMinutes(uptimeMillis) % 60;
+
+    // Ping each server and get status
+    var serverStatuses = new HashMap<String, String>();
+    for (var registeredServer : server.getAllServers()) {
+      try {
+        var ping = registeredServer.ping();
+
+        ping.thenAccept(serverPing -> {
+          var players = serverPing.getPlayers().get();
+
+          var serverStatus = registeredServer.getServerInfo().getName() + " - " +
+            players.getOnline() + "/" + players.getMax() + " players," +
+            " Version: " + serverPing.getVersion().getName() + " (" + serverPing.getVersion().getProtocol() + ") | " +
+            PlainTextComponentSerializer.plainText().serialize(serverPing.getDescriptionComponent());
+
+          serverStatuses.put(registeredServer.getServerInfo().getName(), serverStatus);
+        }).get(5, TimeUnit.SECONDS);
+      } catch (Exception e) {
+        serverStatuses.put(registeredServer.getServerInfo().getName(), registeredServer.getServerInfo().getName() + " - Offline");
+      }
+    }
+
+    // Build the message
+    StringTemplate template = new StringTemplate(config.discord.TOPIC_FORMAT.get())
+      .add("playerCount", playerCount)
+      .add("playerList", String.join(", ", playerList))
+      .add("playerPingList", String.join(", ", playerPingList))
+      .add("serverCount", serverCount)
+      .add("serverList", String.join(", ", serverList))
+      .add("hostname", hostname)
+      .add("port", port)
+      .add("queryMotd", queryMotd)
+      .add("queryMap", queryMap)
+      .add("queryPort", queryPort)
+      .add("queryMaxPlayers", queryMaxPlayers)
+      .add("pluginCount", pluginCount)
+      .add("pluginList", String.join(", ", pluginList))
+      .add("version", version)
+      .add("software", software)
+      .add("averagePing", String.format("%.2f ms", averagePing))
+      .add("uptime", String.format("%dh %dm", uptimeHours, uptimeMinutes));
+
+    // Add server-specific details with server[SERVERNAME] placeholders
+    for (var entry : serverStatuses.entrySet()) {
+      template.add("server[" + entry.getKey() + "]", entry.getValue());
+    }
+
+    var topic = template.toString();
+
+    if (topic.length() > 1024) {
+      topic = topic.substring(0, 1000) + "...";
+    }
+
+    activeChannel.getManager().setTopic(topic).queue();
+  }
+
+  // endregion
+
+  // region Message sending
+
+  private void sendMessage(@Nonnull String message) {
     activeChannel.sendMessage(message).queue();
   }
+
+  @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
+  private void sendEmbedMessage(String message, Optional<Color> color) {
+    var embed = new EmbedBuilder().setDescription(message);
+
+    color.ifPresent(embed::setColor);
+
+    activeChannel.sendMessageEmbeds(embed.build()).queue();
+  }
+
+  private void sendWebhookMessage(String uuid, String username, String server, String content) {
+    if (webhookClient == null) {
+      logger.fine("Webhook client was not created due to configuration error, skipping sending message");
+      return;
+    }
+
+    var avatar = new StringTemplate(config.bot.WEBHOOK_AVATAR_URL)
+      .add("username", username)
+      .add("uuid", uuid).toString();
+
+    var discordName = new StringTemplate(config.bot.WEBHOOK_USERNAME)
+      .add("username", username)
+      .add("server", server).toString();
+
+    var webhookMessage = new MessageCreateBuilder().setContent(content).build();
+
+    webhookClient.sendMessage(webhookMessage).setAvatarUrl(avatar).setUsername(discordName).queue();
+  }
+
+  // endregion
 
   private String parseMentions(String message) {
     var msg = message;
@@ -265,155 +500,5 @@ public class Discord extends ListenerAdapter {
 
   private String filterEveryoneAndHere(String message) {
     return EveryoneAndHerePattern.matcher(message).replaceAll("@\u200B${ping}");
-  }
-
-  public void sendWebhookMessage(String avatar, String username, String content) {
-    var webhookMessage = new MessageCreateBuilder().setContent(content).build();
-
-    webhookClient.sendMessage(webhookMessage).setAvatarUrl(avatar).setUsername(username).queue();
-  }
-
-  public void sendPlayerDeath(String username, String displayname, String death) {
-    if (config.discord.DEATH_MESSAGE_FORMAT.isPresent()) {
-      var message = new StringTemplate(config.discord.DEATH_MESSAGE_FORMAT.get())
-        .add("username", username)
-        .add("displayname", displayname)
-        .add("death_message", death).toString();
-
-      sendMessage(message);
-    }
-  }
-
-  public void sendPlayerAdvancement(String username, String displayname, String title, String description) {
-    if (config.discord.ADVANCEMENT_MESSAGE_FORMAT.isPresent()) {
-      var message = new StringTemplate(config.discord.ADVANCEMENT_MESSAGE_FORMAT.get())
-        .add("username", username)
-        .add("displayname", displayname)
-        .add("advancement_title", title)
-        .add("advancement_description", description).toString();
-
-      sendMessage(message);
-    }
-  }
-
-  @Override
-  public void onSlashCommandInteraction(@Nonnull SlashCommandInteractionEvent event) {
-    var command = event.getName();
-
-    if (!commands.containsKey(command)) {
-      return;
-    }
-
-    commands.get(command).handle(event);
-  }
-
-  public void updateActivityPlayerAmount() {
-    if (!config.bot.SHOW_ACTIVITY) {
-      return;
-    }
-
-    final var playerCount = this.server.getPlayerCount();
-
-    if (this.lastPlayerCount != playerCount) {
-      var message = new StringTemplate(config.bot.ACTIVITY_FORMAT)
-        .add("amount", playerCount).toString();
-
-      jda.getPresence().setActivity(Activity.playing(message));
-
-      this.lastPlayerCount = playerCount;
-    }
-  }
-  
-  public void updateChannelTopic() {
-    if (config.discord.TOPIC_FORMAT.isPresent()) {
-        // Collect additional information
-        int playerCount = this.server.getPlayerCount();
-        List<String> playerList = this.server.getAllPlayers().stream()
-            .map(player -> player.getUsername())
-            .collect(Collectors.toList());
-        List<String> playerPingList = this.server.getAllPlayers().stream()
-            .map(player -> String.valueOf(player.getUsername() + " (" + player.getPing() + "ms)"))
-            .collect(Collectors.toList());
-        int serverCount = this.server.getAllServers().size();
-        List<String> serverList = this.server.getAllServers().stream()
-            .map(registeredServer -> registeredServer.getServerInfo().getName())
-            .collect(Collectors.toList());
-        String hostname = this.server.getBoundAddress().getHostName();
-        String port = String.valueOf(this.server.getBoundAddress().getPort());
-        String queryMotd = PlainTextComponentSerializer.plainText().serialize(this.server.getConfiguration().getMotd());
-        String queryMap = this.server.getConfiguration().getQueryMap();
-        int queryPort = this.server.getConfiguration().getQueryPort();
-        int queryMaxPlayers = this.server.getConfiguration().getShowMaxPlayers();
-        int pluginCount = this.server.getPluginManager().getPlugins().size();
-        List<String> pluginList = this.server.getPluginManager().getPlugins().stream()
-            .map(plugin -> plugin.getDescription().getName())
-            .flatMap(Optional::stream)
-            .collect(Collectors.toList());
-        String version = this.server.getVersion().getVersion();
-        String software = this.server.getVersion().getName();
-
-        // Calculate average ping
-        double averagePing = this.server.getAllPlayers().stream()
-            .mapToLong(player -> player.getPing())
-            .average()
-            .orElse(0.0);
-
-        // Get server uptime
-        long uptimeMillis = ManagementFactory.getRuntimeMXBean().getUptime();
-        long uptimeHours = TimeUnit.MILLISECONDS.toHours(uptimeMillis);
-        long uptimeMinutes = TimeUnit.MILLISECONDS.toMinutes(uptimeMillis) % 60;
-
-        // Ping each server and get status
-        Map<String, String> serverStatuses = new HashMap<>();
-        for (RegisteredServer registeredServer : server.getAllServers()) {
-            try {
-                CompletableFuture<ServerPing> ping = registeredServer.ping();
-                ping.thenAccept(serverPing -> {
-                    ServerPing.Players players = serverPing.getPlayers().get();
-                    String serverStatus = registeredServer.getServerInfo().getName() + " - " +
-                    players.getOnline() + "/" + players.getMax() + " players," +
-                    " Version: " + serverPing.getVersion().getName() + " (" + serverPing.getVersion().getProtocol() + ") | " +  
-                    PlainTextComponentSerializer.plainText().serialize(serverPing.getDescriptionComponent());
-                    serverStatuses.put(registeredServer.getServerInfo().getName(), serverStatus);
-                }).get(5, TimeUnit.SECONDS);
-            } catch (Exception e) {
-                serverStatuses.put(registeredServer.getServerInfo().getName(), registeredServer.getServerInfo().getName() + " - Offline");
-            }
-        }
-
-        // Build the message
-        StringTemplate template = new StringTemplate(config.discord.TOPIC_FORMAT.get())
-            .add("playerCount", playerCount)
-            .add("playerList", String.join(", ", playerList))
-            .add("playerPingList", String.join(", ", playerPingList))
-            .add("serverCount", serverCount)
-            .add("serverList", String.join(", ", serverList))
-            .add("hostname", hostname)
-            .add("port", port)
-            .add("queryMotd", queryMotd)
-            .add("queryMap", queryMap)
-            .add("queryPort", queryPort)
-            .add("queryMaxPlayers", queryMaxPlayers)
-            .add("pluginCount", pluginCount)
-            .add("pluginList", String.join(", ", pluginList))
-            .add("version", version)
-            .add("software", software)
-            .add("averagePing", String.format("%.2f ms", averagePing))
-            .add("uptime", String.format("%dh %dm", uptimeHours, uptimeMinutes));
-
-        // Add server-specific details with server[SERVERNAME] placeholders
-        for (Map.Entry<String, String> entry : serverStatuses.entrySet()) {
-            template.add("server[" + entry.getKey() + "]", entry.getValue());
-        }
-
-        String message = template.toString();
-
-        if (message.length() > 1024) {
-            message = message.substring(0, 1000) + "...";
-        }
-
-        // Update the channel topic
-        activeChannel.getManager().setTopic(message).queue();
-    }
   }
 }

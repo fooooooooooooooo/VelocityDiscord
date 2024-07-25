@@ -3,36 +3,35 @@ package ooo.foooooooooooo.velocitydiscord.util;
 import javax.annotation.Nonnull;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 
 public class StringTemplate {
   private final Map<String, String> variables = new HashMap<>();
   @Nonnull
   private String template;
 
-  public StringTemplate(String template) {
-    this.template = Objects.requireNonNull(template);
+  public StringTemplate(@Nonnull String template) {
+    this.template = template;
   }
 
-  public StringTemplate add(String key, String value) {
+  public StringTemplate add(@Nonnull String key, @Nonnull String value) {
     variables.put(key, value);
 
     return this;
   }
 
-  public StringTemplate add(String key, int value) {
+  public StringTemplate add(@Nonnull String key, int value) {
     variables.put(key, String.valueOf(value));
 
     return this;
   }
 
-  public StringTemplate add(String key, boolean value) {
+  public StringTemplate add(@Nonnull String key, boolean value) {
     variables.put(key, String.valueOf(value));
 
     return this;
   }
 
-  public StringTemplate add(String key, double value) {
+  public StringTemplate add(@Nonnull String key, double value) {
     variables.put(key, String.valueOf(value));
 
     return this;
@@ -41,15 +40,17 @@ public class StringTemplate {
   @Override
   @Nonnull
   public String toString() {
-    for (var entry : variables.entrySet()) {
-      template = Objects.requireNonNull(template.replace("{" + entry.getKey() + "}", entry.getValue()));
+    String result = template;
+
+    for (Map.Entry<String, String> entry : variables.entrySet()) {
+      result = result.replace("{" + entry.getKey() + "}", entry.getValue());
     }
 
-    return template;
+    return result;
   }
 
-  public StringTemplate replace(String target, String replacement) {
-    template = Objects.requireNonNull(template.replace(target, replacement));
+  public StringTemplate replace(@Nonnull String target, @Nonnull String replacement) {
+    template = template.replace(target, replacement);
 
     return this;
   }

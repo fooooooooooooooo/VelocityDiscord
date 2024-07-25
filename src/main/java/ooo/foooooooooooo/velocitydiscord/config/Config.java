@@ -5,12 +5,15 @@ import com.google.inject.Inject;
 import com.velocitypowered.api.plugin.annotation.DataDirectory;
 import ooo.foooooooooooo.velocitydiscord.config.commands.ListCommandConfig;
 
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.logging.Logger;
 
 import static ooo.foooooooooooo.velocitydiscord.VelocityDiscord.PluginVersion;
 
@@ -19,21 +22,21 @@ public class Config extends BaseConfig {
   private static final String configVersion = splitVersion[0] + '.' + splitVersion[1];
   private static final String configMajorVersion = splitVersion[0];
 
-  private final Path dataDir;
+  private Path dataDir;
 
   private boolean configCreatedThisRun = false;
 
-  public BotConfig bot;
-  public DiscordMessageConfig discord;
-  public MinecraftMessageConfig minecraft;
+  public final BotConfig bot;
+  public final DiscordMessageConfig discord;
+  public final MinecraftMessageConfig minecraft;
 
-  public ListCommandConfig listCommand;
+  public final ListCommandConfig listCommand;
 
   public List<String> EXCLUDED_SERVERS = new ArrayList<>();
   public boolean EXCLUDED_SERVERS_RECEIVE_MESSAGES = false;
+  public long PING_INTERVAL = 15L;
 
-  @Inject
-  public Config(@DataDirectory Path dataDir) {
+  public Config(Path dataDir, Logger logger) {
     this.dataDir = dataDir;
 
     var config = loadFile();
@@ -45,6 +48,12 @@ public class Config extends BaseConfig {
     minecraft = new MinecraftMessageConfig(config);
 
     listCommand = new ListCommandConfig(config);
+
+    var error = checkInvalidValues();
+
+    if (error != null) {
+      logger.severe(error);
+    }
   }
 
   private com.electronwill.nightconfig.core.Config loadFile() {
@@ -52,7 +61,7 @@ public class Config extends BaseConfig {
       try {
         Files.createDirectory(dataDir);
       } catch (IOException e) {
-        throw new RuntimeException("Could not create data directory at " + dataDir.toAbsolutePath());
+        throw new RuntimeException("ERROR: Could not create data directory at " + dataDir.toAbsolutePath());
       }
     }
 
@@ -96,9 +105,38 @@ public class Config extends BaseConfig {
   protected void loadConfig(com.electronwill.nightconfig.core.Config config) {
     EXCLUDED_SERVERS = get(config, "exclude_servers", EXCLUDED_SERVERS);
     EXCLUDED_SERVERS_RECEIVE_MESSAGES = get(config, "excluded_servers_receive_messages", EXCLUDED_SERVERS_RECEIVE_MESSAGES);
+    PING_INTERVAL = get(config, "ping_interval", PING_INTERVAL);
   }
 
   public boolean serverDisabled(String name) {
     return EXCLUDED_SERVERS.contains(name);
+  }
+
+  public @Nullable String reloadConfig(Path dataDirectory) {
+    this.dataDir = dataDirectory;
+    var config = loadFile();
+
+    try {
+      loadConfig(config);
+
+      bot.loadConfig(config);
+      discord.loadConfig(config);
+      minecraft.loadConfig(config);
+
+      listCommand.loadConfig(config);
+
+      return checkInvalidValues();
+    } catch (Exception e) {
+      return MessageFormat.format("ERROR: {0}", e.getMessage());
+    }
+  }
+
+  private String checkInvalidValues() {
+    // check for invalid values
+    if (bot.WEBHOOK_URL.isEmpty() && discord.isWebhookEnabled()) {
+      return ("WARN: `discord.webhook.webhook_url` is required when using webhooks, messages will not be sent");
+    }
+
+    return null;
   }
 }

@@ -22,10 +22,12 @@ import java.util.regex.Pattern;
 
 public class MessageListener extends ListenerAdapter {
   private static final Pattern WEBHOOK_ID_REGEX = Pattern.compile("^https://discord\\.com/api/webhooks/(\\d+)/.+$");
+
   private final String webhookId;
   private final ProxyServer server;
   private final Logger logger;
   private final Config config;
+
   private JDA jda;
 
   public MessageListener(ProxyServer server, Logger logger, Config config) {
@@ -86,9 +88,16 @@ public class MessageListener extends ListenerAdapter {
     var discord_chunk = new StringTemplate(config.minecraft.DISCORD_CHUNK_FORMAT)
       .add("discord_color", config.minecraft.DISCORD_COLOR).toString();
 
+    var display_name = author.getGlobalName();
+
+    if (display_name == null) {
+      display_name = author.getName();
+    }
+
     var username_chunk = new StringTemplate(config.minecraft.USERNAME_CHUNK_FORMAT)
       .add("role_color", hex)
       .add("username", author.getName())
+      .add("display_name", display_name)
       .add("nickname", nickname).toString();
 
     var attachment_chunk = config.minecraft.ATTACHMENT_FORMAT;

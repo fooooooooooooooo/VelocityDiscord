@@ -11,11 +11,12 @@ public abstract class BaseConfig {
 
   private static final String invalidValueFormatString = "ERROR: `%s` is not a valid value for `%s`, acceptable values: `false`, any string";
 
-  public static Optional<String> getOptional(com.electronwill.nightconfig.core.Config config, String key, String defaultValue) {
+  @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
+  public static Optional<String> getOptional(com.electronwill.nightconfig.core.Config config, String key, Optional<String> defaultValue) {
     var value = config.getRaw(key);
 
     if (value == null) {
-      return Optional.of(defaultValue);
+      return defaultValue;
     }
 
     if (value instanceof Boolean bool) {

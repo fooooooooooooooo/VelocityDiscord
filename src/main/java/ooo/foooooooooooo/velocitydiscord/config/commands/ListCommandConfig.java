@@ -20,14 +20,13 @@ public class ListCommandConfig extends BaseConfig {
   public String CODEBLOCK_LANG = "asciidoc";
 
   @Override
-  @SuppressWarnings("OptionalGetWithoutIsPresent")
-  protected void loadConfig(Config config) {
+  public void loadConfig(Config config) {
     DISCORD_LIST_ENABLED = get(config, "discord.commands.list.enabled", DISCORD_LIST_ENABLED);
     EPHEMERAL = get(config, "discord.commands.list.ephemeral", EPHEMERAL);
     SERVER_FORMAT = get(config, "discord.commands.list.server_format", SERVER_FORMAT);
     PLAYER_FORMAT = get(config, "discord.commands.list.player_format", PLAYER_FORMAT);
-    NO_PLAYERS_FORMAT = getOptional(config, "discord.commands.list.no_players", NO_PLAYERS_FORMAT.get());
-    SERVER_OFFLINE_FORMAT = getOptional(config, "discord.commands.list.server_offline", SERVER_OFFLINE_FORMAT.get());
+    NO_PLAYERS_FORMAT = getOptional(config, "discord.commands.list.no_players", NO_PLAYERS_FORMAT);
+    SERVER_OFFLINE_FORMAT = getOptional(config, "discord.commands.list.server_offline", SERVER_OFFLINE_FORMAT);
     CODEBLOCK_LANG = get(config, "discord.commands.list.codeblock_lang", CODEBLOCK_LANG);
   }
 }
