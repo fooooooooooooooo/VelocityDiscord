@@ -30,7 +30,7 @@ public class BotConfig extends BaseConfig {
   public String ACTIVITY_FORMAT = "with {amount} players online";
 
   // update channel topic
-  public int UPDATE_CHANNEL_TOPIC_INTERVAL = -1;
+  public int UPDATE_CHANNEL_TOPIC_INTERVAL_MINUTES = -1;
 
 
   @Override
@@ -53,8 +53,7 @@ public class BotConfig extends BaseConfig {
     ACTIVITY_FORMAT = get(config, "discord.activity_text", ACTIVITY_FORMAT);
 
     // update channel topic
-    UPDATE_CHANNEL_TOPIC_INTERVAL = get(config, "discord.update_channel_topic_interval", UPDATE_CHANNEL_TOPIC_INTERVAL);
-
+    UPDATE_CHANNEL_TOPIC_INTERVAL_MINUTES = get(config, "discord.update_channel_topic_interval", UPDATE_CHANNEL_TOPIC_INTERVAL_MINUTES);
   }
 
   public boolean isDefaultValues() {

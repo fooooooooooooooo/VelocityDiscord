@@ -140,7 +140,7 @@ public class VelocityDiscord {
       error = this.config.reloadConfig(this.dataDirectory);
 
       // disable server ping scheduler if it was disabled
-      if (this.config.PING_INTERVAL == 0 && this.pingScheduler != null) {
+      if (this.config.PING_INTERVAL_SECONDS == 0 && this.pingScheduler != null) {
         this.pingScheduler.cancel();
         this.pingScheduler = null;
       }
@@ -148,10 +148,12 @@ public class VelocityDiscord {
       tryStartPingScheduler();
 
       // disable channel topic scheduler if it was disabled
-      if (this.config.bot.UPDATE_CHANNEL_TOPIC_INTERVAL == 0 && this.topicScheduler != null) {
+      if (this.config.bot.UPDATE_CHANNEL_TOPIC_INTERVAL_MINUTES == 0 && this.topicScheduler != null) {
         this.topicScheduler.cancel();
         this.topicScheduler = null;
       }
+
+      tryStartTopicScheduler();
 
       if (this.discord != null) {
         this.discord.configReloaded();
@@ -174,25 +176,25 @@ public class VelocityDiscord {
   }
 
   private void tryStartPingScheduler() {
-    if (this.config.PING_INTERVAL > 0 || this.pingScheduler != null) {
+    if (this.config.PING_INTERVAL_SECONDS > 0 || this.pingScheduler != null) {
       this.pingScheduler = server.getScheduler()
         .buildTask(this, () -> {
           if (this.listener != null) this.listener.checkServerHealth();
         })
-        .repeat(this.config.PING_INTERVAL, TimeUnit.SECONDS)
+        .repeat(this.config.PING_INTERVAL_SECONDS, TimeUnit.SECONDS)
         .schedule();
     }
   }
 
   private void tryStartTopicScheduler() {
-    if (config.bot.UPDATE_CHANNEL_TOPIC_INTERVAL < 10)
+    if (config.bot.UPDATE_CHANNEL_TOPIC_INTERVAL_MINUTES < 10)
       // Schedule the task to update the channel topic at the specified interval
       this.topicScheduler = server.getScheduler().buildTask(this, () -> {
           if (this.discord != null) this.discord.updateChannelTopic();
         })
-        .repeat(config.bot.UPDATE_CHANNEL_TOPIC_INTERVAL, TimeUnit.MINUTES)
+        .repeat(config.bot.UPDATE_CHANNEL_TOPIC_INTERVAL_MINUTES, TimeUnit.MINUTES)
         .schedule();
 
-    logger.info("Scheduled task to update channel topic every " + config.bot.UPDATE_CHANNEL_TOPIC_INTERVAL + " minutes");
+    logger.info("Scheduled task to update channel topic every " + config.bot.UPDATE_CHANNEL_TOPIC_INTERVAL_MINUTES + " minutes");
   }
 }
