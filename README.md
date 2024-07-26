@@ -40,8 +40,8 @@ Chat from all servers gets bridged with a discord channel
 
 ### For advancements/deaths
 
-1. Install the [YepLib](https://github.com/unilock/YepLib) plugin alongside this plugin
-2. Install the [YepTwo](https://github.com/unilock/YepTwo) mod/plugin on each of your backend servers that you want to
+1. Install the [YepLib](https://github.com/unilock/YepLib) velocity plugin alongside this plugin
+2. Install the [YepTwo](https://github.com/unilock/YepTwo) backend mod/plugin on each of your backend servers that you want to
    receive advancements/deaths from
 
 ## Configuration
