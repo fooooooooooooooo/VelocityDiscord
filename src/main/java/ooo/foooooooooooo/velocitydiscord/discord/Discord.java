@@ -1,14 +1,7 @@
 package ooo.foooooooooooo.velocitydiscord.discord;
 
-import com.velocitypowered.api.event.PostOrder;
-import com.velocitypowered.api.event.Subscribe;
-import com.velocitypowered.api.event.connection.DisconnectEvent;
-import com.velocitypowered.api.event.player.PlayerChatEvent;
-import com.velocitypowered.api.event.player.ServerConnectedEvent;
 import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.proxy.ProxyServer;
-import com.velocitypowered.api.proxy.server.RegisteredServer;
-import com.velocitypowered.api.proxy.server.ServerPing;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
@@ -37,11 +30,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 public class Discord extends ListenerAdapter {
   private static final Pattern EveryoneAndHerePattern = Pattern.compile("@(?<ping>everyone|here)");
@@ -363,7 +354,7 @@ public class Discord extends ListenerAdapter {
       .map(Player::getUsername)
       .toList();
     var playerPingList = this.server.getAllPlayers().stream()
-      .map(player -> String.valueOf(player.getUsername() + " (" + player.getPing() + "ms)"))
+      .map(player -> player.getUsername() + " (" + player.getPing() + "ms)")
       .toList();
     var serverCount = this.server.getAllServers().size();
     var serverList = this.server.getAllServers().stream()
@@ -402,6 +393,10 @@ public class Discord extends ListenerAdapter {
         var ping = registeredServer.ping();
 
         ping.thenAccept(serverPing -> {
+          if (serverPing.getPlayers().isEmpty()) {
+            return;
+          }
+
           var players = serverPing.getPlayers().get();
 
           var serverStatus = registeredServer.getServerInfo().getName() + " - " +
