@@ -122,7 +122,7 @@ public class DiscordMessageConfig extends BaseConfig {
   }
 
   private Optional<Color> getColor(Config config, String key, Optional<Color> defaultValue) {
-    Optional<String> defaultHex = defaultValue.map((c) -> String.format("#%06X", (0xFFFFFF & c.getRGB())));
+    var defaultHex = defaultValue.map((c) -> String.format("#%06X", (0xFFFFFF & c.getRGB())));
     return getOptional(config, key, defaultHex).map(Color::decode);
   }
 

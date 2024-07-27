@@ -40,9 +40,9 @@ public class StringTemplate {
   @Override
   @Nonnull
   public String toString() {
-    String result = template;
+    var result = template;
 
-    for (Map.Entry<String, String> entry : variables.entrySet()) {
+    for (var entry : variables.entrySet()) {
       result = result.replace("{" + entry.getKey() + "}", entry.getValue());
     }
 
