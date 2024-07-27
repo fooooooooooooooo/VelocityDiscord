@@ -20,6 +20,7 @@ import java.nio.file.Path;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
+
 @Plugin(
   id = "discord",
   name = VelocityDiscord.PluginName,
@@ -27,13 +28,14 @@ import java.util.logging.Logger;
   version = VelocityDiscord.PluginVersion,
   url = VelocityDiscord.PluginUrl,
   authors = {"fooooooooooooooo"},
-  dependencies = @Dependency(id = "yeplib", optional = true)
+  dependencies = @Dependency(id = VelocityDiscord.YeplibId, optional = true)
 )
 public class VelocityDiscord {
   public static final String PluginName = "Velocity Discord Bridge";
   public static final String PluginDescription = "Velocity Discord Chat Bridge";
   public static final String PluginVersion = "1.8.2";
   public static final String PluginUrl = "https://github.com/fooooooooooooooo/VelocityDiscord";
+  public static final String YeplibId = "yeplib";
 
   public static final MinecraftChannelIdentifier YepIdentifier = MinecraftChannelIdentifier.create("velocity", "yep");
 
@@ -63,7 +65,7 @@ public class VelocityDiscord {
     this.logger = logger;
     this.dataDirectory = dataDirectory;
 
-    logger.info("Loading " + PluginName + " v" + PluginVersion);
+    logger.info("Loading %s v%s".formatted(PluginName, PluginVersion));
 
     reloadConfig();
 
@@ -75,7 +77,7 @@ public class VelocityDiscord {
 
     this.discord = new Discord(this.server, logger, this.config);
 
-    if (server.getPluginManager().isLoaded("yeplib")) {
+    if (server.getPluginManager().isLoaded(VelocityDiscord.YeplibId)) {
       this.yep = new YepListener(logger, this.config);
     }
 
@@ -169,7 +171,8 @@ public class VelocityDiscord {
     pluginDisabled = this.config.isFirstRun();
 
     if (pluginDisabled) {
-      this.logger.severe("This is the first time you are running this plugin. Please configure it in the config.toml file. Disabling plugin.");
+      this.logger.severe("This is the first time you are running this plugin. Please configure it in the config.toml " +
+        "file. Disabling plugin.");
     }
 
     return error;
@@ -195,6 +198,6 @@ public class VelocityDiscord {
         .repeat(config.bot.UPDATE_CHANNEL_TOPIC_INTERVAL_MINUTES, TimeUnit.MINUTES)
         .schedule();
 
-    logger.info("Scheduled task to update channel topic every " + config.bot.UPDATE_CHANNEL_TOPIC_INTERVAL_MINUTES + " minutes");
+    logger.info("Scheduled task to update channel topic every %d minutes".formatted(config.bot.UPDATE_CHANNEL_TOPIC_INTERVAL_MINUTES));
   }
 }
