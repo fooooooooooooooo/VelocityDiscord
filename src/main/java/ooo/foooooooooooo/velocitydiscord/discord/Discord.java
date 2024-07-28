@@ -28,6 +28,10 @@ import javax.annotation.Nonnull;
 import java.awt.*;
 import java.lang.management.ManagementFactory;
 import java.text.MessageFormat;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.Queue;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -181,11 +185,6 @@ public class Discord extends ListenerAdapter {
       content = filterEveryoneAndHere(content);
     }
 
-    if (config.discord.isWebhookEnabled()) {
-      sendWebhookMessage(uuid, username, server, content);
-
-      return;
-    }
 
     if (config.discord.MESSAGE_FORMAT.isPresent()) {
       var message = new StringTemplate(config.discord.MESSAGE_FORMAT.get())
@@ -198,6 +197,8 @@ public class Discord extends ListenerAdapter {
       switch (config.discord.MESSAGE_TYPE) {
         case EMBED -> sendEmbedMessage(message, config.discord.MESSAGE_EMBED_COLOR);
         case TEXT -> sendMessage(message);
+        case WEBHOOK -> sendWebhookMessage(uuid, username, server, content);
+        default -> throw new IllegalArgumentException("Unexpected value: " + config.discord.MESSAGE_TYPE);
       }
     }
   }
@@ -217,6 +218,7 @@ public class Discord extends ListenerAdapter {
     switch (config.discord.JOIN_MESSAGE_TYPE) {
       case EMBED -> sendEmbedMessage(message, config.discord.JOIN_MESSAGE_EMBED_COLOR);
       case TEXT -> sendMessage(message);
+
     }
   }
 
@@ -420,8 +422,7 @@ public class Discord extends ListenerAdapter {
 
     // Get server uptime
     var uptimeMillis = ManagementFactory.getRuntimeMXBean().getUptime();
-    var uptimeHours = TimeUnit.MILLISECONDS.toHours(uptimeMillis);
-    var uptimeMinutes = TimeUnit.MILLISECONDS.toMinutes(uptimeMillis) % 60;
+    var formattedUptime = formatUptime(uptimeMillis);
 
     // Ping each server and get status
     var serverStatuses = new HashMap<String, String>();
@@ -493,7 +494,7 @@ public class Discord extends ListenerAdapter {
       .add("version", proxyVersion)
       .add("software", proxySoftware)
       .add("average_ping", String.format("%.2f ms", averagePing))
-      .add("uptime", String.format("%dh %dm", uptimeHours, uptimeMinutes));
+      .add("uptime", formattedUptime);
 
     // Add server-specific details with server[SERVERNAME] placeholders
     for (var entry : serverStatuses.entrySet()) {
@@ -519,6 +520,29 @@ public class Discord extends ListenerAdapter {
     activeChannel.getManager().setTopic(topic).queue();
   }
 
+  private String formatUptime(long uptimeMillis) {
+      long seconds = TimeUnit.MILLISECONDS.toSeconds(uptimeMillis);
+      long minutes = TimeUnit.MILLISECONDS.toMinutes(uptimeMillis);
+      long hours = TimeUnit.MILLISECONDS.toHours(uptimeMillis);
+      long days = TimeUnit.MILLISECONDS.toDays(uptimeMillis);
+
+      if (seconds < 60) {
+          return seconds + "s";
+      } else if (minutes < 60) {
+          long remainingSeconds = seconds % 60;
+          return minutes + "m " + remainingSeconds + "s";
+      } else if (hours < 24) {
+          long remainingMinutes = minutes % 60;
+          return hours + "h " + remainingMinutes + "m";
+      } else if (days < 7) {
+          long remainingHours = hours % 24;
+          return days + "d " + remainingHours + "h";
+      } else {
+          long weeks = days / 7;
+          long remainingDays = days % 7;
+          return weeks + "w " + remainingDays + "d";
+      }
+  }
   // endregion
 
   // region Message sending
