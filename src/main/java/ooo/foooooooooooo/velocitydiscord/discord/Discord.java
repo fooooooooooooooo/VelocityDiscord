@@ -28,11 +28,6 @@ import javax.annotation.Nonnull;
 import java.awt.*;
 import java.lang.management.ManagementFactory;
 import java.text.MessageFormat;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Queue;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
@@ -521,28 +516,29 @@ public class Discord extends ListenerAdapter {
   }
 
   private String formatUptime(long uptimeMillis) {
-      long seconds = TimeUnit.MILLISECONDS.toSeconds(uptimeMillis);
-      long minutes = TimeUnit.MILLISECONDS.toMinutes(uptimeMillis);
-      long hours = TimeUnit.MILLISECONDS.toHours(uptimeMillis);
-      long days = TimeUnit.MILLISECONDS.toDays(uptimeMillis);
+    var seconds = TimeUnit.MILLISECONDS.toSeconds(uptimeMillis);
+    var minutes = TimeUnit.MILLISECONDS.toMinutes(uptimeMillis);
+    var hours = TimeUnit.MILLISECONDS.toHours(uptimeMillis);
+    var days = TimeUnit.MILLISECONDS.toDays(uptimeMillis);
 
-      if (seconds < 60) {
-          return seconds + "s";
-      } else if (minutes < 60) {
-          long remainingSeconds = seconds % 60;
-          return minutes + "m " + remainingSeconds + "s";
-      } else if (hours < 24) {
-          long remainingMinutes = minutes % 60;
-          return hours + "h " + remainingMinutes + "m";
-      } else if (days < 7) {
-          long remainingHours = hours % 24;
-          return days + "d " + remainingHours + "h";
-      } else {
-          long weeks = days / 7;
-          long remainingDays = days % 7;
-          return weeks + "w " + remainingDays + "d";
-      }
+    if (seconds < 60) {
+      return seconds + "s";
+    } else if (minutes < 60) {
+      var remainingSeconds = seconds % 60;
+      return minutes + "m " + remainingSeconds + "s";
+    } else if (hours < 24) {
+      var remainingMinutes = minutes % 60;
+      return hours + "h " + remainingMinutes + "m";
+    } else if (days < 7) {
+      var remainingHours = hours % 24;
+      return days + "d " + remainingHours + "h";
+    } else {
+      var weeks = days / 7;
+      var remainingDays = days % 7;
+      return weeks + "w " + remainingDays + "d";
+    }
   }
+
   // endregion
 
   // region Message sending
