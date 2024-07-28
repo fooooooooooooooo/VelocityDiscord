@@ -108,6 +108,7 @@ public class VelocityDiscord {
 
     if (this.config != null) {
       tryStartPingScheduler();
+      tryStartTopicScheduler();
     }
 
     var commandManager = server.getCommandManager();
@@ -152,6 +153,8 @@ public class VelocityDiscord {
         this.topicScheduler.cancel();
         this.topicScheduler = null;
       }
+
+      tryStartTopicScheduler();
 
       if (this.discord != null) {
         this.discord.configReloaded();
