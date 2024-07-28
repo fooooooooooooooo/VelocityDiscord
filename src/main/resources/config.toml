@@ -25,7 +25,7 @@ show_attachments_ingame = true
 # Show a text as playing activity of the bot
 show_activity = true
 # Activity text of the bot to show in Discord
-# Placeholder {amount} is available
+# Placeholders available: {amount}
 activity_text = "with {amount} players online"
 
 # Enable mentioning Discord users from Minecraft chat
@@ -39,41 +39,61 @@ enable_everyone_and_here = false
 update_channel_topic_interval = -1
 
 # Template for the channel topic.
-# Available placeholders:
-# {playerCount} - Total number of players online
-# {playerList} - List of player usernames
-# {playerPingList} - List of player pings with latency
-# {serverCount} - Number of servers
-# {serverList} - List of server names
+# Placeholders available:
+# {players} - Total number of players online
+# {player_list} - List of players (format is defined below)
+# {servers} - Number of servers
+# {server_list} - List of server names
 # {hostname} - Server hostname
 # {port} - Server port
-# {queryMotd} - Message of the Day (MOTD)
-# {queryMap} - Custom key-value pairs for the server
-# {queryPort} - Query port
-# {queryMaxPlayers} - Maximum number of players
-# {pluginCount} - Number of plugins
-# {pluginList} - List of plugin names
+# {motd} - Message of the Day (MOTD)
+# {query_port} - Query port
+# {max_players} - Maximum number of players
+# {plugins} - Number of plugins
+# {plugin_list} - List of plugin names
 # {version} - Server version
 # {software} - Software name
-# {averagePing} - Average ping of all players
+# {average_ping} - Average ping of all players
 # {uptime} - Server uptime in hours and minutes
 # {server[SERVERNAME]} - Dynamic placeholder for each server's name and status (e.g., {server[MyServer]}, {server[AnotherServer]}, {server[Lobby]}, etc.)
-topic_format = """Player count: {playerCount} | Players: {playerList} | Pings: {playerPingList} | \
-Server count: {serverCount} | Servers: {serverList} | {server[lobby]} | {server[survival]} | \
-Hostname: {hostname} | Port: {port} | MOTD: {queryMotd} | Query map: {queryMap} | \
-Query port: {queryPort} | Max players: {queryMaxPlayers} | Plugin count: {pluginCount} | \
-Plugins: {pluginList} | Version: {version} | Software: {software} | Average ping: {averagePing} | \
+topic = """{players}/{max_players}
+{player_list}
+{hostname}:{port}
 Uptime: {uptime}"""
+
+# Template for server[SERVERNAME] placeholder in the channel topic.
+# Placeholders available: {name}, {players}, {max_players}, {motd}, {version}, {protocol}
+topic_server = "{name}: {players}/{max_players}"
+
+# Template for server[SERVERNAME] placeholder in the channel topic when the server is offline.
+# Placeholders available: {name}
+topic_server_offline = "{name}: Offline"
+
+# Can be disabled to hide the list completely when no players are online
+topic_player_list_no_players_header = "No players online"
+
+# Can be disabled to hide the header and only show the player list
+topic_player_list_header = "Players: "
+
+# Placeholders available: {username}, {ping}
+topic_player_list_player = "{username}"
+
+# Separator between players in the list, \n can be used for new line
+topic_player_list_separator = ", "
+
+# Maximum number of players to show in the topic
+# Set to < 1 to show all players
+topic_player_list_max_count = 10
 
 [discord.webhook]
 # Full webhook URL to send more fancy Minecraft chat messages to
 webhook_url = ""
 # Full URL of an avatar service to get the player's avatar from
-# Placeholders {uuid} and {username} are available
+# Placeholders available: {uuid}, {username}
 avatar_url = "https://visage.surgeplay.com/face/96/{uuid}"
 
 # The format of the webhook's username
-# Placeholders {username} and {server} are available
+# Placeholders available: {username}, {server}
 webhook_username = "{username}"
 
 # Minecraft > Discord message formats
@@ -81,14 +101,14 @@ webhook_username = "{username}"
 # Messages can be disabled with empty string ("") or false
 #
 # x_message_type can be one of the following:
-# "text"    - Normal text only message with the associated x_message format
-# "embed"   - Discord embed with the associated x_message format as the description field
+# "text"  - Normal text only message with the associated x_message format
+# "embed" - Discord embed with the associated x_message format as the description field
 # Default for all is "text"
 #
 # x_message_embed_color is the color of the embed, in #RRGGBB format
 [discord.chat]
 
-# Placeholders {username}, {server}, and {message} are available
+# Placeholders available: {username}, {prefix}, {server}, {message}
 # Can be disabled
 message = "{username}: {message}"
 
@@ -104,7 +124,7 @@ message_type = "text"
 # Can be disabled
 message_embed_color = ""
 
-# Placeholders {username} and {server} are available
+# Placeholders available: {username}, {prefix}, {server}
 # Can be disabled
 join_message = "**{username} joined the game**"
 join_message_type = "text"
@@ -117,21 +137,21 @@ leave_message_type = "text"
 leave_message_embed_color = "#bf4040"
 
 # Possible different format for timeouts or other terminating connections
-# Placeholder {username} is available
+# Placeholders available: {username}, {prefix}
 # Can be disabled
 disconnect_message = "**{username} disconnected**"
 disconnect_message_type = "text"
 # Can be disabled
 disconnect_message_embed_color = "#bf4040"
 
-# Placeholders {username}, {current}, and {previous} are available
+# Placeholders available: {username}, {prefix}, {current}, {previous}
 # Can be disabled
 server_switch_message = "**{username} moved to {current} from {previous}**"
 server_switch_message_type = "text"
 # Can be disabled
 server_switch_message_embed_color = "#40bf4f"
 
-# Placeholders {username} and {death_message} are available
+# Placeholders available: {username}, {death_message}
 # death_message includes the username just as it is shown ingame
 # Can be disabled
 death_message = "**{death_message}**"
@@ -139,7 +159,7 @@ death_message_type = "text"
 # Can be disabled
 death_message_embed_color = "#bf4040"
 
-# Placeholders {username}, {advancement_title}, and {advancement_description} are available
+# Placeholders available: {username}, {advancement_title}, {advancement_description}
 # Can be disabled
 advancement_message = "**{username} has made the advancement __{advancement_title}__**\n_{advancement_description}_"
 advancement_message_type = "text"
@@ -158,14 +178,14 @@ proxy_stop_message_type = "text"
 # Can be disabled
 proxy_stop_message_embed_color = "#bf4040"
 
-# Placeholder {server} is available
+# Placeholders available: {server}
 # Can be disabled
 server_start_message = "**{server} has started**"
 server_start_message_type = "text"
 # Can be disabled
 server_start_message_embed_color = "#40bf4f"
 
-# Placeholder {server} is available
+# Placeholders available: {server}
 # Can be disabled
 server_stop_message = "**{server} has stopped**"
 server_stop_message_type = "text"
@@ -178,10 +198,10 @@ enabled = true
 # Ephemeral messages are only visible to the user who sent the command
 ephemeral = true
 
-# Placeholders {server_name}, {online_players} and {max_players} are available
+# Placeholders available: {server_name}, {online_players}, {max_players}
 server_format = "[{server_name} {online_players}/{max_players}]"
 
-# Placeholder {username} is available
+# Placeholders available: {username}
 player_format = "- {username}"
 
 # Can be disabled
@@ -194,17 +214,17 @@ codeblock_lang = "asciidoc"
 # Discord > Minecraft message formats
 # Uses XML-like formatting with https://docs.advntr.dev/minimessage/format.html
 [minecraft]
-# Placeholder {discord} is available
+# Placeholders available: {discord}
 discord_chunk = "<dark_gray>[<{discord_color}>Discord<dark_gray>]<reset>"
 
-# Placeholders {role_color}, {display_name}, {username} and {nickname} are available
+# Placeholders available: {role_color}, {display_name}, {username}, {nickname}
 # <insert> tag allows you to shift right-click the username to insert @{username} in the chat
 username_chunk = "<{role_color}><insert:@{username}><hover:show_text:{display_name}>{nickname}</hover></insert><reset>"
 
-# Placeholders {discord_chunk}, {username_chunk}, {attachments} and {message} are available
+# Placeholders available: {discord_chunk}, {username_chunk}, {attachments}, {message}
 message = "{discord_chunk} {username_chunk}<dark_gray>: <reset>{message} {attachments}"
 
-# Placeholders {url} and {attachment_color} are available
+# Placeholders available: {url}, {attachment_color}
 attachments = "<dark_gray><click:open_url:{url}>[<{attachment_color}>Attachment<dark_gray>]</click><reset>"
 
 # Colors for the <{discord_color}> and <{attachment_color}> tags

@@ -86,7 +86,8 @@ public class MessageListener extends ListenerAdapter {
 
     // parse configured message formats
     var discord_chunk = new StringTemplate(config.minecraft.DISCORD_CHUNK_FORMAT)
-      .add("discord_color", config.minecraft.DISCORD_COLOR).toString();
+      .add("discord_color", config.minecraft.DISCORD_COLOR)
+      .toString();
 
     var display_name = author.getGlobalName();
 
@@ -98,7 +99,8 @@ public class MessageListener extends ListenerAdapter {
       .add("role_color", hex)
       .add("username", author.getName())
       .add("display_name", display_name)
-      .add("nickname", nickname).toString();
+      .add("nickname", nickname)
+      .toString();
 
     var attachment_chunk = config.minecraft.ATTACHMENT_FORMAT;
     var message_chunk = new StringTemplate(config.minecraft.MESSAGE_FORMAT)
@@ -116,7 +118,8 @@ public class MessageListener extends ListenerAdapter {
     for (var attachment : attachments) {
       var chunk = new StringTemplate(attachment_chunk)
         .add("url", attachment.getUrl())
-        .add("attachment_color", config.minecraft.ATTACHMENT_COLOR).toString();
+        .add("attachment_color", config.minecraft.ATTACHMENT_COLOR)
+        .toString();
 
       attachmentChunks.add(chunk);
     }

@@ -15,6 +15,8 @@ import ooo.foooooooooooo.velocitydiscord.discord.Discord;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 public class VelocityListener {
@@ -47,9 +49,11 @@ public class VelocityListener {
     }
 
     var username = event.getPlayer().getUsername();
-    var uuid = event.getPlayer().getUniqueId().toString();
+    var uuid = event.getPlayer().getUniqueId();
 
-    discord.onPlayerChat(username, uuid, server, event.getMessage());
+    var prefix = getPrefix(uuid);
+
+    discord.onPlayerChat(username, uuid.toString(), prefix, server, event.getMessage());
   }
 
   @Subscribe
@@ -68,11 +72,13 @@ public class VelocityListener {
     var previousServer = event.getPreviousServer();
     var previousName = previousServer.map(s -> s.getServerInfo().getName()).orElse(null);
 
+    var prefix = getPrefix(event.getPlayer().getUniqueId());
+
     // if previousServer is disabled but the current server is not, treat it as a join
     if (previousServer.isPresent() && !config.serverDisabled(previousName)) {
-      discord.onServerSwitch(username, server, previousName);
+      discord.onServerSwitch(username, prefix, server, previousName);
     } else {
-      discord.onJoin(username, server);
+      discord.onJoin(username, prefix, server);
     }
   }
 
@@ -83,9 +89,10 @@ public class VelocityListener {
     var currentServer = event.getPlayer().getCurrentServer();
 
     var username = event.getPlayer().getUsername();
+    var prefix = getPrefix(event.getPlayer().getUniqueId());
 
     if (currentServer.isEmpty()) {
-      discord.onDisconnect(username);
+      discord.onDisconnect(username, prefix);
     } else {
       var name = currentServer.get().getServerInfo().getName();
 
@@ -95,7 +102,7 @@ public class VelocityListener {
 
       setServerOnline(name);
 
-      discord.onLeave(username, currentServer.get().getServerInfo().getName());
+      discord.onLeave(username, prefix, currentServer.get().getServerInfo().getName());
     }
   }
 
@@ -127,6 +134,14 @@ public class VelocityListener {
     discord.updateActivityPlayerAmount(this.server.getPlayerCount());
   }
 
+  private Optional<String> getPrefix(UUID uuid) {
+    var user = VelocityDiscord.getLuckPerms().getUserManager().getUser(uuid);
+    if (user != null) {
+      return Optional.ofNullable(user.getCachedData().getMetaData().getPrefix());
+    }
+    return Optional.empty();
+  }
+
   /**
    * Ping all servers and update online state
    */
@@ -134,7 +149,9 @@ public class VelocityListener {
     var servers = server.getAllServers();
 
     CompletableFuture
-      .allOf(servers.parallelStream().map((server) -> server.ping().handle((ping, ex) -> handlePing(server, ping, ex))).toArray(CompletableFuture[]::new))
+      .allOf(servers.parallelStream()
+               .map((server) -> server.ping().handle((ping, ex) -> handlePing(server, ping, ex)))
+               .toArray(CompletableFuture[]::new))
       .join();
 
     this.firstHealthCheck = false;

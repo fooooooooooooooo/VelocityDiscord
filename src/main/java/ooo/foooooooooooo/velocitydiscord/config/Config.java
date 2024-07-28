@@ -32,7 +32,7 @@ public class Config extends BaseConfig {
 
   public List<String> EXCLUDED_SERVERS = new ArrayList<>();
   public boolean EXCLUDED_SERVERS_RECEIVE_MESSAGES = false;
-  public long PING_INTERVAL = 15L;
+  public int PING_INTERVAL_SECONDS = 15;
 
   public Config(Path dataDir, Logger logger) {
     this.dataDir = dataDir;
@@ -103,7 +103,7 @@ public class Config extends BaseConfig {
   protected void loadConfig(com.electronwill.nightconfig.core.Config config) {
     EXCLUDED_SERVERS = get(config, "exclude_servers", EXCLUDED_SERVERS);
     EXCLUDED_SERVERS_RECEIVE_MESSAGES = get(config, "excluded_servers_receive_messages", EXCLUDED_SERVERS_RECEIVE_MESSAGES);
-    PING_INTERVAL = get(config, "ping_interval", PING_INTERVAL);
+    PING_INTERVAL_SECONDS = get(config, "ping_interval", PING_INTERVAL_SECONDS);
   }
 
   public boolean serverDisabled(String name) {
