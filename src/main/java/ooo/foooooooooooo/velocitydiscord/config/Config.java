@@ -1,8 +1,6 @@
 package ooo.foooooooooooo.velocitydiscord.config;
 
 import com.electronwill.nightconfig.core.file.FileConfig;
-import com.google.inject.Inject;
-import com.velocitypowered.api.plugin.annotation.DataDirectory;
 import ooo.foooooooooooo.velocitydiscord.config.commands.ListCommandConfig;
 
 import javax.annotation.Nullable;
