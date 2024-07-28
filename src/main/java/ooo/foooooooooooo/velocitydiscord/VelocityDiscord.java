@@ -22,7 +22,6 @@ import java.nio.file.Path;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
-
 @Plugin(
   id = "discord",
   name = VelocityDiscord.PluginName,
@@ -38,7 +37,7 @@ import java.util.logging.Logger;
 public class VelocityDiscord {
   public static final String PluginName = "Velocity Discord Bridge";
   public static final String PluginDescription = "Velocity Discord Chat Bridge";
-  public static final String PluginVersion = "1.8.2";
+  public static final String PluginVersion = "1.9.0-pre";
   public static final String PluginUrl = "https://github.com/fooooooooooooooo/VelocityDiscord";
 
   public static final String YeplibId = "yeplib";
