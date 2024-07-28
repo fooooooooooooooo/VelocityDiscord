@@ -154,11 +154,6 @@ public class Discord extends ListenerAdapter {
       content = filterEveryoneAndHere(content);
     }
 
-    if (config.discord.isWebhookEnabled()) {
-      sendWebhookMessage(uuid, username, server, content);
-
-      return;
-    }
 
     if (config.discord.MESSAGE_FORMAT.isPresent()) {
       var message = new StringTemplate(config.discord.MESSAGE_FORMAT.get())
@@ -169,6 +164,8 @@ public class Discord extends ListenerAdapter {
       switch (config.discord.MESSAGE_TYPE) {
         case EMBED -> sendEmbedMessage(message, config.discord.MESSAGE_EMBED_COLOR);
         case TEXT -> sendMessage(message);
+        case WEBHOOK -> sendWebhookMessage(uuid, username, server, content);
+        default -> throw new IllegalArgumentException("Unexpected value: " + config.discord.MESSAGE_TYPE);
       }
     }
   }
@@ -187,6 +184,7 @@ public class Discord extends ListenerAdapter {
     switch (config.discord.JOIN_MESSAGE_TYPE) {
       case EMBED -> sendEmbedMessage(message, config.discord.JOIN_MESSAGE_EMBED_COLOR);
       case TEXT -> sendMessage(message);
+
     }
   }
 
