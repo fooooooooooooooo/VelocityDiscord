@@ -59,13 +59,24 @@ public class DiscordMessageConfig extends BaseConfig {
   public Optional<Color> SERVER_STOP_MESSAGE_EMBED_COLOR = Optional.of(new Color(0xbf4040));
 
   // channel topic
-  public Optional<String> TOPIC_FORMAT = Optional.of("Player count: {playerCount} | Players: {playerList} | Pings: {playerPingList} | "
-    + "Server count: {serverCount} | Servers: {serverList} | Hostname: {hostname} | Port: {port} | Query MOTD: {queryMotd} | "
-    + "Query map: {queryMap} | Query port: {queryPort} | Max players: {queryMaxPlayers} | "
-    + "Plugin count: {pluginCount} | Plugins: {pluginList} | Version: {version}");
+  public Optional<String> TOPIC_FORMAT = Optional.of(
+    """
+      {players}/{max_players}
+      {player_list}
+      {hostname}:{port}
+      Uptime: {uptime}"""
+  );
 
+  public Optional<String> TOPIC_SERVER_FORMAT = Optional.of("{name}: {players}/{max_players}");
+  public Optional<String> TOPIC_SERVER_OFFLINE_FORMAT = Optional.of("{name}: Offline");
 
-    @Override
+  public Optional<String> TOPIC_PLAYER_LIST_NO_PLAYERS_HEADER = Optional.of("No players online");
+  public Optional<String> TOPIC_PLAYER_LIST_HEADER = Optional.of("Players: ");
+  public String TOPIC_PLAYER_LIST_FORMAT = "{username}";
+  public String TOPIC_PLAYER_LIST_SEPARATOR = ", ";
+  public int TOPIC_PLAYER_LIST_MAX_COUNT = 10;
+
+  @Override
   protected void loadConfig(Config config) {
     MESSAGE_FORMAT = getOptional(config, "discord.chat.message", MESSAGE_FORMAT);
 
@@ -118,7 +129,16 @@ public class DiscordMessageConfig extends BaseConfig {
     SERVER_SWITCH_MESSAGE_TYPE = getMessageType(config, "discord.chat.server_switch_message_type", SERVER_SWITCH_MESSAGE_TYPE);
     SERVER_SWITCH_MESSAGE_EMBED_COLOR = getColor(config, "discord.chat.server_switch_message_embed_color", SERVER_SWITCH_MESSAGE_EMBED_COLOR);
 
-    TOPIC_FORMAT = getOptional(config, "discord.topic_format", TOPIC_FORMAT);
+    TOPIC_FORMAT = getOptional(config, "discord.topic", TOPIC_FORMAT);
+
+    TOPIC_SERVER_FORMAT = getOptional(config, "discord.topic_server", TOPIC_SERVER_FORMAT);
+    TOPIC_SERVER_OFFLINE_FORMAT = getOptional(config, "discord.topic_server_offline", TOPIC_SERVER_OFFLINE_FORMAT);
+
+    TOPIC_PLAYER_LIST_NO_PLAYERS_HEADER = getOptional(config, "discord.topic_player_list_no_players_header", TOPIC_PLAYER_LIST_NO_PLAYERS_HEADER);
+    TOPIC_PLAYER_LIST_HEADER = getOptional(config, "discord.topic_player_list_header", TOPIC_PLAYER_LIST_HEADER);
+    TOPIC_PLAYER_LIST_FORMAT = get(config, "discord.topic_player_list_player", TOPIC_PLAYER_LIST_FORMAT);
+    TOPIC_PLAYER_LIST_SEPARATOR = get(config, "discord.topic_player_list_separator", TOPIC_PLAYER_LIST_SEPARATOR);
+    TOPIC_PLAYER_LIST_MAX_COUNT = get(config, "discord.topic_player_list_max_count", TOPIC_PLAYER_LIST_MAX_COUNT);
   }
 
   private Optional<Color> getColor(Config config, String key, Optional<Color> defaultValue) {

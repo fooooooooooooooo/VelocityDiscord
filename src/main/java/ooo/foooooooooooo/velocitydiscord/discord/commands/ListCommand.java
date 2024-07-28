@@ -36,7 +36,8 @@ public class ListCommand implements ICommand {
       var serverInfo = new StringTemplate(config.listCommand.SERVER_FORMAT)
         .add("server_name", name)
         .add("online_players", state.players)
-        .add("max_players", state.maxPlayers).toString();
+        .add("max_players", state.maxPlayers)
+        .toString();
 
       sb.append(serverInfo).append('\n');
 
@@ -47,7 +48,8 @@ public class ListCommand implements ICommand {
       } else {
         for (var player : players) {
           var user = new StringTemplate(config.listCommand.PLAYER_FORMAT)
-            .add("username", player.getUsername()).toString();
+            .add("username", player.getUsername())
+            .toString();
 
           sb.append(user).append('\n');
         }
