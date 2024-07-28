@@ -378,11 +378,9 @@ public class Discord extends ListenerAdapter {
       .average()
       .orElse(0.0);
 
-
     // Get server uptime
     var uptimeMillis = ManagementFactory.getRuntimeMXBean().getUptime();
-    var uptimeHours = TimeUnit.MILLISECONDS.toHours(uptimeMillis);
-    var uptimeMinutes = TimeUnit.MILLISECONDS.toMinutes(uptimeMillis) % 60;
+    var formattedUptime = formatUptime(uptimeMillis);
 
     // Ping each server and get status
     var serverStatuses = new HashMap<String, String>();
@@ -423,7 +421,7 @@ public class Discord extends ListenerAdapter {
       .add("version", version)
       .add("software", software)
       .add("averagePing", String.format("%.2f ms", averagePing))
-      .add("uptime", String.format("%dh %dm", uptimeHours, uptimeMinutes));
+      .add("uptime", formattedUptime);
 
     // Add server-specific details with server[SERVERNAME] placeholders
     for (var entry : serverStatuses.entrySet()) {
@@ -439,6 +437,29 @@ public class Discord extends ListenerAdapter {
     activeChannel.getManager().setTopic(topic).queue();
   }
 
+  private String formatUptime(long uptimeMillis) {
+      long seconds = TimeUnit.MILLISECONDS.toSeconds(uptimeMillis);
+      long minutes = TimeUnit.MILLISECONDS.toMinutes(uptimeMillis);
+      long hours = TimeUnit.MILLISECONDS.toHours(uptimeMillis);
+      long days = TimeUnit.MILLISECONDS.toDays(uptimeMillis);
+
+      if (seconds < 60) {
+          return seconds + "s";
+      } else if (minutes < 60) {
+          long remainingSeconds = seconds % 60;
+          return minutes + "m " + remainingSeconds + "s";
+      } else if (hours < 24) {
+          long remainingMinutes = minutes % 60;
+          return hours + "h " + remainingMinutes + "m";
+      } else if (days < 7) {
+          long remainingHours = hours % 24;
+          return days + "d " + remainingHours + "h";
+      } else {
+          long weeks = days / 7;
+          long remainingDays = days % 7;
+          return weeks + "w " + remainingDays + "d";
+      }
+  }
   // endregion
 
   // region Message sending
