@@ -10,8 +10,6 @@ import com.velocitypowered.api.plugin.annotation.DataDirectory;
 import com.velocitypowered.api.proxy.ProxyServer;
 import com.velocitypowered.api.proxy.messages.MinecraftChannelIdentifier;
 import com.velocitypowered.api.scheduler.ScheduledTask;
-import net.luckperms.api.LuckPerms;
-import net.luckperms.api.LuckPermsProvider;
 import ooo.foooooooooooo.velocitydiscord.commands.Commands;
 import ooo.foooooooooooo.velocitydiscord.config.Config;
 import ooo.foooooooooooo.velocitydiscord.discord.Discord;
@@ -37,7 +35,7 @@ import java.util.logging.Logger;
 public class VelocityDiscord {
   public static final String PluginName = "Velocity Discord Bridge";
   public static final String PluginDescription = "Velocity Discord Chat Bridge";
-  public static final String PluginVersion = "1.9.0-pre";
+  public static final String PluginVersion = "1.9.0-pre.1";
   public static final String PluginUrl = "https://github.com/fooooooooooooooo/VelocityDiscord";
 
   public static final String YeplibId = "yeplib";
@@ -130,8 +128,12 @@ public class VelocityDiscord {
     Commands.RegisterCommands(server.getCommandManager());
 
     try {
-      luckPerms = LuckPermsProvider.get();
-      logger.info("LuckPerms found, prefix will be displayed");
+      if (server.getPluginManager().getPlugin("luckperms").isPresent()) {
+        this.luckPerms = new LuckPerms();
+        logger.info("LuckPerms found, prefix will be displayed");
+      } else {
+        logger.info("LuckPerms not found, prefix will not be displayed");
+      }
     } catch (Exception e) {
       logger.info("LuckPerms not found, prefix will not be displayed");
     }

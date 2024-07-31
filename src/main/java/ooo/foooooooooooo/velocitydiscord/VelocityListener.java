@@ -135,10 +135,14 @@ public class VelocityListener {
   }
 
   private Optional<String> getPrefix(UUID uuid) {
-    var user = VelocityDiscord.getLuckPerms().getUserManager().getUser(uuid);
+    var luckPerms = VelocityDiscord.getLuckPerms();
+    if (luckPerms == null) return Optional.empty();
+
+    var user = luckPerms.getUserManager().getUser(uuid);
     if (user != null) {
       return Optional.ofNullable(user.getCachedData().getMetaData().getPrefix());
     }
+
     return Optional.empty();
   }
 
@@ -150,8 +154,8 @@ public class VelocityListener {
 
     CompletableFuture
       .allOf(servers.parallelStream()
-               .map((server) -> server.ping().handle((ping, ex) -> handlePing(server, ping, ex)))
-               .toArray(CompletableFuture[]::new))
+        .map((server) -> server.ping().handle((ping, ex) -> handlePing(server, ping, ex)))
+        .toArray(CompletableFuture[]::new))
       .join();
 
     this.firstHealthCheck = false;
