@@ -129,6 +129,22 @@ public class DiscordMessageConfig extends BaseConfig {
     SERVER_SWITCH_MESSAGE_TYPE = getMessageType(config, "discord.chat.server_switch_message_type", SERVER_SWITCH_MESSAGE_TYPE);
     SERVER_SWITCH_MESSAGE_EMBED_COLOR = getColor(config, "discord.chat.server_switch_message_embed_color", SERVER_SWITCH_MESSAGE_EMBED_COLOR);
 
+    PROXY_START_MESSAGE_FORMAT = getOptional(config, "discord.chat.proxy_start_message", PROXY_START_MESSAGE_FORMAT);
+    PROXY_START_MESSAGE_TYPE = getMessageType(config, "discord.chat.proxy_start_message_type", PROXY_START_MESSAGE_TYPE);
+    PROXY_START_MESSAGE_EMBED_COLOR = getColor(config, "discord.chat.proxy_start_message_embed_color", PROXY_START_MESSAGE_EMBED_COLOR);
+
+    PROXY_STOP_MESSAGE_FORMAT = getOptional(config, "discord.chat.proxy_stop_message", PROXY_STOP_MESSAGE_FORMAT);
+    PROXY_STOP_MESSAGE_TYPE = getMessageType(config, "discord.chat.proxy_stop_message_type", PROXY_STOP_MESSAGE_TYPE);
+    PROXY_STOP_MESSAGE_EMBED_COLOR = getColor(config, "discord.chat.proxy_stop_message_embed_color", PROXY_STOP_MESSAGE_EMBED_COLOR);
+
+    SERVER_START_MESSAGE_FORMAT = getOptional(config, "discord.chat.server_start_message", SERVER_START_MESSAGE_FORMAT);
+    SERVER_START_MESSAGE_TYPE = getMessageType(config, "discord.chat.server_start_message_type", SERVER_START_MESSAGE_TYPE);
+    SERVER_START_MESSAGE_EMBED_COLOR = getColor(config, "discord.chat.server_start_message_embed_color", SERVER_START_MESSAGE_EMBED_COLOR);
+
+    SERVER_STOP_MESSAGE_FORMAT = getOptional(config, "discord.chat.server_stop_message", SERVER_STOP_MESSAGE_FORMAT);
+    SERVER_STOP_MESSAGE_TYPE = getMessageType(config, "discord.chat.server_stop_message_type", SERVER_STOP_MESSAGE_TYPE);
+    SERVER_STOP_MESSAGE_EMBED_COLOR = getColor(config, "discord.chat.server_stop_message_embed_color", SERVER_STOP_MESSAGE_EMBED_COLOR);
+
     TOPIC_FORMAT = getOptional(config, "discord.topic", TOPIC_FORMAT);
 
     TOPIC_SERVER_FORMAT = getOptional(config, "discord.topic_server", TOPIC_SERVER_FORMAT);
