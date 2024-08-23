@@ -5,11 +5,14 @@ Chat from all servers gets bridged with a discord channel
 ## Features
 
 - Configurable
-- Webhooks or normal chat for messages
+- Webhooks or embeds or normal text for messages
 - Player count in bot status
 - List command
 - Templating syntax for all messages
 - Death and Advancement messages shown
+- Server start/stop messages
+- Server status in channel topic
+- Reload command for config changes while the server is running
 
 > **Note**
 > This requires a [companion Velocity plugin](https://github.com/unilock/YepLib)
