@@ -1,5 +1,5 @@
 plugins {
-  id 'com.github.johnrengelman.shadow' version '8.1.1'
+  id 'com.gradleup.shadow' version '8.3.0'
   id 'java-library'
 }
 
@@ -21,8 +21,12 @@ repositories {
 }
 
 dependencies {
-  compileOnly "com.velocitypowered:velocity-api:$velocity_version"
-  annotationProcessor "com.velocitypowered:velocity-api:$velocity_version"
+  compileOnly("com.velocitypowered:velocity-api:$velocity_version") {
+    changing = true
+  }
+  annotationProcessor("com.velocitypowered:velocity-api:$velocity_version") {
+    changing = true
+  }
 
   shade implementation("net.dv8tion:JDA:$jda_version") {
     exclude module: 'opus-java'
