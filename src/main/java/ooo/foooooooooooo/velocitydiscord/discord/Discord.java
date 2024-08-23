@@ -45,6 +45,8 @@ public class Discord extends ListenerAdapter {
   private IncomingWebhookClient webhookClient;
   private final Map<String, ICommand> commands = new HashMap<>();
 
+  private final MessageListener messageListener;
+
   private TextChannel activeChannel;
   private int lastPlayerCount = -1;
 
@@ -59,6 +61,7 @@ public class Discord extends ListenerAdapter {
     this.logger = logger;
     this.config = config;
     this.server = server;
+    this.messageListener = new MessageListener(server, logger, config);
 
     configReloaded();
   }
@@ -66,7 +69,8 @@ public class Discord extends ListenerAdapter {
   public void configReloaded() {
     commands.put("list", new ListCommand(server, config));
 
-    var messageListener = new MessageListener(server, logger, config);
+    // update webhook id in case the webhook url changed
+    this.messageListener.updateWebhookId();
 
     if (!config.bot.DISCORD_TOKEN.equals(lastToken)) {
       if (jda != null) {
@@ -80,7 +84,7 @@ public class Discord extends ListenerAdapter {
         .enableIntents(GatewayIntent.GUILD_MEMBERS, GatewayIntent.GUILD_MESSAGES, GatewayIntent.MESSAGE_CONTENT)
         // mentions always miss without this
         .setMemberCachePolicy(MemberCachePolicy.ALL) //
-        .addEventListeners(messageListener, this);
+        .addEventListeners(this.messageListener, this);
 
       try {
         jda = builder.build();

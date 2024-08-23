@@ -23,7 +23,8 @@ import java.util.regex.Pattern;
 public class MessageListener extends ListenerAdapter {
   private static final Pattern WEBHOOK_ID_REGEX = Pattern.compile("^https://discord\\.com/api/webhooks/(\\d+)/.+$");
 
-  private final String webhookId;
+  private String webhookId;
+
   private final ProxyServer server;
   private final Logger logger;
   private final Config config;
@@ -35,6 +36,10 @@ public class MessageListener extends ListenerAdapter {
     this.logger = logger;
     this.config = config;
 
+    updateWebhookId();
+  }
+
+  public void updateWebhookId() {
     final var matcher = WEBHOOK_ID_REGEX.matcher(config.bot.WEBHOOK_URL);
     this.webhookId = matcher.find() ? matcher.group(1) : null;
     logger.log(Level.FINER, "Found webhook id: {0}", webhookId);
