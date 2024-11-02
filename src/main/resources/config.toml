@@ -11,6 +11,11 @@ excluded_servers_receive_messages = false
 # Excluded servers will not be pinged
 ping_interval = 30
 
+# Server display names
+# If a server is not found in this list, the server name will be used instead
+[server_names]
+# lobby = "Lobby"
+
 [discord]
 # Bot token from https://discordapp.com/developers/applications/
 token = "TOKEN"

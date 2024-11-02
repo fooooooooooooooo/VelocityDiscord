@@ -187,7 +187,7 @@ public class Discord extends ListenerAdapter {
     if (config.discord.MESSAGE_FORMAT.isPresent()) {
       var message = new StringTemplate(config.discord.MESSAGE_FORMAT.get())
         .add("username", username)
-        .add("server", server)
+        .add("server", config.serverName(server))
         .add("message", content)
         .add("prefix", prefix.orElse(""))
         .toString();
@@ -209,7 +209,7 @@ public class Discord extends ListenerAdapter {
 
     var message = new StringTemplate(config.discord.JOIN_MESSAGE_FORMAT.get())
       .add("username", username)
-      .add("server", server)
+      .add("server", config.serverName(server))
       .add("prefix", prefix.orElse(""))
       .toString();
 
@@ -228,8 +228,8 @@ public class Discord extends ListenerAdapter {
 
     var message = new StringTemplate(config.discord.SERVER_SWITCH_MESSAGE_FORMAT.get())
       .add("username", username)
-      .add("current", current)
-      .add("previous", previous)
+      .add("current", config.serverName(current))
+      .add("previous", config.serverName(previous))
       .add("prefix", prefix.orElse(""))
       .toString();
 
@@ -264,7 +264,7 @@ public class Discord extends ListenerAdapter {
 
     var message = new StringTemplate(config.discord.LEAVE_MESSAGE_FORMAT.get())
       .add("username", username)
-      .add("server", server)
+      .add("server", config.serverName(server))
       .add("prefix", prefix.orElse(""))
       .toString();
 
@@ -330,7 +330,7 @@ public class Discord extends ListenerAdapter {
   public void onServerStart(String server) {
     if (config.discord.SERVER_START_MESSAGE_FORMAT.isPresent()) {
       var message = new StringTemplate(config.discord.SERVER_START_MESSAGE_FORMAT.get())
-        .add("server", server)
+        .add("server", config.serverName(server))
         .toString();
 
       switch (config.discord.SERVER_START_MESSAGE_TYPE) {
@@ -343,7 +343,7 @@ public class Discord extends ListenerAdapter {
   public void onServerStop(String server) {
     if (config.discord.SERVER_STOP_MESSAGE_FORMAT.isPresent()) {
       var message = new StringTemplate(config.discord.SERVER_STOP_MESSAGE_FORMAT.get())
-        .add("server", server)
+        .add("server", config.serverName(server))
         .toString();
 
       switch (config.discord.SERVER_STOP_MESSAGE_TYPE) {
@@ -452,7 +452,7 @@ public class Discord extends ListenerAdapter {
           var motd = PlainTextComponentSerializer.plainText().serialize(serverPing.getDescriptionComponent());
 
           var serverStatus = new StringTemplate(config.discord.TOPIC_SERVER_FORMAT.get())
-            .add("name", name)
+            .add("name", config.serverName(name))
             .add("players", online)
             .add("max_players", max)
             .add("version", ver)
@@ -469,7 +469,7 @@ public class Discord extends ListenerAdapter {
         }
 
         var serverStatus = new StringTemplate(config.discord.TOPIC_SERVER_OFFLINE_FORMAT.get())
-          .add("name", name)
+          .add("name", config.serverName(name))
           .toString();
 
         serverStatuses.put(name, serverStatus);
@@ -481,7 +481,7 @@ public class Discord extends ListenerAdapter {
       .add("players", playerCount)
       .add("player_list", playerList)
       .add("servers", serverCount)
-      .add("server_list", String.join(", ", serverList))
+      .add("server_list", String.join(", ", serverList.stream().map(config::serverName).toList()))
       .add("hostname", hostname)
       .add("port", port)
       .add("motd", queryMotd)
@@ -580,7 +580,7 @@ public class Discord extends ListenerAdapter {
 
     var discordName = new StringTemplate(config.bot.WEBHOOK_USERNAME)
       .add("username", username)
-      .add("server", server)
+      .add("server", config.serverName(server))
       .toString();
 
     var webhookMessage = new MessageCreateBuilder().setContent(content).build();

@@ -1,5 +1,6 @@
 package ooo.foooooooooooo.velocitydiscord.config;
 
+import com.electronwill.nightconfig.core.CommentedConfig;
 import com.electronwill.nightconfig.core.file.FileConfig;
 import ooo.foooooooooooo.velocitydiscord.config.commands.ListCommandConfig;
 
@@ -8,9 +9,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.logging.Logger;
 
 import static ooo.foooooooooooo.velocitydiscord.VelocityDiscord.PluginVersion;
@@ -34,8 +33,13 @@ public class Config extends BaseConfig {
   public boolean EXCLUDED_SERVERS_RECEIVE_MESSAGES = false;
   public int PING_INTERVAL_SECONDS = 15;
 
+  public Map<String, String> serverDisplayNames = new HashMap<>();
+
+  private final Logger logger;
+
   public Config(Path dataDir, Logger logger) {
     this.dataDir = dataDir;
+    this.logger = logger;
 
     var config = loadFile();
 
@@ -104,10 +108,27 @@ public class Config extends BaseConfig {
     EXCLUDED_SERVERS = get(config, "exclude_servers", EXCLUDED_SERVERS);
     EXCLUDED_SERVERS_RECEIVE_MESSAGES = get(config, "excluded_servers_receive_messages", EXCLUDED_SERVERS_RECEIVE_MESSAGES);
     PING_INTERVAL_SECONDS = get(config, "ping_interval", PING_INTERVAL_SECONDS);
+
+    CommentedConfig server_names = config.get("server_names");
+
+    for (var entry : server_names.entrySet()) {
+      if (entry.getValue() instanceof String) {
+        serverDisplayNames.put(entry.getKey(), entry.getValue());
+      } else {
+        var warning = String.format("Invalid server name for `%s`: `%s`", entry.getKey(), entry.getValue());
+        logger.warning(warning);
+      }
+    }
+
+    logger.fine("serverDisplayNames: " + serverDisplayNames.toString());
   }
 
   public boolean serverDisabled(String name) {
     return EXCLUDED_SERVERS.contains(name);
+  }
+
+  public String serverName(String name) {
+    return serverDisplayNames.getOrDefault(name, name);
   }
 
   public @Nullable String reloadConfig(Path dataDirectory) {

@@ -34,7 +34,7 @@ public class ListCommand implements ICommand {
       var state = VelocityDiscord.getListener().getServerState(server);
 
       var serverInfo = new StringTemplate(config.listCommand.SERVER_FORMAT)
-        .add("server_name", name)
+        .add("server_name", config.serverName(name))
         .add("online_players", state.players)
         .add("max_players", state.maxPlayers)
         .toString();
