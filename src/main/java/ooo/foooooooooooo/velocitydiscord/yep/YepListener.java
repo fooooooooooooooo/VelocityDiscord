@@ -19,12 +19,16 @@ public class YepListener {
   @Subscribe
   public void onYepAdvancement(YepAdvancementEvent event) {
     if (config.serverDisabled(event.getSource().getServer().getServerInfo().getName())) return;
-    VelocityDiscord.getDiscord().onPlayerAdvancement(event.getUsername(), event.getDisplayName(), event.getTitle(), event.getDescription());
+    var uuid = event.getPlayer().getUniqueId().toString();
+    var server = event.getSource().getServer().getServerInfo().getName();
+    VelocityDiscord.getDiscord().onPlayerAdvancement(event.getUsername(), uuid, event.getDisplayName(), server, event.getTitle(), event.getDescription());
   }
 
   @Subscribe
   public void onYepDeath(YepDeathEvent event) {
     if (config.serverDisabled(event.getSource().getServer().getServerInfo().getName())) return;
-    VelocityDiscord.getDiscord().onPlayerDeath(event.getUsername(), event.getDisplayName(), event.getMessage());
+    var uuid = event.getPlayer().getUniqueId().toString();
+    var server = event.getSource().getServer().getServerInfo().getName();
+    VelocityDiscord.getDiscord().onPlayerDeath(event.getUsername(), uuid, server, event.getDisplayName(), event.getMessage());
   }
 }

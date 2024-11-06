@@ -202,7 +202,7 @@ public class Discord extends ListenerAdapter {
   }
 
   @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
-  public void onJoin(String username, Optional<String> prefix, String server) {
+  public void onJoin(String username, String uuid,  Optional<String> prefix, String server) {
     if (config.discord.JOIN_MESSAGE_FORMAT.isEmpty()) {
       return;
     }
@@ -216,12 +216,12 @@ public class Discord extends ListenerAdapter {
     switch (config.discord.JOIN_MESSAGE_TYPE) {
       case EMBED -> sendEmbedMessage(message, config.discord.JOIN_MESSAGE_EMBED_COLOR);
       case TEXT -> sendMessage(message);
-
+      case WEBHOOK -> sendWebhookMessage(uuid, username, server, message);
     }
   }
 
   @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
-  public void onServerSwitch(String username, Optional<String> prefix, String current, String previous) {
+  public void onServerSwitch(String username, String uuid, Optional<String> prefix, String current, String previous) {
     if (config.discord.SERVER_SWITCH_MESSAGE_FORMAT.isEmpty()) {
       return;
     }
@@ -236,11 +236,12 @@ public class Discord extends ListenerAdapter {
     switch (config.discord.SERVER_SWITCH_MESSAGE_TYPE) {
       case EMBED -> sendEmbedMessage(message, config.discord.SERVER_SWITCH_MESSAGE_EMBED_COLOR);
       case TEXT -> sendMessage(message);
+      case WEBHOOK -> sendWebhookMessage(uuid, username, current, message);
     }
   }
 
   @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
-  public void onDisconnect(String username, Optional<String> prefix) {
+  public void onDisconnect(String username, String uuid, Optional<String> prefix, String server) {
     if (config.discord.DISCONNECT_MESSAGE_FORMAT.isEmpty()) {
       return;
     }
@@ -253,11 +254,12 @@ public class Discord extends ListenerAdapter {
     switch (config.discord.LEAVE_MESSAGE_TYPE) {
       case EMBED -> sendEmbedMessage(message, config.discord.DISCONNECT_MESSAGE_EMBED_COLOR);
       case TEXT -> sendMessage(message);
+      case WEBHOOK -> sendWebhookMessage(uuid, username, server, message);
     }
   }
 
   @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
-  public void onLeave(String username, Optional<String> prefix, String server) {
+  public void onLeave(String username, String uuid, Optional<String> prefix, String server) {
     if (config.discord.LEAVE_MESSAGE_FORMAT.isEmpty()) {
       return;
     }
@@ -271,10 +273,11 @@ public class Discord extends ListenerAdapter {
     switch (config.discord.LEAVE_MESSAGE_TYPE) {
       case EMBED -> sendEmbedMessage(message, config.discord.LEAVE_MESSAGE_EMBED_COLOR);
       case TEXT -> sendMessage(message);
+      case WEBHOOK -> sendWebhookMessage(uuid, username, server, message);
     }
   }
 
-  public void onPlayerDeath(String username, String displayName, String death) {
+  public void onPlayerDeath(String username, String uuid, String server, String displayName, String death) {
     if (config.discord.DEATH_MESSAGE_FORMAT.isPresent()) {
       var message = new StringTemplate(config.discord.DEATH_MESSAGE_FORMAT.get())
         .add("username", username)
@@ -285,11 +288,12 @@ public class Discord extends ListenerAdapter {
       switch (config.discord.DEATH_MESSAGE_TYPE) {
         case EMBED -> sendEmbedMessage(message, config.discord.DEATH_MESSAGE_EMBED_COLOR);
         case TEXT -> sendMessage(message);
+        case WEBHOOK -> sendWebhookMessage(uuid, username, server, message);
       }
     }
   }
 
-  public void onPlayerAdvancement(String username, String displayname, String title, String description) {
+  public void onPlayerAdvancement(String username, String uuid, String server, String displayname, String title, String description) {
     if (config.discord.ADVANCEMENT_MESSAGE_FORMAT.isPresent()) {
       var message = new StringTemplate(config.discord.ADVANCEMENT_MESSAGE_FORMAT.get())
         .add("username", username)
@@ -301,6 +305,7 @@ public class Discord extends ListenerAdapter {
       switch (config.discord.ADVANCEMENT_MESSAGE_TYPE) {
         case EMBED -> sendEmbedMessage(message, config.discord.ADVANCEMENT_MESSAGE_EMBED_COLOR);
         case TEXT -> sendMessage(message);
+        case WEBHOOK -> sendWebhookMessage(uuid, username, server, message);
       }
     }
   }

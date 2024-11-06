@@ -72,13 +72,15 @@ public class VelocityListener {
     var previousServer = event.getPreviousServer();
     var previousName = previousServer.map(s -> s.getServerInfo().getName()).orElse(null);
 
-    var prefix = getPrefix(event.getPlayer().getUniqueId());
+    var uuid = event.getPlayer().getUniqueId();
+
+    var prefix = getPrefix(uuid);
 
     // if previousServer is disabled but the current server is not, treat it as a join
     if (previousServer.isPresent() && !config.serverDisabled(previousName)) {
-      discord.onServerSwitch(username, prefix, server, previousName);
+      discord.onServerSwitch(username, uuid.toString(), prefix, server, previousName);
     } else {
-      discord.onJoin(username, prefix, server);
+      discord.onJoin(username, uuid.toString(),prefix, server);
     }
   }
 
@@ -89,10 +91,12 @@ public class VelocityListener {
     var currentServer = event.getPlayer().getCurrentServer();
 
     var username = event.getPlayer().getUsername();
-    var prefix = getPrefix(event.getPlayer().getUniqueId());
+    var uuid = event.getPlayer().getUniqueId();
+    var prefix = getPrefix(uuid);
+    
 
     if (currentServer.isEmpty()) {
-      discord.onDisconnect(username, prefix);
+      discord.onDisconnect(username, uuid.toString(), prefix, "");
     } else {
       var name = currentServer.get().getServerInfo().getName();
 
@@ -102,7 +106,7 @@ public class VelocityListener {
 
       setServerOnline(name);
 
-      discord.onLeave(username, prefix, currentServer.get().getServerInfo().getName());
+      discord.onLeave(username, uuid.toString(), prefix, name);
     }
   }
 
