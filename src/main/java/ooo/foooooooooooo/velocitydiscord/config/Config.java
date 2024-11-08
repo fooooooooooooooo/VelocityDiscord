@@ -110,6 +110,7 @@ public class Config extends BaseConfig {
     PING_INTERVAL_SECONDS = get(config, "ping_interval", PING_INTERVAL_SECONDS);
 
     CommentedConfig server_names = config.get("server_names");
+    if (server_names == null) return; 
 
     for (var entry : server_names.entrySet()) {
       if (entry.getValue() instanceof String) {
