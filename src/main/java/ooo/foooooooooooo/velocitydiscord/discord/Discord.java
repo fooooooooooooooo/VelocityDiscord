@@ -135,9 +135,6 @@ public class Discord extends ListenerAdapter {
     // Load all discord users in the channel and add them to MC client chat suggestions
     var members = channel.getMembers();
     mentionCompletions = members.stream().map((m -> "@"+m.getUser().getName())).toList();
-    for (var mention : mentionCompletions) {
-      System.out.println(mention);
-    }
 
     activeChannel = channel;
 
