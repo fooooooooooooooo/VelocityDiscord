@@ -5,10 +5,7 @@ import com.velocitypowered.api.proxy.ProxyServer;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
-import net.dv8tion.jda.api.entities.Activity;
-import net.dv8tion.jda.api.entities.IncomingWebhookClient;
-import net.dv8tion.jda.api.entities.MessageEmbed;
-import net.dv8tion.jda.api.entities.WebhookClient;
+import net.dv8tion.jda.api.entities.*;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.session.ReadyEvent;
@@ -29,9 +26,11 @@ import java.awt.*;
 import java.lang.management.ManagementFactory;
 import java.text.MessageFormat;
 import java.util.*;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 public class Discord extends ListenerAdapter {
   private static final Pattern EveryoneAndHerePattern = Pattern.compile("@(?<ping>everyone|here)");
@@ -49,6 +48,8 @@ public class Discord extends ListenerAdapter {
 
   private TextChannel activeChannel;
   private int lastPlayerCount = -1;
+
+  private List<String> mentionCompletions;
 
   public boolean ready = false;
 
@@ -131,6 +132,13 @@ public class Discord extends ListenerAdapter {
       return;
     }
 
+    // Load all discord users in the channel and add them to MC client chat suggestions
+    var members = channel.getMembers();
+    mentionCompletions = members.stream().map((m -> "@"+m.getUser().getName())).toList();
+    for (var mention : mentionCompletions) {
+      System.out.println(mention);
+    }
+
     activeChannel = channel;
 
     var guild = activeChannel.getGuild();
@@ -151,6 +159,8 @@ public class Discord extends ListenerAdapter {
         }
       } else if (msg instanceof MessageEmbed embed) {
         activeChannel.sendMessageEmbeds(embed).queue();
+      } else if (msg instanceof Player player) {
+        player.addCustomChatCompletions(mentionCompletions);
       } else {
         logger.warning("Unknown message type in preReadyQueue: " + msg);
       }
@@ -201,14 +211,24 @@ public class Discord extends ListenerAdapter {
     }
   }
 
+  private void sendChatCompletions(Player player) {
+    if (mentionCompletions == null) {
+      preReadyQueue.add(player);
+    } else {
+      player.addCustomChatCompletions(mentionCompletions);
+    }
+  }
+
   @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
-  public void onJoin(String username, String uuid,  Optional<String> prefix, String server) {
+  public void onJoin(Player player, Optional<String> prefix, String server) {
+    sendChatCompletions(player);
+
     if (config.discord.JOIN_MESSAGE_FORMAT.isEmpty()) {
       return;
     }
 
     var message = new StringTemplate(config.discord.JOIN_MESSAGE_FORMAT.get())
-      .add("username", username)
+      .add("username", player.getUsername())
       .add("server", config.serverName(server))
       .add("prefix", prefix.orElse(""))
       .toString();
@@ -216,7 +236,7 @@ public class Discord extends ListenerAdapter {
     switch (config.discord.JOIN_MESSAGE_TYPE) {
       case EMBED -> sendEmbedMessage(message, config.discord.JOIN_MESSAGE_EMBED_COLOR);
       case TEXT -> sendMessage(message);
-      case WEBHOOK -> sendWebhookMessage(uuid, username, server, message);
+      case WEBHOOK -> sendWebhookMessage(player.getUniqueId().toString(), player.getUsername(), server, message);
     }
   }
 
