@@ -227,7 +227,7 @@ discord_chunk = "<dark_gray>[<{discord_color}>Discord<dark_gray>]<reset>"
 username_chunk = "<{role_color}><insert:@{username}><hover:show_text:{display_name}>{nickname}</hover></insert><reset>"
 
 # Placeholders available: {discord_chunk}, {username_chunk}, {attachments}, {message}
-message = "{discord_chunk} {username_chunk}<dark_gray>: <reset>{message} {attachments}"
+message = "{discord_chunk} {role_prefix} {username_chunk}<dark_gray>: <reset>{message} {attachments}"
 
 # Placeholders available: {url}, {attachment_color}
 attachments = "<dark_gray><click:open_url:{url}>[<{attachment_color}>Attachment<dark_gray>]</click><reset>"
@@ -235,3 +235,11 @@ attachments = "<dark_gray><click:open_url:{url}>[<{attachment_color}>Attachment<
 # Colors for the <{discord_color}> and <{attachment_color}> tags
 discord_color = "#7289da"
 attachment_color = "#4abdff"
+
+# Role prefix configuration
+# Format: role_id = "prefix format using MiniMessage"
+[minecraft.role_prefixes]
+"123456789" = "<dark_gray>[</dark_gray><red><b>OWNER</b></red><dark_gray>]</dark_gray>"
+"987654321" = "<dark_gray>[</dark_gray><blue>ADMIN</blue><dark_gray>]</dark_gray>"
+"456789123" = "<dark_gray>[</dark_gray><green>MOD</green><dark_gray>]</dark_gray>"
+"789123456" = "<dark_gray>[</dark_gray><aqua>HELPER</aqua><dark_gray>]</dark_gray>"

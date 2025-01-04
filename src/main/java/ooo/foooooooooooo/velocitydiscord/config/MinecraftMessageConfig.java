@@ -4,6 +4,7 @@ import com.electronwill.nightconfig.core.Config;
 
 public class MinecraftMessageConfig extends BaseConfig {
   public MinecraftMessageConfig(Config config) {
+    rolePrefixes = new RolePrefixConfig(config);
     loadConfig(config);
   }
 
@@ -14,12 +15,15 @@ public class MinecraftMessageConfig extends BaseConfig {
   // formats
   public String DISCORD_CHUNK_FORMAT = "<dark_gray>[<{discord_color}>Discord<dark_gray>]<reset>";
   public String USERNAME_CHUNK_FORMAT = "<{role_color}><insert:@{username}><hover:show_text:{display_name}>{nickname}</hover></insert><reset>";
-  public String MESSAGE_FORMAT = "{discord_chunk} {username_chunk}<dark_gray>: <reset>{message} {attachments}";
+  public String MESSAGE_FORMAT = "{discord_chunk} {role_prefix} {username_chunk}<dark_gray> <dark_gray>»</dark_gray> <reset><gray>{message}</gray> {attachments}";
   public String ATTACHMENT_FORMAT = "<dark_gray><click:open_url:{url}>[<{attachment_color}>Attachment<dark_gray>]</click><reset>";
 
   // colors
   public String DISCORD_COLOR = "#7289da";
   public String ATTACHMENT_COLOR = "#4abdff";
+
+  // role prefixes
+  public final RolePrefixConfig rolePrefixes;
 
   @Override
   protected void loadConfig(Config config) {
@@ -36,5 +40,8 @@ public class MinecraftMessageConfig extends BaseConfig {
     // colors
     DISCORD_COLOR = get(config, "minecraft.discord_color", DISCORD_COLOR);
     ATTACHMENT_COLOR = get(config, "minecraft.attachment_color", ATTACHMENT_COLOR);
+
+    // Reload role prefixes
+    rolePrefixes.loadConfig(config);
   }
 }
