@@ -80,7 +80,7 @@ public class VelocityListener {
     if (previousServer.isPresent() && !config.serverDisabled(previousName)) {
       discord.onServerSwitch(username, uuid.toString(), prefix, server, previousName);
     } else {
-      discord.onJoin(username, uuid.toString(),prefix, server);
+      discord.onJoin(event.getPlayer(), prefix, server);
     }
   }
 
