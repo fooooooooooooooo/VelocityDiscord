@@ -77,6 +77,7 @@ public class MessageListener extends ListenerAdapter {
 
     var color = Color.white;
     var nickname = author.getName(); // Nickname defaults to username
+    var rolePrefix = "";
 
     var member = guild.getMember(author);
     if (member != null) {
@@ -85,6 +86,15 @@ public class MessageListener extends ListenerAdapter {
         color = Color.white;
       }
       nickname = member.getEffectiveName();
+
+      // Get the role prefix
+      var highestRole = member.getRoles().stream()
+        .filter(role -> !config.minecraft.rolePrefixes.getPrefixForRole(role.getId()).isEmpty())
+        .findFirst();
+
+      rolePrefix = highestRole
+        .map(role -> config.minecraft.rolePrefixes.getPrefixForRole(role.getId()))
+        .orElse("");
     }
 
     var hex = "#" + Integer.toHexString(color.getRGB()).substring(2);
@@ -110,6 +120,7 @@ public class MessageListener extends ListenerAdapter {
     var attachment_chunk = config.minecraft.ATTACHMENT_FORMAT;
     var message_chunk = new StringTemplate(config.minecraft.MESSAGE_FORMAT)
       .add("discord_chunk", discord_chunk)
+      .add("role_prefix", rolePrefix)
       .add("username_chunk", username_chunk)
       .add("message", message.getContentDisplay());
 
