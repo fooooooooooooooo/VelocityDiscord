@@ -2,31 +2,34 @@ package ooo.foooooooooooo.velocitydiscord.config.commands;
 
 import com.electronwill.nightconfig.core.Config;
 import ooo.foooooooooooo.velocitydiscord.config.BaseConfig;
+import ooo.foooooooooooo.velocitydiscord.config.Key;
 
 import java.util.Optional;
 
 @SuppressWarnings({"OptionalUsedAsFieldOrParameterType"})
 public class ListCommandConfig extends BaseConfig {
   public ListCommandConfig(Config config) {
-    loadConfig(config);
+    super(config);
+    loadConfig();
   }
 
+  public ListCommandConfig(Config config, ListCommandConfig main) {
+    super(config, main);
+    loadConfig();
+  }
+
+  @Key("discord.commands.list.enabled")
   public Boolean DISCORD_LIST_ENABLED = true;
+  @Key("discord.commands.list.ephemeral")
   public Boolean EPHEMERAL = true;
+  @Key("discord.commands.list.server_format")
   public String SERVER_FORMAT = "[{server_name} {online_players}/{max_players}]";
+  @Key("discord.commands.list.player_format")
   public String PLAYER_FORMAT = "- {username}";
+  @Key("discord.commands.list.no_players")
   public Optional<String> NO_PLAYERS_FORMAT = Optional.of("No players online");
+  @Key("discord.commands.list.server_offline")
   public Optional<String> SERVER_OFFLINE_FORMAT = Optional.of("Server offline");
+  @Key("discord.commands.list.codeblock_lang")
   public String CODEBLOCK_LANG = "asciidoc";
-
-  @Override
-  public void loadConfig(Config config) {
-    DISCORD_LIST_ENABLED = get(config, "discord.commands.list.enabled", DISCORD_LIST_ENABLED);
-    EPHEMERAL = get(config, "discord.commands.list.ephemeral", EPHEMERAL);
-    SERVER_FORMAT = get(config, "discord.commands.list.server_format", SERVER_FORMAT);
-    PLAYER_FORMAT = get(config, "discord.commands.list.player_format", PLAYER_FORMAT);
-    NO_PLAYERS_FORMAT = getOptional(config, "discord.commands.list.no_players", NO_PLAYERS_FORMAT);
-    SERVER_OFFLINE_FORMAT = getOptional(config, "discord.commands.list.server_offline", SERVER_OFFLINE_FORMAT);
-    CODEBLOCK_LANG = get(config, "discord.commands.list.codeblock_lang", CODEBLOCK_LANG);
-  }
 }

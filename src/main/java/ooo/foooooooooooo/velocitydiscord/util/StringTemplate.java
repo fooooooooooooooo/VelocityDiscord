@@ -14,25 +14,25 @@ public class StringTemplate {
   }
 
   public StringTemplate add(@Nonnull String key, @Nonnull String value) {
-    variables.put(key, value);
+    this.variables.put(key, value);
 
     return this;
   }
 
   public StringTemplate add(@Nonnull String key, int value) {
-    variables.put(key, String.valueOf(value));
+    this.variables.put(key, String.valueOf(value));
 
     return this;
   }
 
   public StringTemplate add(@Nonnull String key, boolean value) {
-    variables.put(key, String.valueOf(value));
+    this.variables.put(key, String.valueOf(value));
 
     return this;
   }
 
   public StringTemplate add(@Nonnull String key, double value) {
-    variables.put(key, String.valueOf(value));
+    this.variables.put(key, String.valueOf(value));
 
     return this;
   }
@@ -40,9 +40,9 @@ public class StringTemplate {
   @Override
   @Nonnull
   public String toString() {
-    var result = template;
+    var result = this.template;
 
-    for (var entry : variables.entrySet()) {
+    for (var entry : this.variables.entrySet()) {
       result = result.replace("{" + entry.getKey() + "}", entry.getValue());
     }
 
@@ -50,7 +50,7 @@ public class StringTemplate {
   }
 
   public StringTemplate replace(@Nonnull String target, @Nonnull String replacement) {
-    template = template.replace(target, replacement);
+    this.template = this.template.replace(target, replacement);
 
     return this;
   }

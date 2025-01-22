@@ -17,7 +17,7 @@ import static org.junit.jupiter.api.Assertions.*;
 public class ConfigTests {
   @Test
   void getReturnsEmptyGivenFalse(@TempDir Path tempDir) {
-    var toml = createConfig("test = false", tempDir);
+    var toml = new BaseConfig(createConfig("test = false", tempDir));
 
     var test = BaseConfig.getOptional(toml, "test", Optional.of("default awa"));
 
@@ -26,7 +26,7 @@ public class ConfigTests {
 
   @Test
   void getReturnsEmptyGivenEmptyString(@TempDir Path tempDir) {
-    var toml = createConfig("test = ''", tempDir);
+    var toml = new BaseConfig(createConfig("test = ''", tempDir));
 
     var test = BaseConfig.getOptional(toml, "test", Optional.of("default awa"));
 
@@ -35,7 +35,7 @@ public class ConfigTests {
 
   @Test
   void getReturnsValueGivenString(@TempDir Path tempDir) {
-    var toml = createConfig("test = 'awa'", tempDir);
+    var toml = new BaseConfig(createConfig("test = 'awa'", tempDir));
 
     var test = BaseConfig.getOptional(toml, "test", Optional.of("default awa"));
 
@@ -45,7 +45,7 @@ public class ConfigTests {
 
   @Test
   void getReturnsDefaultValueGivenMissingKey(@TempDir Path tempDir) {
-    var toml = createConfig("", tempDir);
+    var toml = new BaseConfig(createConfig("", tempDir));
 
     var test = BaseConfig.getOptional(toml, "test", Optional.of("default awa"));
 
@@ -53,6 +53,7 @@ public class ConfigTests {
     assertEquals(test.get(), "default awa");
   }
 
+  // this is insane I wish I could just read from a string instead of making a temp file
   Config createConfig(String s, @NotNull Path tempDir) {
     var test = tempDir.resolve("test.toml");
 

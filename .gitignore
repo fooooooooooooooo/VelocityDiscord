@@ -9,3 +9,5 @@ run/
 bin/
 
 .env
+
+deps/*.jar

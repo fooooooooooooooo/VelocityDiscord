@@ -4,7 +4,13 @@ import com.electronwill.nightconfig.core.Config;
 
 public class BotConfig extends BaseConfig {
   public BotConfig(Config config) {
-    loadConfig(config);
+    super(config);
+    loadConfig();
+  }
+
+  public BotConfig(Config config, BotConfig main) {
+    super(config, main);
+    loadConfig();
   }
 
   private static final String DefaultToken = "TOKEN";
@@ -13,50 +19,36 @@ public class BotConfig extends BaseConfig {
   private static final String DefaultAvatarUrl = "https://crafatar.com/avatars/{uuid}?overlay";
 
   // bot
+  @Key(value = "discord.token", overridable = false)
   public String DISCORD_TOKEN = DefaultToken;
-  public String CHANNEL_ID = DefaultChannelId;
+  @Key("discord.channel")
+  public String MAIN_CHANNEL_ID = DefaultChannelId;
 
   // webhooks
+  @Key("discord.webhook.webhook_url")
   public String WEBHOOK_URL = DefaultWebhookUrl;
+  @Key("discord.webhook.avatar_url")
   public String WEBHOOK_AVATAR_URL = DefaultAvatarUrl;
+  @Key("discord.webhook.webhook_username")
   public String WEBHOOK_USERNAME = "{username}";
 
   // pings
+  @Key("discord.enable_mentions")
   public Boolean ENABLE_MENTIONS = true;
+  @Key("discord.enable_everyone_and_here")
   public Boolean ENABLE_EVERYONE_AND_HERE = false;
 
   // bot activity
+  @Key("discord.show_activity")
   public Boolean SHOW_ACTIVITY = true;
+  @Key("discord.activity_text")
   public String ACTIVITY_FORMAT = "with {amount} players online";
 
   // update channel topic
+  @Key("discord.update_channel_topic_interval")
   public int UPDATE_CHANNEL_TOPIC_INTERVAL_MINUTES = -1;
 
-
-  @Override
-  protected void loadConfig(com.electronwill.nightconfig.core.Config config) {
-    // bot
-    DISCORD_TOKEN = get(config, "discord.token", DISCORD_TOKEN);
-    CHANNEL_ID = get(config, "discord.channel", CHANNEL_ID);
-
-    // webhooks
-    WEBHOOK_URL = get(config, "discord.webhook.webhook_url", WEBHOOK_URL);
-    WEBHOOK_AVATAR_URL = get(config, "discord.webhook.avatar_url", WEBHOOK_AVATAR_URL);
-    WEBHOOK_USERNAME = get(config, "discord.webhook.webhook_username", WEBHOOK_USERNAME);
-
-    // pings
-    ENABLE_MENTIONS = get(config, "discord.enable_mentions", ENABLE_MENTIONS);
-    ENABLE_EVERYONE_AND_HERE = get(config, "discord.enable_everyone_and_here", ENABLE_EVERYONE_AND_HERE);
-
-    // bot activity
-    SHOW_ACTIVITY = get(config, "discord.show_activity", SHOW_ACTIVITY);
-    ACTIVITY_FORMAT = get(config, "discord.activity_text", ACTIVITY_FORMAT);
-
-    // update channel topic
-    UPDATE_CHANNEL_TOPIC_INTERVAL_MINUTES = get(config, "discord.update_channel_topic_interval", UPDATE_CHANNEL_TOPIC_INTERVAL_MINUTES);
-  }
-
   public boolean isDefaultValues() {
-    return DISCORD_TOKEN.equals(DefaultToken) || CHANNEL_ID.equals(DefaultChannelId);
+    return this.DISCORD_TOKEN.equals(DefaultToken) || this.MAIN_CHANNEL_ID.equals(DefaultChannelId);
   }
 }

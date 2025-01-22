@@ -1,4 +1,4 @@
-package ooo.foooooooooooo.velocitydiscord;
+package ooo.foooooooooooo.velocitydiscord.compat;
 
 import net.luckperms.api.LuckPermsProvider;
 import net.luckperms.api.model.user.UserManager;

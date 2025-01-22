@@ -1,75 +1,110 @@
 package ooo.foooooooooooo.velocitydiscord.discord;
 
-import com.velocitypowered.api.proxy.ProxyServer;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.channel.ChannelType;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
-import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
-import ooo.foooooooooooo.velocitydiscord.config.Config;
+import ooo.foooooooooooo.velocitydiscord.VelocityDiscord;
 import ooo.foooooooooooo.velocitydiscord.util.StringTemplate;
 
 import javax.annotation.Nonnull;
 import java.awt.*;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
 public class MessageListener extends ListenerAdapter {
   private static final Pattern WEBHOOK_ID_REGEX = Pattern.compile("^https://discord\\.com/api/webhooks/(\\d+)/.+$");
+  private final HashMap<String, Discord.Channels> serverChannels;
+  private final HashMap<Long, List<String>> channelToServersMap = new HashMap<>();
 
   private String webhookId;
 
-  private final ProxyServer server;
-  private final Logger logger;
-  private final Config config;
-
   private JDA jda;
 
-  public MessageListener(ProxyServer server, Logger logger, Config config) {
-    this.server = server;
-    this.logger = logger;
-    this.config = config;
-
+  public MessageListener(HashMap<String, Discord.Channels> serverChannels) {
+    this.serverChannels = serverChannels;
     updateWebhookId();
+    onServerChannelsUpdated();
   }
 
   public void updateWebhookId() {
-    final var matcher = WEBHOOK_ID_REGEX.matcher(config.bot.WEBHOOK_URL);
+    final var matcher = WEBHOOK_ID_REGEX.matcher(VelocityDiscord.CONFIG.bot.WEBHOOK_URL);
     this.webhookId = matcher.find() ? matcher.group(1) : null;
-    logger.log(Level.FINER, "Found webhook id: {0}", webhookId);
+    VelocityDiscord.LOGGER.log(Level.FINER, "Found webhook id: {0}", this.webhookId);
+  }
+
+  public void onServerChannelsUpdated() {
+    this.channelToServersMap.clear();
+
+    for (var entry : this.serverChannels.entrySet()) {
+      this.channelToServersMap
+        .computeIfAbsent(entry.getValue().chatChannel.getIdLong(), (k) -> new ArrayList<>())
+        .add(entry.getKey());
+    }
   }
 
   @Override
   public void onMessageReceived(@Nonnull MessageReceivedEvent event) {
     if (!event.isFromType(ChannelType.TEXT)) {
-      logger.finest("ignoring non text channel message");
+      VelocityDiscord.LOGGER.finest("ignoring non text channel message");
       return;
     }
 
-    if (jda == null) {
-      jda = event.getJDA();
+    if (this.jda == null) {
+      this.jda = event.getJDA();
     }
 
     var channel = event.getChannel().asTextChannel();
-    if (!channel.getId().equals(config.bot.CHANNEL_ID)) {
+    var targetServerNames = this.channelToServersMap.get(channel.getIdLong());
+
+    if (targetServerNames == null) {
       return;
     }
+
+    VelocityDiscord.LOGGER.info("Received message from Discord channel "
+      + channel.getName()
+      + " for servers "
+      + targetServerNames);
+
+    var messages = new HashMap<String, String>();
+    for (var serverName : targetServerNames) {
+      messages.put(serverName, serializeMinecraftMessage(event, serverName));
+    }
+
+    for (var server : VelocityDiscord.SERVER.getAllServers()) {
+      var serverName = server.getServerInfo().getName();
+      if (!VelocityDiscord.CONFIG.EXCLUDED_SERVERS_RECEIVE_MESSAGES
+        && VelocityDiscord.CONFIG.serverDisabled(serverName)) {
+        continue;
+      }
+
+      var message = messages.get(serverName);
+      if (message == null) continue;
+
+      server.sendMessage(MiniMessage.miniMessage().deserialize(message).asComponent());
+    }
+  }
+
+  private String serializeMinecraftMessage(MessageReceivedEvent event, String server) {
+    var serverConfig = VelocityDiscord.CONFIG.getServerConfig(server);
+    var serverMinecraftConfig = serverConfig.getMinecraftMessageConfig();
 
     var author = event.getAuthor();
-    if (!config.minecraft.SHOW_BOT_MESSAGES && author.isBot()) {
-      logger.finer("ignoring bot message");
-      return;
+    if (!serverConfig.getMinecraftMessageConfig().SHOW_BOT_MESSAGES && author.isBot()) {
+      VelocityDiscord.LOGGER.finer("ignoring bot message");
+      return null;
     }
 
-    if (author.getId().equals(jda.getSelfUser().getId()) || (Objects.nonNull(this.webhookId) && author.getId().equals(this.webhookId))) {
-      logger.finer("ignoring own message");
-      return;
+    if (author.getId().equals(this.jda.getSelfUser().getId()) || (
+      Objects.nonNull(this.webhookId) && author.getId().equals(this.webhookId))) {
+      VelocityDiscord.LOGGER.finer("ignoring own message");
+      return null;
     }
 
     var message = event.getMessage();
@@ -88,20 +123,21 @@ public class MessageListener extends ListenerAdapter {
       nickname = member.getEffectiveName();
 
       // Get the role prefix
-      var highestRole = member.getRoles().stream()
-        .filter(role -> !config.minecraft.rolePrefixes.getPrefixForRole(role.getId()).isEmpty())
+      var highestRole = member
+        .getRoles()
+        .stream()
+        .filter(role -> !serverMinecraftConfig.rolePrefixes.getPrefixForRole(role.getId()).isEmpty())
         .findFirst();
 
-      rolePrefix = highestRole
-        .map(role -> config.minecraft.rolePrefixes.getPrefixForRole(role.getId()))
-        .orElse("");
+      rolePrefix =
+        highestRole.map(role -> serverMinecraftConfig.rolePrefixes.getPrefixForRole(role.getId())).orElse("");
     }
 
     var hex = "#" + Integer.toHexString(color.getRGB()).substring(2);
 
     // parse configured message formats
-    var discord_chunk = new StringTemplate(config.minecraft.DISCORD_CHUNK_FORMAT)
-      .add("discord_color", config.minecraft.DISCORD_COLOR)
+    var discord_chunk = new StringTemplate(serverMinecraftConfig.DISCORD_CHUNK_FORMAT)
+      .add("discord_color", serverMinecraftConfig.DISCORD_COLOR)
       .toString();
 
     var display_name = author.getGlobalName();
@@ -110,15 +146,15 @@ public class MessageListener extends ListenerAdapter {
       display_name = author.getName();
     }
 
-    var username_chunk = new StringTemplate(config.minecraft.USERNAME_CHUNK_FORMAT)
+    var username_chunk = new StringTemplate(serverMinecraftConfig.USERNAME_CHUNK_FORMAT)
       .add("role_color", hex)
       .add("username", author.getName())
       .add("display_name", display_name)
       .add("nickname", nickname)
       .toString();
 
-    var attachment_chunk = config.minecraft.ATTACHMENT_FORMAT;
-    var message_chunk = new StringTemplate(config.minecraft.MESSAGE_FORMAT)
+    var attachment_chunk = serverMinecraftConfig.ATTACHMENT_FORMAT;
+    var message_chunk = new StringTemplate(serverMinecraftConfig.MESSAGE_FORMAT)
       .add("discord_chunk", discord_chunk)
       .add("role_prefix", rolePrefix)
       .add("username_chunk", username_chunk)
@@ -127,14 +163,14 @@ public class MessageListener extends ListenerAdapter {
     var attachmentChunks = new ArrayList<String>();
 
     List<Message.Attachment> attachments = new ArrayList<>();
-    if (config.minecraft.SHOW_ATTACHMENTS) {
+    if (serverMinecraftConfig.SHOW_ATTACHMENTS) {
       attachments = message.getAttachments();
     }
 
     for (var attachment : attachments) {
       var chunk = new StringTemplate(attachment_chunk)
         .add("url", attachment.getUrl())
-        .add("attachment_color", config.minecraft.ATTACHMENT_COLOR)
+        .add("attachment_color", serverMinecraftConfig.ATTACHMENT_COLOR)
         .toString();
 
       attachmentChunks.add(chunk);
@@ -150,16 +186,6 @@ public class MessageListener extends ListenerAdapter {
     message_chunk.add("message", content);
     message_chunk.add("attachments", String.join(" ", attachmentChunks));
 
-    sendMessage(MiniMessage.miniMessage().deserialize(message_chunk.toString()).asComponent());
-  }
-
-  private void sendMessage(Component msg) {
-    for (var server : server.getAllServers()) {
-      if (!config.EXCLUDED_SERVERS_RECEIVE_MESSAGES && config.serverDisabled(server.getServerInfo().getName())) {
-        continue;
-      }
-
-      server.sendMessage(msg);
-    }
+    return message_chunk.toString();
   }
 }

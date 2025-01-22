@@ -11,6 +11,7 @@ import com.velocitypowered.api.proxy.ProxyServer;
 import com.velocitypowered.api.proxy.messages.MinecraftChannelIdentifier;
 import com.velocitypowered.api.scheduler.ScheduledTask;
 import ooo.foooooooooooo.velocitydiscord.commands.Commands;
+import ooo.foooooooooooo.velocitydiscord.compat.LuckPerms;
 import ooo.foooooooooooo.velocitydiscord.config.Config;
 import ooo.foooooooooooo.velocitydiscord.discord.Discord;
 import ooo.foooooooooooo.velocitydiscord.yep.YepListener;
@@ -35,7 +36,7 @@ import java.util.logging.Logger;
 public class VelocityDiscord {
   public static final String PluginName = "Velocity Discord Bridge";
   public static final String PluginDescription = "Velocity Discord Chat Bridge";
-  public static final String PluginVersion = "1.9.0";
+  public static final String PluginVersion = "2.0.0";
   public static final String PluginUrl = "https://github.com/fooooooooooooooo/VelocityDiscord";
 
   public static final String YeplibId = "yeplib";
@@ -43,14 +44,15 @@ public class VelocityDiscord {
 
   public static final MinecraftChannelIdentifier YepIdentifier = MinecraftChannelIdentifier.create("velocity", "yep");
 
+  public static Logger LOGGER;
+  public static Config CONFIG;
+  public static ProxyServer SERVER;
+
   public static boolean pluginDisabled = false;
 
   private static VelocityDiscord instance;
 
-  private final ProxyServer server;
-  private final Logger logger;
   private final Path dataDirectory;
-  private Config config = null;
 
   @Nullable
   private VelocityListener listener = null;
@@ -69,27 +71,28 @@ public class VelocityDiscord {
 
   @Inject
   public VelocityDiscord(ProxyServer server, Logger logger, @DataDirectory Path dataDirectory) {
-    this.server = server;
-    this.logger = logger;
+    SERVER = server;
+    LOGGER = logger;
+
     this.dataDirectory = dataDirectory;
 
-    logger.info("Loading %s v%s".formatted(PluginName, PluginVersion));
+    LOGGER.info("Loading %s v%s".formatted(PluginName, PluginVersion));
 
     reloadConfig();
 
-    instance = this;
+    VelocityDiscord.instance = this;
 
-    if (pluginDisabled || this.config == null) {
+    if (pluginDisabled || CONFIG == null) {
       return;
     }
 
-    this.discord = new Discord(this.server, logger, this.config);
+    this.discord = new Discord();
 
     if (server.getPluginManager().isLoaded(VelocityDiscord.YeplibId)) {
-      this.yep = new YepListener(logger, this.config);
+      this.yep = new YepListener();
     }
 
-    this.listener = new VelocityListener(config, discord, server);
+    this.listener = new VelocityListener(this.discord);
   }
 
   public static Discord getDiscord() {
@@ -110,58 +113,58 @@ public class VelocityDiscord {
 
   @Subscribe
   public void onProxyInitialization(ProxyInitializeEvent event) {
-    if (listener != null) {
-      register(listener);
+    if (this.listener != null) {
+      register(this.listener);
     }
 
-    if (yep != null) {
-      register(yep);
+    if (this.yep != null) {
+      register(this.yep);
     }
 
-    this.server.getChannelRegistrar().register(YepIdentifier);
+    SERVER.getChannelRegistrar().register(YepIdentifier);
 
-    if (this.config != null) {
+    if (CONFIG != null) {
       tryStartPingScheduler();
       tryStartTopicScheduler();
     }
 
-    Commands.RegisterCommands(server.getCommandManager());
+    Commands.RegisterCommands(SERVER.getCommandManager());
 
     try {
-      if (server.getPluginManager().getPlugin("luckperms").isPresent()) {
+      if (SERVER.getPluginManager().getPlugin("luckperms").isPresent()) {
         this.luckPerms = new LuckPerms();
-        logger.info("LuckPerms found, prefix will be displayed");
+        LOGGER.info("LuckPerms found, prefix will be displayed");
       } else {
-        logger.info("LuckPerms not found, prefix will not be displayed");
+        LOGGER.info("LuckPerms not found, prefix will not be displayed");
       }
     } catch (Exception e) {
-      logger.info("LuckPerms not found, prefix will not be displayed");
+      LOGGER.info("LuckPerms not found, prefix will not be displayed");
     }
   }
 
   @Subscribe
   public void onProxyShutdown(ProxyShutdownEvent event) {
-    if (discord != null) {
-      discord.shutdown();
+    if (this.discord != null) {
+      this.discord.shutdown();
     }
   }
 
   private void register(Object listener) {
-    this.server.getEventManager().register(this, listener);
+    SERVER.getEventManager().register(this, listener);
   }
 
   public String reloadConfig() {
     String error = null;
 
-    if (this.config == null) {
-      this.config = new Config(this.dataDirectory, this.logger);
+    if (CONFIG == null) {
+      CONFIG = new Config(this.dataDirectory);
     } else {
-      this.logger.info("Reloading config");
+      LOGGER.info("Reloading config");
 
-      error = this.config.reloadConfig(this.dataDirectory);
+      error = CONFIG.reloadConfig(this.dataDirectory);
 
       // disable server ping scheduler if it was disabled
-      if (this.config.PING_INTERVAL_SECONDS == 0 && this.pingScheduler != null) {
+      if (CONFIG.PING_INTERVAL_SECONDS == 0 && this.pingScheduler != null) {
         this.pingScheduler.cancel();
         this.pingScheduler = null;
       }
@@ -169,7 +172,7 @@ public class VelocityDiscord {
       tryStartPingScheduler();
 
       // disable channel topic scheduler if it was disabled
-      if (this.config.bot.UPDATE_CHANNEL_TOPIC_INTERVAL_MINUTES == 0 && this.topicScheduler != null) {
+      if (CONFIG.bot.UPDATE_CHANNEL_TOPIC_INTERVAL_MINUTES == 0 && this.topicScheduler != null) {
         this.topicScheduler.cancel();
         this.topicScheduler = null;
       }
@@ -177,47 +180,43 @@ public class VelocityDiscord {
       tryStartTopicScheduler();
 
       if (this.discord != null) {
-        this.discord.configReloaded();
+        this.discord.onConfigReload();
       }
 
       if (error != null) {
-        this.logger.severe("Error reloading config: " + error);
+        LOGGER.severe("Error reloading config: " + error);
       }
 
-      this.logger.info("Config reloaded");
+      LOGGER.info("Config reloaded");
     }
 
-    pluginDisabled = this.config.isFirstRun();
+    pluginDisabled = CONFIG.isFirstRun();
 
     if (pluginDisabled) {
-      this.logger.severe("This is the first time you are running this plugin. Please configure it in the config.toml file. Disabling plugin.");
+      LOGGER.severe(
+        "This is the first time you are running this plugin. Please configure it in the config.toml file. Disabling "
+          + "plugin.");
     }
 
     return error;
   }
 
   private void tryStartPingScheduler() {
-    if (this.config.PING_INTERVAL_SECONDS > 0 || this.pingScheduler != null) {
-      this.pingScheduler = server.getScheduler()
-        .buildTask(this, () -> {
-          if (this.listener != null) this.listener.checkServerHealth();
-        })
-        .repeat(this.config.PING_INTERVAL_SECONDS, TimeUnit.SECONDS)
-        .schedule();
+    if (CONFIG.PING_INTERVAL_SECONDS > 0 || this.pingScheduler != null) {
+      this.pingScheduler = SERVER.getScheduler().buildTask(this, () -> {
+        if (this.listener != null) this.listener.checkServerHealth();
+      }).repeat(CONFIG.PING_INTERVAL_SECONDS, TimeUnit.SECONDS).schedule();
     }
   }
 
   private void tryStartTopicScheduler() {
-    if (config.bot.UPDATE_CHANNEL_TOPIC_INTERVAL_MINUTES < 10) return;
+    if (CONFIG.bot.UPDATE_CHANNEL_TOPIC_INTERVAL_MINUTES < 10) return;
 
-    this.topicScheduler = server.getScheduler()
-      .buildTask(this, () -> {
-        logger.fine("Updating channel topic");
-        if (this.discord != null) this.discord.updateChannelTopic();
-      })
-      .repeat(config.bot.UPDATE_CHANNEL_TOPIC_INTERVAL_MINUTES, TimeUnit.MINUTES)
-      .schedule();
+    this.topicScheduler = SERVER.getScheduler().buildTask(this, () -> {
+      LOGGER.fine("Updating channel topic");
+      if (this.discord != null) this.discord.updateChannelTopic();
+    }).repeat(CONFIG.bot.UPDATE_CHANNEL_TOPIC_INTERVAL_MINUTES, TimeUnit.MINUTES).schedule();
 
-    logger.info("Scheduled task to update channel topic every %d minutes".formatted(config.bot.UPDATE_CHANNEL_TOPIC_INTERVAL_MINUTES));
+    LOGGER.info("Scheduled task to update channel topic every %d minutes".formatted(CONFIG.bot.UPDATE_CHANNEL_TOPIC_INTERVAL_MINUTES));
   }
 }
