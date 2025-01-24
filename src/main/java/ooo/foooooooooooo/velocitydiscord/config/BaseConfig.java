@@ -1,5 +1,6 @@
 package ooo.foooooooooooo.velocitydiscord.config;
 
+import com.electronwill.nightconfig.core.CommentedConfig;
 import com.electronwill.nightconfig.core.Config;
 import ooo.foooooooooooo.velocitydiscord.VelocityDiscord;
 
@@ -28,8 +29,8 @@ public class BaseConfig {
     this.main = main;
   }
 
-  void setInner(com.electronwill.nightconfig.core.Config inner) {
-    this.inner = inner;
+  public void setInner(com.electronwill.nightconfig.core.Config config) {
+    this.inner = config;
   }
 
   protected void loadConfig() {
@@ -185,5 +186,23 @@ public class BaseConfig {
   public static Set<Field> getConfigFields(Object instance) {
     var clazz = instance.getClass();
     return Arrays.stream(clazz.getFields()).filter(f -> f.isAnnotationPresent(Key.class)).collect(Collectors.toSet());
+  }
+
+  public void logInner() {
+    this.inner.entrySet().forEach(entry -> logInnerEntry(entry.getKey(), entry.getValue(), 0));
+  }
+
+  private void logInnerEntry(String key, Object value, int depth) {
+    var indent = "  ".repeat(depth);
+    if (value instanceof CommentedConfig config) {
+      System.out.printf("%s%s:%n", indent, key);
+      config.entrySet().forEach(entry -> logInnerEntry(entry.getKey(), entry.getValue(), depth + 1));
+    } else {
+      if (value instanceof String str) {
+        System.out.printf("%s%s: '%s'%n", indent, key, str.replace("\n", "\\n"));
+      } else {
+        System.out.printf("%s%s: %s%n", indent, key, value);
+      }
+    }
   }
 }

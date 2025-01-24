@@ -3,7 +3,6 @@ package ooo.foooooooooooo.velocitydiscord.config;
 import com.electronwill.nightconfig.core.CommentedConfig;
 import com.electronwill.nightconfig.core.file.FileConfig;
 import ooo.foooooooooooo.velocitydiscord.VelocityDiscord;
-import ooo.foooooooooooo.velocitydiscord.config.commands.ListCommandConfig;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
@@ -27,8 +26,6 @@ public class Config extends BaseConfig implements ServerConfig {
   public final DiscordMessageConfig discord;
   private final MinecraftMessageConfig minecraft;
 
-  public final ListCommandConfig listCommand;
-
   @Key("exclude_servers")
   public List<String> EXCLUDED_SERVERS = new ArrayList<>();
   @Key("excluded_servers_receive_messages")
@@ -49,8 +46,6 @@ public class Config extends BaseConfig implements ServerConfig {
     this.bot = new BotConfig(this.inner);
     this.discord = new DiscordMessageConfig(this.inner);
     this.minecraft = new MinecraftMessageConfig(this.inner);
-
-    this.listCommand = new ListCommandConfig(this.inner);
 
     loadConfig();
 
@@ -120,8 +115,6 @@ public class Config extends BaseConfig implements ServerConfig {
     this.discord.loadConfig();
     this.minecraft.loadConfig();
 
-    this.listCommand.loadConfig();
-
     CommentedConfig server_names = this.inner.get("server_names");
 
     if (server_names == null) return;
@@ -166,8 +159,7 @@ public class Config extends BaseConfig implements ServerConfig {
 
         this.serverOverridesMap.put(serverName, new OverrideConfig(serverOverride, this));
       } else {
-        var warning = String.format("Invalid server override for `%s`: `%s`", entry.getKey(), entry.getValue());
-        VelocityDiscord.LOGGER.warn(warning);
+        VelocityDiscord.LOGGER.warn("Invalid server override for `{}`: `{}`", entry.getKey(), entry.getValue());
       }
     }
 
@@ -184,13 +176,23 @@ public class Config extends BaseConfig implements ServerConfig {
 
   public @Nullable String reloadConfig(Path dataDirectory) {
     this.dataDir = dataDirectory;
+    //    VelocityDiscord.LOGGER.info("prev inner:");
+    //    VelocityDiscord.LOGGER.info("---");
+    //    logInner();
+    //    VelocityDiscord.LOGGER.info("---");
     setInner(Config.loadFile(this.dataDir));
+    //    VelocityDiscord.LOGGER.info("new inner:");
+    //    VelocityDiscord.LOGGER.info("---");
+    //    logInner();
+    //    VelocityDiscord.LOGGER.info("---");
 
     try {
       loadConfig();
 
       for (var overrideConfigEntry : this.serverOverridesMap.entrySet()) {
-        overrideConfigEntry.getValue().loadConfig();
+        var overrideConfig = overrideConfigEntry.getValue();
+        overrideConfig.setInner(this.inner);
+        overrideConfig.loadConfig();
       }
 
       return checkInvalidValues();
@@ -245,21 +247,22 @@ public class Config extends BaseConfig implements ServerConfig {
     public final DiscordMessageConfig discord;
     public final MinecraftMessageConfig minecraft;
 
-    public final ListCommandConfig listCommand;
-
     public OverrideConfig(com.electronwill.nightconfig.core.Config config, Config main) {
       this.bot = new BotConfig(config, main.bot);
       this.discord = new DiscordMessageConfig(config, main.discord);
       this.minecraft = new MinecraftMessageConfig(config, main.minecraft);
-
-      this.listCommand = new ListCommandConfig(config, main.listCommand);
     }
 
     public void loadConfig() {
       this.bot.loadConfig();
       this.discord.loadConfig();
       this.minecraft.loadConfig();
-      this.listCommand.loadConfig();
+    }
+
+    public void setInner(com.electronwill.nightconfig.core.Config config) {
+      this.bot.setInner(config);
+      this.discord.setInner(config);
+      this.minecraft.setInner(config);
     }
 
     @Override

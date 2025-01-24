@@ -18,9 +18,9 @@ public class ListCommandConfig extends BaseConfig {
     loadConfig();
   }
 
-  @Key("discord.commands.list.enabled")
+  @Key(value = "discord.commands.list.enabled", overridable = false)
   public Boolean DISCORD_LIST_ENABLED = true;
-  @Key("discord.commands.list.ephemeral")
+  @Key(value = "discord.commands.list.ephemeral", overridable = false)
   public Boolean EPHEMERAL = true;
   @Key("discord.commands.list.server_format")
   public String SERVER_FORMAT = "[{server_name} {online_players}/{max_players}]";
@@ -30,6 +30,6 @@ public class ListCommandConfig extends BaseConfig {
   public Optional<String> NO_PLAYERS_FORMAT = Optional.of("No players online");
   @Key("discord.commands.list.server_offline")
   public Optional<String> SERVER_OFFLINE_FORMAT = Optional.of("Server offline");
-  @Key("discord.commands.list.codeblock_lang")
+  @Key(value = "discord.commands.list.codeblock_lang", overridable = false)
   public String CODEBLOCK_LANG = "asciidoc";
 }

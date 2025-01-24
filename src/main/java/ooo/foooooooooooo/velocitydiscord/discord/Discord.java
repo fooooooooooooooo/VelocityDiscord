@@ -67,7 +67,9 @@ public class Discord extends ListenerAdapter {
   }
 
   public void onConfigReload() {
-    this.commands.put("list", new ListCommand());
+    if (VelocityDiscord.CONFIG.bot.listCommand.DISCORD_LIST_ENABLED) {
+      this.commands.put(ListCommand.COMMAND_NAME, new ListCommand());
+    }
 
     // update webhook id in case the webhook url changed
     this.messageListener.updateWebhookId();
@@ -173,9 +175,13 @@ public class Discord extends ListenerAdapter {
       );
     }
 
-    var guild = this.mainChannel.getGuild();
+    if (!this.commands.isEmpty()) {
+      var guild = this.mainChannel.getGuild();
 
-    guild.upsertCommand("list", "list players").queue();
+      for (var entry : this.commands.entrySet()) {
+        guild.upsertCommand(entry.getKey(), entry.getValue().description()).queue();
+      }
+    }
   }
 
   @Override

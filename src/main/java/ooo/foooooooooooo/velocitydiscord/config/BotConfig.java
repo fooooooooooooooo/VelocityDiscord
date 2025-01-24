@@ -1,16 +1,27 @@
 package ooo.foooooooooooo.velocitydiscord.config;
 
 import com.electronwill.nightconfig.core.Config;
+import ooo.foooooooooooo.velocitydiscord.config.commands.ListCommandConfig;
 
 public class BotConfig extends BaseConfig {
+  public final ListCommandConfig listCommand;
+
   public BotConfig(Config config) {
     super(config);
+    this.listCommand = new ListCommandConfig(config);
     loadConfig();
   }
 
   public BotConfig(Config config, BotConfig main) {
     super(config, main);
+    this.listCommand = new ListCommandConfig(config, main.listCommand);
     loadConfig();
+  }
+
+  @Override
+  protected void loadConfig() {
+    super.loadConfig();
+    this.listCommand.loadConfig();
   }
 
   private static final String DefaultToken = "TOKEN";
