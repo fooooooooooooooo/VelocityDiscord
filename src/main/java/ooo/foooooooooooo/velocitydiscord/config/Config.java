@@ -57,7 +57,7 @@ public class Config extends BaseConfig implements ServerConfig {
     var error = checkInvalidValues();
 
     if (error != null) {
-      VelocityDiscord.LOGGER.severe(error);
+      VelocityDiscord.LOGGER.error(error);
     }
   }
 
@@ -131,11 +131,11 @@ public class Config extends BaseConfig implements ServerConfig {
         this.serverDisplayNames.put(entry.getKey(), entry.getValue());
       } else {
         var warning = String.format("Invalid server name for `%s`: `%s`", entry.getKey(), entry.getValue());
-        VelocityDiscord.LOGGER.warning(warning);
+        VelocityDiscord.LOGGER.warn(warning);
       }
     }
 
-    VelocityDiscord.LOGGER.info("serverDisplayNames: " + this.serverDisplayNames.toString());
+    VelocityDiscord.LOGGER.info("serverDisplayNames: {}", this.serverDisplayNames.toString());
 
     // server overrides
 
@@ -148,7 +148,7 @@ public class Config extends BaseConfig implements ServerConfig {
 
     // dump to logger
 
-    VelocityDiscord.LOGGER.info(String.format("Server overrides found (%s):", serverOverrides.size()));
+    VelocityDiscord.LOGGER.info("Server overrides found ({}):", serverOverrides.size());
 
     this.serverOverridesMap = new HashMap<>();
 
@@ -158,20 +158,20 @@ public class Config extends BaseConfig implements ServerConfig {
 
         // todo: maybe better than this
         if (this.EXCLUDED_SERVERS.contains(serverName) && !this.EXCLUDED_SERVERS_RECEIVE_MESSAGES) {
-          VelocityDiscord.LOGGER.info("Ignoring override for excluded server: " + serverName);
+          VelocityDiscord.LOGGER.info("Ignoring override for excluded server: {}", serverName);
           continue;
         }
 
-        VelocityDiscord.LOGGER.info("serverOverride: " + serverName + " -> " + serverOverride);
+        VelocityDiscord.LOGGER.info("serverOverride: {} -> {}", serverName, serverOverride);
 
         this.serverOverridesMap.put(serverName, new OverrideConfig(serverOverride, this));
       } else {
         var warning = String.format("Invalid server override for `%s`: `%s`", entry.getKey(), entry.getValue());
-        VelocityDiscord.LOGGER.warning(warning);
+        VelocityDiscord.LOGGER.warn(warning);
       }
     }
 
-    VelocityDiscord.LOGGER.info("serverOverridesMap: " + this.serverOverridesMap);
+    VelocityDiscord.LOGGER.info("serverOverridesMap: {}", this.serverOverridesMap);
   }
 
   public boolean serverDisabled(String name) {
@@ -189,8 +189,8 @@ public class Config extends BaseConfig implements ServerConfig {
     try {
       loadConfig();
 
-      for (var entry : this.serverOverridesMap.entrySet()) {
-        entry.getValue().loadConfig();
+      for (var overrideConfigEntry : this.serverOverridesMap.entrySet()) {
+        overrideConfigEntry.getValue().loadConfig();
       }
 
       return checkInvalidValues();
@@ -256,6 +256,7 @@ public class Config extends BaseConfig implements ServerConfig {
     }
 
     public void loadConfig() {
+      this.bot.loadConfig();
       this.discord.loadConfig();
       this.minecraft.loadConfig();
       this.listCommand.loadConfig();

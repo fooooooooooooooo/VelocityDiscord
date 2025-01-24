@@ -15,11 +15,11 @@ import ooo.foooooooooooo.velocitydiscord.compat.LuckPerms;
 import ooo.foooooooooooo.velocitydiscord.config.Config;
 import ooo.foooooooooooo.velocitydiscord.discord.Discord;
 import ooo.foooooooooooo.velocitydiscord.yep.YepListener;
+import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
 import java.nio.file.Path;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Logger;
 
 @Plugin(
   id = "discord",
@@ -76,7 +76,7 @@ public class VelocityDiscord {
 
     this.dataDirectory = dataDirectory;
 
-    LOGGER.info("Loading %s v%s".formatted(PluginName, PluginVersion));
+    LOGGER.info("Loading {} v{}", PluginName, PluginVersion);
 
     reloadConfig();
 
@@ -133,12 +133,14 @@ public class VelocityDiscord {
     try {
       if (SERVER.getPluginManager().getPlugin("luckperms").isPresent()) {
         this.luckPerms = new LuckPerms();
-        LOGGER.info("LuckPerms found, prefix will be displayed");
-      } else {
-        LOGGER.info("LuckPerms not found, prefix will not be displayed");
+        LOGGER.info("LuckPerms found, prefix can be displayed");
       }
     } catch (Exception e) {
-      LOGGER.info("LuckPerms not found, prefix will not be displayed");
+      LOGGER.warn("Error getting LuckPerms instance: {}", e.getMessage());
+    } finally {
+      if (this.luckPerms == null) {
+        LOGGER.info("LuckPerms not found, prefix will not be displayed");
+      }
     }
   }
 
@@ -184,18 +186,17 @@ public class VelocityDiscord {
       }
 
       if (error != null) {
-        LOGGER.severe("Error reloading config: " + error);
+        LOGGER.error("Error reloading config: {}", error);
+      } else {
+        LOGGER.info("Config reloaded");
       }
-
-      LOGGER.info("Config reloaded");
     }
 
     pluginDisabled = CONFIG.isFirstRun();
 
     if (pluginDisabled) {
-      LOGGER.severe(
-        "This is the first time you are running this plugin. Please configure it in the config.toml file. Disabling "
-          + "plugin.");
+      LOGGER.error("This is the first time you are running this plugin."
+        + " Please configure it in the config.toml file. Disabling plugin.");
     }
 
     return error;
@@ -213,10 +214,12 @@ public class VelocityDiscord {
     if (CONFIG.bot.UPDATE_CHANNEL_TOPIC_INTERVAL_MINUTES < 10) return;
 
     this.topicScheduler = SERVER.getScheduler().buildTask(this, () -> {
-      LOGGER.fine("Updating channel topic");
+      LOGGER.debug("Updating channel topic");
       if (this.discord != null) this.discord.updateChannelTopic();
     }).repeat(CONFIG.bot.UPDATE_CHANNEL_TOPIC_INTERVAL_MINUTES, TimeUnit.MINUTES).schedule();
 
-    LOGGER.info("Scheduled task to update channel topic every %d minutes".formatted(CONFIG.bot.UPDATE_CHANNEL_TOPIC_INTERVAL_MINUTES));
+    LOGGER.info("Scheduled task to update channel topic every {} minutes",
+      CONFIG.bot.UPDATE_CHANNEL_TOPIC_INTERVAL_MINUTES
+    );
   }
 }

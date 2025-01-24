@@ -15,7 +15,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
-import java.util.logging.Level;
 import java.util.regex.Pattern;
 
 public class MessageListener extends ListenerAdapter {
@@ -36,7 +35,7 @@ public class MessageListener extends ListenerAdapter {
   public void updateWebhookId() {
     final var matcher = WEBHOOK_ID_REGEX.matcher(VelocityDiscord.CONFIG.bot.WEBHOOK_URL);
     this.webhookId = matcher.find() ? matcher.group(1) : null;
-    VelocityDiscord.LOGGER.log(Level.FINER, "Found webhook id: {0}", this.webhookId);
+    VelocityDiscord.LOGGER.debug("Found webhook id: {}", this.webhookId);
   }
 
   public void onServerChannelsUpdated() {
@@ -52,7 +51,7 @@ public class MessageListener extends ListenerAdapter {
   @Override
   public void onMessageReceived(@Nonnull MessageReceivedEvent event) {
     if (!event.isFromType(ChannelType.TEXT)) {
-      VelocityDiscord.LOGGER.finest("ignoring non text channel message");
+      VelocityDiscord.LOGGER.trace("ignoring non text channel message");
       return;
     }
 
@@ -67,10 +66,10 @@ public class MessageListener extends ListenerAdapter {
       return;
     }
 
-    VelocityDiscord.LOGGER.info("Received message from Discord channel "
-      + channel.getName()
-      + " for servers "
-      + targetServerNames);
+    VelocityDiscord.LOGGER.info("Received message from Discord channel {} for servers {}",
+      channel.getName(),
+      targetServerNames
+    );
 
     var messages = new HashMap<String, String>();
     for (var serverName : targetServerNames) {
@@ -97,13 +96,13 @@ public class MessageListener extends ListenerAdapter {
 
     var author = event.getAuthor();
     if (!serverConfig.getMinecraftMessageConfig().SHOW_BOT_MESSAGES && author.isBot()) {
-      VelocityDiscord.LOGGER.finer("ignoring bot message");
+      VelocityDiscord.LOGGER.debug("ignoring bot message");
       return null;
     }
 
     if (author.getId().equals(this.jda.getSelfUser().getId()) || (
       Objects.nonNull(this.webhookId) && author.getId().equals(this.webhookId))) {
-      VelocityDiscord.LOGGER.finer("ignoring own message");
+      VelocityDiscord.LOGGER.debug("ignoring own message");
       return null;
     }
 

@@ -27,7 +27,6 @@ import ooo.foooooooooooo.velocitydiscord.util.StringTemplate;
 import javax.annotation.Nonnull;
 import java.awt.*;
 import java.lang.management.ManagementFactory;
-import java.text.MessageFormat;
 import java.util.List;
 import java.util.Queue;
 import java.util.*;
@@ -91,7 +90,7 @@ public class Discord extends ListenerAdapter {
         this.jda = builder.build();
         this.lastToken = VelocityDiscord.CONFIG.bot.DISCORD_TOKEN;
       } catch (Exception e) {
-        VelocityDiscord.LOGGER.severe("Failed to login to discord: " + e);
+        VelocityDiscord.LOGGER.error("Failed to login to discord:", e);
       }
     } else {
       // no ready event, just reload channels here
@@ -118,10 +117,10 @@ public class Discord extends ListenerAdapter {
 
   @Override
   public void onReady(@Nonnull ReadyEvent event) {
-    VelocityDiscord.LOGGER.info(MessageFormat.format("Bot ready, Guilds: {0} ({1} available)",
+    VelocityDiscord.LOGGER.info("Bot ready, Guilds: {} ({} available)",
       event.getGuildTotalCount(),
       event.getGuildAvailableCount()
-    ));
+    );
 
     loadChannels();
 
@@ -133,11 +132,16 @@ public class Discord extends ListenerAdapter {
   }
 
   private void loadChannels() {
+    VelocityDiscord.LOGGER.info("Loading channels");
     this.mainChannel = loadChannel(VelocityDiscord.CONFIG.bot.MAIN_CHANNEL_ID);
     this.proxyStartChannel =
       loadChannel(VelocityDiscord.CONFIG.discord.PROXY_START_CHANNEL.orElse(VelocityDiscord.CONFIG.bot.MAIN_CHANNEL_ID));
     this.proxyStopChannel =
       loadChannel(VelocityDiscord.CONFIG.discord.PROXY_STOP_CHANNEL.orElse(VelocityDiscord.CONFIG.bot.MAIN_CHANNEL_ID));
+
+    VelocityDiscord.LOGGER.info("Main channel: {}", this.mainChannel.getIdLong());
+    VelocityDiscord.LOGGER.info("Proxy start channel: {}", this.proxyStartChannel.getIdLong());
+    VelocityDiscord.LOGGER.info("Proxy stop channel: {}", this.proxyStopChannel.getIdLong());
 
     this.serverChannels.clear();
     for (var server : VelocityDiscord.SERVER.getAllServers()) {
@@ -147,7 +151,16 @@ public class Discord extends ListenerAdapter {
       this.serverChannels.put(serverName, new Channels(this, serverName, config, defaultChannel));
     }
 
+    // @formatter:off
+    VelocityDiscord.LOGGER.info("Server channels:");
+    for (var entry : this.serverChannels.entrySet()) {
+      entry.getValue().logChannels();
+    }
+    // @formatter:on
+
     this.defaultChannels = new Channels(this, "default", VelocityDiscord.CONFIG, this.mainChannel);
+
+    this.defaultChannels.logChannels();
 
     this.messageListener.onServerChannelsUpdated();
 
@@ -635,7 +648,7 @@ public class Discord extends ListenerAdapter {
     TextChannel channel, String uuid, String username, String server, String content
   ) {
     if (this.webhookClient == null) {
-      VelocityDiscord.LOGGER.fine("Webhook client was not created due to configuration error, skipping sending "
+      VelocityDiscord.LOGGER.debug("Webhook client was not created due to configuration error, skipping sending "
         + "message");
       return;
     }
@@ -716,12 +729,12 @@ public class Discord extends ListenerAdapter {
     var channel = this.jda.getTextChannelById(id);
 
     if (channel == null) {
-      VelocityDiscord.LOGGER.severe("Could not load channel with id: " + id);
+      VelocityDiscord.LOGGER.error("Could not load channel with id: {}", id);
       return null;
     }
 
     if (!channel.canTalk()) {
-      VelocityDiscord.LOGGER.severe("Cannot talk in configured channel");
+      VelocityDiscord.LOGGER.error("Cannot talk in configured channel");
       return null;
     }
 
@@ -768,6 +781,19 @@ public class Discord extends ListenerAdapter {
       }
 
       return discord.loadChannel(id.get());
+    }
+
+    public void logChannels() {
+      VelocityDiscord.LOGGER.info("Server: {}", this.serverName);
+      VelocityDiscord.LOGGER.info("  Chat:          {}", this.chatChannel.getIdLong());
+      VelocityDiscord.LOGGER.info("  Death:         {}", this.deathChannel.getIdLong());
+      VelocityDiscord.LOGGER.info("  Advancement:   {}", this.advancementChannel.getIdLong());
+      VelocityDiscord.LOGGER.info("  Join:          {}", this.joinChannel.getIdLong());
+      VelocityDiscord.LOGGER.info("  Leave:         {}", this.leaveChannel.getIdLong());
+      VelocityDiscord.LOGGER.info("  Disconnect:    {}", this.disconnectChannel.getIdLong());
+      VelocityDiscord.LOGGER.info("  Server switch: {}", this.serverSwitchChannel.getIdLong());
+      VelocityDiscord.LOGGER.info("  Server start:  {}", this.serverStartChannel.getIdLong());
+      VelocityDiscord.LOGGER.info("  Server stop:   {}", this.serverStopChannel.getIdLong());
     }
   }
 }

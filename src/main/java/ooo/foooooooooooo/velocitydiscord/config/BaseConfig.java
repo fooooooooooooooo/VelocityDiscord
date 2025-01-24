@@ -41,15 +41,15 @@ public class BaseConfig {
         // check if config key does not exist in this.inner or if the field is not overridable
         // and set field value to the value of the same field in main
         if (!this.inner.contains(key) || !annotation.overridable()) {
-          VelocityDiscord.LOGGER.finest("Inheriting value of field %s from main config".formatted(field.getName()));
+          VelocityDiscord.LOGGER.trace("Inheriting value of field {} from main config", field.getName());
           try {
             field.set(this, field.get(this.main));
             continue;
           } catch (IllegalAccessException e) {
-            VelocityDiscord.LOGGER.severe("Failed to get inherit value of field " + field.getName());
+            VelocityDiscord.LOGGER.error("Failed to get inherit value of field {}", field.getName());
           }
         } else {
-          VelocityDiscord.LOGGER.finest("Field %s has a value in override config".formatted(field.getName()));
+          VelocityDiscord.LOGGER.trace("Field {} has a value in override config", field.getName());
         }
       }
 
@@ -67,21 +67,21 @@ public class BaseConfig {
           var actualType = parameterizedType.getActualTypeArguments()[0];
 
           if (actualType == Color.class) {
-            VelocityDiscord.LOGGER.finest("Loading color field %s".formatted(field.getName()));
+            VelocityDiscord.LOGGER.trace("Loading color field {}", field.getName());
             loadField(field, key, BaseConfig::getColor);
           } else {
-            VelocityDiscord.LOGGER.finest("Loading optional field %s".formatted(field.getName()));
+            VelocityDiscord.LOGGER.trace("Loading optional field {}", field.getName());
             loadField(field, key, BaseConfig::getOptional);
           }
         }
       } else if (type == MessageType.class) {
-        VelocityDiscord.LOGGER.finest("Loading message type field %s".formatted(field.getName()));
+        VelocityDiscord.LOGGER.trace("Loading message type field {}", field.getName());
         loadField(field, key, BaseConfig::getMessageType);
       } else if (type == UserMessageType.class) {
-        VelocityDiscord.LOGGER.finest("Loading user message type field %s".formatted(field.getName()));
+        VelocityDiscord.LOGGER.trace("Loading user message type field {}", field.getName());
         loadField(field, key, BaseConfig::getUserMessageType);
       } else {
-        VelocityDiscord.LOGGER.finest("Loading field %s".formatted(field.getName()));
+        VelocityDiscord.LOGGER.trace("Loading field {}", field.getName());
         loadField(field, key, BaseConfig::get);
       }
     }
@@ -93,18 +93,18 @@ public class BaseConfig {
     try {
       //noinspection unchecked
       defaultValue = (T) field.get(this);
-      VelocityDiscord.LOGGER.finest("Default value of %s (`%s`) is %s".formatted(field.getName(), key, defaultValue));
+      VelocityDiscord.LOGGER.trace("Default value of {} (`{}`) is {}", field.getName(), key, defaultValue);
     } catch (IllegalAccessException e) {
-      VelocityDiscord.LOGGER.severe("Failed to get default value of field " + field.getName());
+      VelocityDiscord.LOGGER.error("Failed to get default value of field {}", field.getName());
     }
 
     var value = getter.get(this, key, defaultValue);
 
     try {
       field.set(this, value);
-      VelocityDiscord.LOGGER.finest("Set value of %s (`%s`) to %s".formatted(field.getName(), key, value));
+      VelocityDiscord.LOGGER.trace("Set value of {} (`{}`) to {}", field.getName(), key, value);
     } catch (IllegalAccessException e) {
-      VelocityDiscord.LOGGER.severe("Failed to set value of field " + field.getName());
+      VelocityDiscord.LOGGER.error("Failed to set value of field {}", field.getName());
     }
   }
 
