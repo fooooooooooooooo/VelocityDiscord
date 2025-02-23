@@ -66,7 +66,7 @@ public class MessageListener extends ListenerAdapter {
       return;
     }
 
-    VelocityDiscord.LOGGER.info("Received message from Discord channel {} for servers {}",
+    VelocityDiscord.LOGGER.trace("Received message from Discord channel {} for servers {}",
       channel.getName(),
       targetServerNames
     );
@@ -147,15 +147,15 @@ public class MessageListener extends ListenerAdapter {
 
     var username_chunk = new StringTemplate(serverMinecraftConfig.USERNAME_CHUNK_FORMAT)
       .add("role_color", hex)
-      .add("username", author.getName())
-      .add("display_name", display_name)
-      .add("nickname", nickname)
+      .add("username", escapeTags(author.getName()))
+      .add("display_name", escapeTags(display_name))
+      .add("nickname", escapeTags(nickname))
       .toString();
 
     var attachment_chunk = serverMinecraftConfig.ATTACHMENT_FORMAT;
     var message_chunk = new StringTemplate(serverMinecraftConfig.MESSAGE_FORMAT)
       .add("discord_chunk", discord_chunk)
-      .add("role_prefix", rolePrefix)
+      .add("role_prefix", escapeTags(rolePrefix))
       .add("username_chunk", username_chunk)
       .add("message", message.getContentDisplay());
 
@@ -186,5 +186,9 @@ public class MessageListener extends ListenerAdapter {
     message_chunk.add("attachments", String.join(" ", attachmentChunks));
 
     return message_chunk.toString();
+  }
+
+  private String escapeTags(String input) {
+    return input.replace("<", "ᐸ").replace(">", "ᐳ");
   }
 }

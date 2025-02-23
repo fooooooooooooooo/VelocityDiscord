@@ -8,7 +8,6 @@ import javax.annotation.Nullable;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.text.MessageFormat;
 import java.util.*;
 
 import static ooo.foooooooooooo.velocitydiscord.VelocityDiscord.PluginVersion;
@@ -128,20 +127,20 @@ public class Config extends BaseConfig implements ServerConfig {
       }
     }
 
-    VelocityDiscord.LOGGER.info("serverDisplayNames: {}", this.serverDisplayNames.toString());
+    // VelocityDiscord.LOGGER.info("serverDisplayNames: {}", this.serverDisplayNames.toString());
 
     // server overrides
 
     CommentedConfig serverOverrides = this.inner.get("override");
 
     if (serverOverrides == null) {
-      VelocityDiscord.LOGGER.info("No server overrides found");
+      VelocityDiscord.LOGGER.debug("No server overrides found");
       return;
     }
 
     // dump to logger
 
-    VelocityDiscord.LOGGER.info("Server overrides found ({}):", serverOverrides.size());
+    // VelocityDiscord.LOGGER.info("Server overrides found ({}):", serverOverrides.size());
 
     this.serverOverridesMap = new HashMap<>();
 
@@ -151,11 +150,11 @@ public class Config extends BaseConfig implements ServerConfig {
 
         // todo: maybe better than this
         if (this.EXCLUDED_SERVERS.contains(serverName) && !this.EXCLUDED_SERVERS_RECEIVE_MESSAGES) {
-          VelocityDiscord.LOGGER.info("Ignoring override for excluded server: {}", serverName);
+          VelocityDiscord.LOGGER.debug("Ignoring override for excluded server: {}", serverName);
           continue;
         }
 
-        VelocityDiscord.LOGGER.info("serverOverride: {} -> {}", serverName, serverOverride);
+        // VelocityDiscord.LOGGER.info("serverOverride: {} -> {}", serverName, serverOverride);
 
         this.serverOverridesMap.put(serverName, new OverrideConfig(serverOverride, this));
       } else {
@@ -163,7 +162,7 @@ public class Config extends BaseConfig implements ServerConfig {
       }
     }
 
-    VelocityDiscord.LOGGER.info("serverOverridesMap: {}", this.serverOverridesMap);
+    // VelocityDiscord.LOGGER.info("serverOverridesMap: {}", this.serverOverridesMap);
   }
 
   public boolean serverDisabled(String name) {
@@ -197,14 +196,14 @@ public class Config extends BaseConfig implements ServerConfig {
 
       return checkInvalidValues();
     } catch (Exception e) {
-      return MessageFormat.format("ERROR: {0}", e.getMessage());
+      return "ERROR: " + e.getMessage();
     }
   }
 
   private String checkInvalidValues() {
     // check for invalid values
     if (this.bot.WEBHOOK_URL.isEmpty() && this.discord.isWebhookEnabled()) {
-      return ("WARN: `discord.webhook.webhook_url` is required when using webhooks, messages will not be sent");
+      return "WARN: `discord.webhook.webhook_url` is required when using webhooks, messages will not be sent";
     }
 
     return null;
