@@ -35,6 +35,7 @@ import java.util.regex.Pattern;
 
 public class Discord extends ListenerAdapter {
   private static final Pattern EveryoneAndHerePattern = Pattern.compile("@(?<ping>everyone|here)");
+  private static final Pattern RawPingPattern = Pattern.compile("<@(?<ping>[!&]?\\d+)>");
 
   private boolean ready = false;
 
@@ -206,6 +207,8 @@ public class Discord extends ListenerAdapter {
     var serverConfig = VelocityDiscord.CONFIG.getServerConfig(server);
     var serverBotConfig = serverConfig.getBotConfig();
     var serverDiscordConfig = serverConfig.getDiscordMessageConfig();
+
+    content = filterRawPings(content);
 
     if (serverBotConfig.ENABLE_MENTIONS) {
       content = parseMentions(server, content);
@@ -700,6 +703,10 @@ public class Discord extends ListenerAdapter {
 
   private String filterEveryoneAndHere(String message) {
     return EveryoneAndHerePattern.matcher(message).replaceAll("@\u200B${ping}");
+  }
+
+  private String filterRawPings(String message) {
+    return RawPingPattern.matcher(message).replaceAll("<@\u200B${ping}>");
   }
 
   private record QueuedWebhookMessage(MessageCreateData message, String avatar, String username)
