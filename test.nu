@@ -5,7 +5,7 @@ if $env.TEST_SERVER_DIR == '' {
   exit 1
 }
 
-./gradlew.bat build
+# ./gradlew.bat build
 
 let dest_dir = ($env.TEST_SERVER_DIR | path join 'plugins')
 
