@@ -218,7 +218,7 @@ public class VelocityListener {
 
   public ServerState getServerState(RegisteredServer server) {
     var name = server.getServerInfo().getName();
-    return this.serverState.get(name);
+    return this.serverState.getOrDefault(name, ServerState.empty());
   }
 
   private void setServerOnline(String server) {
