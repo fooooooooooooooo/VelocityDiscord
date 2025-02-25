@@ -1,4 +1,4 @@
-name: Gradle build
+name: JUnit Tests
 
 on:
   push:
@@ -10,7 +10,7 @@ on:
       - 'gradlew'
       - 'gradlew.bat'
       - 'gradle/wrapper/**'
-      - '.github/workflows/build.yml'
+      - '.github/workflows/test.yml'
   pull_request:
     paths:
       - 'src/**'
@@ -20,7 +20,7 @@ on:
       - 'gradlew'
       - 'gradlew.bat'
       - 'gradle/wrapper/**'
-      - '.github/workflows/build.yml'
+      - '.github/workflows/test.yml'
 
 jobs:
   gradle:
@@ -38,11 +38,5 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
 
-      - name: Build with Gradle
-        run: ./gradlew build
-
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: Artifacts
-          path: build/libs/
+      - name: Test with Gradle
+        run: ./gradlew test
