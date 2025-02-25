@@ -15,10 +15,13 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class MessageListener extends ListenerAdapter {
   private static final Pattern WEBHOOK_ID_REGEX = Pattern.compile("^https://discord\\.com/api/webhooks/(\\d+)/.+$");
+  private static final Pattern LINK_REGEX =
+    Pattern.compile("[^:/?#\\s]+:(?://)?(?:[^?#\\s]+)?(?:\\?[^#\\s]+)?(?:#\\S+)?");
   private final HashMap<String, Discord.Channels> serverChannels;
   private final HashMap<Long, List<String>> channelToServersMap = new HashMap<>();
 
@@ -180,6 +183,19 @@ public class MessageListener extends ListenerAdapter {
     // Remove leading whitespace from attachments if there's no content
     if (content.isBlank()) {
       message_chunk = message_chunk.replace(" {attachments}", "{attachments}");
+    }
+
+    if (serverMinecraftConfig.LINK_FORMAT.isPresent()) {
+      // Replace links with the link format
+      content = LINK_REGEX.matcher(content).replaceAll(match -> {
+        var url = match.group();
+        var replacement = new StringTemplate(serverMinecraftConfig.LINK_FORMAT.get())
+          .add("url", url)
+          .add("link_color", serverMinecraftConfig.LINK_COLOR)
+          .toString();
+
+        return Matcher.quoteReplacement(replacement);
+      });
     }
 
     message_chunk.add("message", content);

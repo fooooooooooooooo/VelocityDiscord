@@ -247,9 +247,14 @@ message = "{discord_chunk} {role_prefix} {username_chunk}<dark_gray>: <reset>{me
 # Placeholders available: {url}, {attachment_color}
 attachments = "<dark_gray><click:open_url:{url}>[<{attachment_color}>Attachment<dark_gray>]</click><reset>"
 
-# Colors for the <{discord_color}> and <{attachment_color}> tags
+# Placeholders available: {url}, {link_color}
+# Can be disabled
+links = "<click:open_url:\"{url}\"><hover:show_text:\"Click to open {url}\"><dark_gray>[</dark_gray><{link_color}>Link<dark_gray>]</hover></click>"
+
+# Colors for the <{discord_color}>, <{attachment_color}> and <{link_color}> tags
 discord_color = "#7289da"
 attachment_color = "#4abdff"
+link_color = "#55FF55"
 
 # Role prefix configuration
 # Format: "role_id" = "prefix format using MiniMessage"
