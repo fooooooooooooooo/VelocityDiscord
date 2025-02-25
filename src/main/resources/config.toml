@@ -7,8 +7,8 @@ exclude_servers = []
 excluded_servers_receive_messages = false
 
 # How often to ping all servers to check for online status (seconds)
-# Set to 0 to disable
 # Excluded servers will not be pinged
+# Use a value of 0 to disable
 ping_interval = 30
 
 # Server display names
@@ -18,8 +18,9 @@ ping_interval = 30
 
 [discord]
 # Bot token from https://discordapp.com/developers/applications/
+# Not server overridable
 token = "TOKEN"
-# Channel ID to send Minecraft chat messages to
+# Default channel ID to send Minecraft chat messages to
 channel = "000000000000000000"
 
 # Show messages from bots in Minecraft chat
@@ -27,10 +28,10 @@ show_bot_messages = false
 # Show clickable links for attachments in Minecraft chat
 show_attachments_ingame = true
 
-# Show a text as playing activity of the bot
-show_activity = true
 # Activity text of the bot to show in Discord
 # Placeholders available: {amount}
+# Can be disabled with "" or false
+# Not server overridable
 activity_text = "with {amount} players online"
 
 # Enable mentioning Discord users from Minecraft chat
@@ -38,13 +39,14 @@ enable_mentions = true
 # Enable @everyone and @here pings from Minecraft chat
 enable_everyone_and_here = false
 
-# OPTIONAL - Configuration for updating the Discord channel topic
-# Set the interval (in minutes) for updating the channel topic.
-# Use a value less than 10 to disable this feature.
-update_channel_topic_interval = -1
+# Set the interval (in minutes) for updating the channel topic
+# Use a value of 0 to disable
+# Not server overridable
+update_channel_topic_interval = 0
 
+# Channel topic config (if enabled)
 [discord.channel_topic]
-# Template for the channel topic.
+# Template for the channel topic
 # Placeholders available:
 # {players} - Total number of players online
 # {player_list} - List of players (format is defined below)
@@ -67,18 +69,18 @@ format = """{players}/{max_players}
 {hostname}:{port}
 Uptime: {uptime}"""
 
-# Template for server[SERVERNAME] placeholder in the channel topic.
+# Template for server[SERVERNAME] placeholder in the channel topic
 # Placeholders available: {name}, {players}, {max_players}, {motd}, {version}, {protocol}
 server = "{name}: {players}/{max_players}"
 
-# Template for server[SERVERNAME] placeholder in the channel topic when the server is offline.
+# Template for server[SERVERNAME] placeholder in the channel topic when the server is offline
 # Placeholders available: {name}
 server_offline = "{name}: Offline"
 
-# Can be disabled to hide the list completely when no players are online
+# Can be disabled with "" or false to hide the list completely when no players are online
 player_list_no_players_header = "No players online"
 
-# Can be disabled to hide the header and only show the player list
+# Can be disabled with "" or false to hide the header and only show the player list
 player_list_header = "Players: "
 
 # Placeholders available: {username}, {ping}
@@ -114,7 +116,7 @@ webhook_username = "{username}"
 # x_message_embed_color is the color of the embed, in #RRGGBB format
 [discord.chat.message]
 # Placeholders available: {username}, {prefix}, {server}, {message}
-# Can be disabled
+# Can be disabled with "" or false
 format = "{username}: {message}"
 
 # for user messages, the following types can be used
@@ -126,7 +128,7 @@ format = "{username}: {message}"
 #
 # "embed"   - Discord embed with the above format as the description field
 type = "text"
-# Can be disabled
+# Can be disabled with "" or false
 embed_color = ""
 # Channel override for this message type, set to "" or false or remove to use the default channel
 # Can be applied to all message types
@@ -134,88 +136,92 @@ embed_color = ""
 
 [discord.chat.join]
 # Placeholders available: {username}, {prefix}, {server}
-# Can be disabled
+# Can be disabled with "" or false
 format = "**{username} joined the game**"
 type = "text"
-# Can be disabled
+# Can be disabled with "" or false
 embed_color = "#40bf4f"
 
 [discord.chat.leave]
 # Placeholders available: {username}, {prefix}, {server}
-# Can be disabled
+# Can be disabled with "" or false
 format = "**{username} left the game**"
 type = "text"
-# Can be disabled
+# Can be disabled with "" or false
 embed_color = "#bf4040"
 
 [discord.chat.disconnect]
 # Possible different format for timeouts or other terminating connections
 # Placeholders available: {username}, {prefix}
-# Can be disabled
-format  = "**{username} disconnected**"
+# Can be disabled with "" or false
+format = "**{username} disconnected**"
 type = "text"
-# Can be disabled
+# Can be disabled with "" or false
 embed_color = "#bf4040"
 
 [discord.chat.server_switch]
 # Placeholders available: {username}, {prefix}, {current}, {previous}
-# Can be disabled
+# Can be disabled with "" or false
 format = "**{username} moved to {current} from {previous}**"
 type = "text"
-# Can be disabled
+# Can be disabled with "" or false
 embed_color = "#40bf4f"
 
 [discord.chat.death]
 # Placeholders available: {username}, {death_message}
 # death_message includes the username just as it is shown ingame
-# Can be disabled
+# Can be disabled with "" or false
 format = "**{death_message}**"
 type = "text"
-# Can be disabled
+# Can be disabled with "" or false
 embed_color = "#bf4040"
 
 [discord.chat.advancement]
 # Placeholders available: {username}, {advancement_title}, {advancement_description}
-# Can be disabled
+# Can be disabled with "" or false
 format = "**{username} has made the advancement __{advancement_title}__**\n_{advancement_description}_"
 type = "text"
-# Can be disabled
+# Can be disabled with "" or false
 embed_color = "#40bf4f"
 
+# Not server overridable
 [discord.chat.proxy_start]
-# Can be disabled
+# Can be disabled with "" or false
 format = "**Proxy started**"
 type = "text"
-# Can be disabled
+# Can be disabled with "" or false
 embed_color = "#40bf4f"
 
+# Not server overridable
 [discord.chat.proxy_stop]
-# Can be disabled
+# Can be disabled with "" or false
 format = "**Proxy stopped**"
 type = "text"
-# Can be disabled
+# Can be disabled with "" or false
 embed_color = "#bf4040"
 
 [discord.chat.server_start]
 # Placeholders available: {server}
-# Can be disabled
+# Can be disabled with "" or false
 format = "**{server} has started**"
 type = "text"
-# Can be disabled
+# Can be disabled with "" or false
 embed_color = "#40bf4f"
 
 [discord.chat.server_stop]
 # Placeholders available: {server}
-# Can be disabled
+# Can be disabled with "" or false
 format = "**{server} has stopped**"
 type = "text"
-# Can be disabled
+# Can be disabled with "" or false
 embed_color = "#bf4040"
 
 [discord.commands.list]
+# Not server overridable
 enabled = true
 
 # Ephemeral messages are only visible to the user who sent the command
+# Not server overridable
 ephemeral = true
 
 # Placeholders available: {server_name}, {online_players}, {max_players}
@@ -224,11 +230,12 @@ server_format = "[{server_name} {online_players}/{max_players}]"
 # Placeholders available: {username}
 player_format = "- {username}"
 
-# Can be disabled
+# Can be disabled with "" or false
 no_players = "No players online"
 
-# Can be disabled
+# Can be disabled with "" or false
 server_offline = "Server offline"
+# Not server overridable
 codeblock_lang = "asciidoc"
 
 # Discord > Minecraft message formats
@@ -248,7 +255,7 @@ message = "{discord_chunk} {role_prefix} {username_chunk}<dark_gray>: <reset>{me
 attachments = "<dark_gray><click:open_url:{url}>[<{attachment_color}>Attachment<dark_gray>]</click><reset>"
 
 # Placeholders available: {url}, {link_color}
-# Can be disabled
+# Can be disabled with "" or false
 links = "<click:open_url:\"{url}\"><hover:show_text:\"Click to open {url}\"><dark_gray>[</dark_gray><{link_color}>Link<dark_gray>]</hover></click>"
 
 # Colors for the <{discord_color}>, <{attachment_color}> and <{link_color}> tags
@@ -265,7 +272,8 @@ link_color = "#55FF55"
 # "789123456" = "<dark_gray>[</dark_gray><aqua>HELPER</aqua><dark_gray>]</dark_gray>"
 
 # Override config for specific servers
-# Any config option under [discord] or [minecraft] can be overridden (other than discord.token)
+# Any config option under [discord] or [minecraft] can be overridden (other than options labelled not server overridable)
 # Format: [override.(velocity.toml server name).discord] or [override.(velocity.toml server name).minecraft]
+# Example:
 # [override.lobby.discord]
 # channel = "000000000000000000"

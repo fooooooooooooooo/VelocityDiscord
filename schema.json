@@ -1,0 +1,523 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "VelocityDiscord Config",
+  "type": "object",
+  "required": ["config_version", "discord"],
+  "unevaluatedProperties": false,
+  "$defs": {
+    "message": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "description": "Type of message to send\n\n- text: Normal text only message with the associated format\n- webhook: Use a Discord webhook to have the bot use the player's username and avatar when sending messages. Requires a webhook URL to be set. Ignores the message format, and just sends the message as the content of the webhook\n- embed: Discord embed with the format as the description field",
+          "type": "string",
+          "enum": ["text", "webhook", "embed"]
+        },
+        "embed_color": {
+          "description": "Color of the embed in #RRGGBB format\n\nCan be disabled with false or \"\"",
+          "type": ["string", "boolean"]
+        },
+        "channel": {
+          "description": "Override channel for these messages\n\nCan be disabled with false or \"\"",
+          "type": ["string", "boolean"]
+        }
+      }
+    },
+    "discord_non_overridable": {
+      "type": "object",
+      "required": ["token"],
+      "properties": {
+        "token": {
+          "description": "Bot token from https://discordapp.com/developers/applications/",
+          "type": "string"
+        },
+        "activity_text": {
+          "description": "Activity text of the bot to show in Discord\n\nPlaceholders available: {amount}",
+          "type": "string",
+          "default": "with {amount} players online"
+        },
+        "update_channel_topic_interval": {
+          "description": "Set the interval (in minutes) for updating the channel topic\n\nUse a value of 0 to disable",
+          "type": "integer",
+          "minimum": 0,
+          "default": 0
+        },
+        "channel_topic": {
+          "description": "Configuration for the channel topic",
+          "type": "object",
+          "properties": {
+            "format": {
+              "description": "Format for the channel topic\n\nPlaceholders available:\n{players} - Total number of players online\n{player_list} - List of players (format is defined below)\n{servers} - Number of servers\n{server_list} - List of server names\n{hostname} - Server hostname\n{port} - Server port\n{motd} - Message of the Day (MOTD)\n{query_port} - Query port\n{max_players} - Maximum number of players\n{plugins} - Number of plugins\n{plugin_list} - List of plugin names\n{version} - Server version\n{software} - Software name\n{average_ping} - Average ping of all players\n{uptime} - Server uptime in hours and minutes\n{server[SERVERNAME]} - Dynamic placeholder for each server's name and status (e.g., {server[MyServer]}, {server[AnotherServer]}, {server[Lobby]}, etc.)",
+              "type": "string",
+              "default": "{players}/{max_players}\n{player_list}\n{hostname}:{port}\nUptime: {uptime}"
+            },
+            "player_list_header": {
+              "description": "Header for the player list\n\nCan be disabled with \"\" or false to hide the header and only show the player list",
+              "type": "string",
+              "default": "Players: "
+            },
+            "player_list_max_count": {
+              "description": "Maximum amount of players to show in the player list",
+              "type": "integer",
+              "default": 10
+            },
+            "player_list_no_players_header": {
+              "description": "Header for when no players are online\n\nCan be disabled with \"\" or false to hide the list completely when no players are online",
+              "type": "string",
+              "default": "No players online"
+            },
+            "player_list_player": {
+              "description": "Format for each player in the player list\n\nPlaceholders available: {username}, {ping}",
+              "type": "string",
+              "default": "{username}"
+            },
+            "player_list_separator": {
+              "description": "Separator between players in the player list\n\\n can be used for new line",
+              "type": "string",
+              "default": ", "
+            },
+            "server": {
+              "description": "Template for server[SERVERNAME] placeholder in the channel topic\n\nPlaceholders available: {name}, {players}, {max_players}, {motd}, {version}, {protocol}",
+              "type": "string",
+              "default": "{name}: {players}/{max_players}"
+            },
+            "server_offline": {
+              "description": "Template for server[SERVERNAME] placeholder in the channel topic when the server is offline\n\nPlaceholders available: {name}\n\nCan be disabled with false or \"\"",
+              "type": "string",
+              "default": "{name}: Offline"
+            }
+          }
+        },
+        "commands": {
+          "description": "Discord bot commands configuration",
+          "type": "object",
+          "properties": {
+            "list": {
+              "description": "Configuration for the list command",
+              "type": "object",
+              "properties": {
+                "enabled": {
+                  "description": "Enable the list command",
+                  "type": "boolean",
+                  "default": true
+                },
+                "ephemeral": {
+                  "description": "Ephemeral messages are only visible to the user who sent the command",
+                  "type": "boolean",
+                  "default": true
+                },
+                "codeblock_lang": {
+                  "description": "Language for the codeblock formatting in Discord",
+                  "type": "string",
+                  "default": "asciidoc"
+                }
+              }
+            }
+          }
+        },
+        "chat": {
+          "description": "Configuration for Discord chat messages",
+          "type": "object",
+          "properties": {
+            "proxy_start": {
+              "type": "object",
+              "description": "Configuration for proxy start messages",
+              "unevaluatedProperties": false,
+              "allOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "format": {
+                      "description": "Format for proxy start messages\n\nCan be disabled with false or \"\"",
+                      "type": ["string", "boolean"],
+                      "default": "**Proxy started**"
+                    }
+                  }
+                },
+                { "$ref": "#/$defs/message" }
+              ]
+            },
+            "proxy_stop": {
+              "type": "object",
+              "description": "Configuration for proxy stop messages",
+              "unevaluatedProperties": false,
+              "allOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "format": {
+                      "description": "Format for proxy stop messages\n\nCan be disabled with false or \"\"",
+                      "type": ["string", "boolean"],
+                      "default": "**Proxy stopped**"
+                    }
+                  }
+                },
+                { "$ref": "#/$defs/message" }
+              ]
+            }
+          }
+        }
+      }
+    },
+    "discord_overridable": {
+      "type": "object",
+      "properties": {
+        "channel": {
+          "description": "Channel ID to send Minecraft chat messages to",
+          "type": "string"
+        },
+        "show_bot_messages": {
+          "description": "Show messages from bots in Minecraft chat",
+          "type": "boolean"
+        },
+        "show_attachments_ingame": {
+          "description": "Show clickable links for attachments in Minecraft chat",
+          "type": "boolean"
+        },
+        "enable_mentions": {
+          "description": "Enable mentioning Discord users from Minecraft chat",
+          "type": "boolean"
+        },
+        "enable_everyone_and_here": {
+          "description": "Enable @everyone and @here pings from Minecraft chat",
+          "type": "boolean"
+        },
+        "webhook": {
+          "description": "Webhook configuration for Discord messages",
+          "type": "object",
+          "unevaluatedProperties": false,
+          "properties": {
+            "webhook_url": {
+              "description": "Full webhook URL to send more fancy Minecraft chat messages to",
+              "type": "string"
+            },
+            "avatar_url": {
+              "description": "Full URL of an avatar service to get the player's avatar from\n\nPlaceholders available: {uuid}, {username}",
+              "type": "string"
+            },
+            "webhook_username": {
+              "description": "The format of the webhook's username\n\nPlaceholders available: {username}, {server}",
+              "type": "string"
+            }
+          }
+        },
+        "chat": {
+          "description": "Configuration for Discord chat messages",
+          "type": "object",
+          "properties": {
+            "message": {
+              "description": "Configuration for player chat messages",
+              "unevaluatedProperties": false,
+              "allOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "format": {
+                      "description": "Format for chat messages\n\nPlaceholders available: {username}, {prefix}, {server}, {message}\n\nCan be disabled with false or \"\"",
+                      "type": ["string", "boolean"]
+                    }
+                  }
+                },
+                { "$ref": "#/$defs/message" }
+              ]
+            },
+            "join": {
+              "type": "object",
+              "description": "Configuration for player join messages",
+              "unevaluatedProperties": false,
+              "allOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "format": {
+                      "description": "Format for join messages\n\nPlaceholders available: {username}, {prefix}, {server}\n\nCan be disabled with false or \"\"",
+                      "type": ["string", "boolean"]
+                    }
+                  }
+                },
+                { "$ref": "#/$defs/message" }
+              ]
+            },
+            "leave": {
+              "type": "object",
+              "description": "Configuration for player leave messages",
+              "unevaluatedProperties": false,
+              "allOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "format": {
+                      "description": "Format for leave messages\n\nPlaceholders available: {username}, {prefix}, {server}\n\nCan be disabled with false or \"\"",
+                      "type": ["string", "boolean"]
+                    }
+                  }
+                },
+                { "$ref": "#/$defs/message" }
+              ]
+            },
+            "disconnect": {
+              "type": "object",
+              "description": "Configuration for player disconnect messages",
+              "unevaluatedProperties": false,
+              "allOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "format": {
+                      "description": "Format for disconnect messages\n\nPlaceholders available: {username}, {prefix}\n\nCan be disabled with false or \"\"",
+                      "type": ["string", "boolean"]
+                    }
+                  }
+                },
+                { "$ref": "#/$defs/message" }
+              ]
+            },
+            "server_switch": {
+              "type": "object",
+              "description": "Configuration for server switch messages",
+              "unevaluatedProperties": false,
+              "allOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "format": {
+                      "description": "Format for server switch messages\n\nPlaceholders available: {username}, {prefix}, {current}, {previous}\n\nCan be disabled with false or \"\"",
+                      "type": ["string", "boolean"]
+                    }
+                  }
+                },
+                { "$ref": "#/$defs/message" }
+              ]
+            },
+            "death_message": {
+              "type": "object",
+              "description": "Configuration for death messages",
+              "unevaluatedProperties": false,
+              "allOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "format": {
+                      "description": "Format for death messages\n\nPlaceholders available: {username}, {death_message}\n\nCan be disabled with false or \"\"",
+                      "type": ["string", "boolean"]
+                    }
+                  }
+                },
+                { "$ref": "#/$defs/message" }
+              ]
+            },
+            "advancement": {
+              "type": "object",
+              "description": "Configuration for advancement messages",
+              "unevaluatedProperties": false,
+              "allOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "format": {
+                      "description": "Format for advancement messages\n\nPlaceholders available: {username}, {advancement_title}, {advancement_description}\n\nCan be disabled with false or \"\"",
+                      "type": ["string", "boolean"]
+                    }
+                  }
+                },
+                { "$ref": "#/$defs/message" }
+              ]
+            },
+            "server_start": {
+              "type": "object",
+              "description": "Configuration for server start messages",
+              "unevaluatedProperties": false,
+              "allOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "format": {
+                      "description": "Format for server start messages\n\nPlaceholders available: {server}\n\nCan be disabled with false or \"\"",
+                      "type": ["string", "boolean"],
+                      "default": "**{server} has started**"
+                    }
+                  }
+                },
+                { "$ref": "#/$defs/message" }
+              ]
+            },
+            "server_stop": {
+              "type": "object",
+              "description": "Configuration for server stop messages",
+              "unevaluatedProperties": false,
+              "allOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "format": {
+                      "description": "Format for server stop messages\n\nPlaceholders available: {server}\n\nCan be disabled with false or \"\"",
+                      "type": ["string", "boolean"],
+                      "default": "**{server} has stopped**"
+                    }
+                  }
+                },
+                { "$ref": "#/$defs/message" }
+              ]
+            }
+          }
+        },
+        "commands": {
+          "description": "Discord bot commands configuration",
+          "type": "object",
+          "properties": {
+            "list": {
+              "description": "Configuration for the list command",
+              "type": "object",
+              "properties": {
+                "no_players": {
+                  "description": "Message to show when no players are online",
+                  "type": "string",
+                  "default": "No players online"
+                },
+                "player_format": {
+                  "description": "Format for each player in the list",
+                  "type": "string",
+                  "default": "- {username}"
+                },
+                "server_format": {
+                  "description": "Format for each server in the list",
+                  "type": "string",
+                  "default": "[{server_name} {online_players}/{max_players}]"
+                },
+                "server_offline": {
+                  "description": "Message to show when a server is offline",
+                  "type": "string",
+                  "default": "Server offline"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "minecraft_overridable": {
+      "type": "object",
+      "properties": {
+        "show_bot_messages": {
+          "description": "Show messages from bots in Minecraft chat",
+          "type": "boolean"
+        },
+        "show_attachments_ingame": {
+          "description": "Show clickable links for attachments in Minecraft chat",
+          "type": "boolean"
+        },
+        "discord_chunk": {
+          "description": "Format for Discord part of messages\n\nUses MiniMessage format\nPlaceholders available: {discord}",
+          "type": "string",
+          "default": "<dark_gray>[<{discord_color}>Discord<dark_gray>]<reset>"
+        },
+        "username_chunk": {
+          "description": "Format for username part of messages\n\nUses MiniMessage format\nPlaceholders available: {role_color}, {display_name}, {username}, {nickname}\n<insert> tag allows you to shift right-click the username to insert @{username} in the chat",
+          "type": "string"
+        },
+        "message": {
+          "description": "Format for chat messages\n\nUses MiniMessage format\nPlaceholders available: {discord_chunk}, {username_chunk}, {attachments}, {message}",
+          "type": "string"
+        },
+        "attachments": {
+          "description": "Format for attachments in chat messages\n\nUses MiniMessage format\nPlaceholders available: {url}, {attachment_color}",
+          "type": "string"
+        },
+        "links": {
+          "description": "Format for links in chat messages\n\nUses MiniMessage format\nPlaceholders available: {url}, {link_color}\nCan be disabled with \"\" or false",
+          "type": ["string", "boolean"]
+        },
+        "discord_color": {
+          "description": "Color for Discord tag in MiniMessage format",
+          "type": "string"
+        },
+        "attachment_color": {
+          "description": "Color for attachment links in MiniMessage format",
+          "type": "string"
+        },
+        "link_color": {
+          "description": "Color for links",
+          "type": "string"
+        },
+        "role_prefixes": {
+          "description": "Role prefixes for Discord users using MiniMessage format\n\nExample format:\n\"123456789\" = \"<dark_gray>[</dark_gray><red><b>OWNER</b></red><dark_gray>]</dark_gray>\"",
+          "type": "object",
+          "unevaluatedProperties": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  },
+  "properties": {
+    "$schema": {
+      "description": "URL to the JSON schema file",
+      "type": "string"
+    },
+    "config_version": {
+      "description": "Configuration version, don't change this",
+      "type": "string",
+      "default": "2.0",
+      "const": "2.0"
+    },
+    "exclude_servers": {
+      "description": "Comma separated list of server names to exclude from the bridge (defined under [servers] inside your velocity.toml)",
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": []
+    },
+    "excluded_servers_receive_messages": {
+      "description": "Whether excluded servers should receive messages from discord",
+      "type": "boolean",
+      "default": false
+    },
+    "ping_interval": {
+      "description": "How often to ping all servers to check for online status (seconds)\n\nExcluded servers will not be pinged\n\nUse a value of 0 to disable",
+      "type": "integer",
+      "minimum": 0,
+      "default": 30
+    },
+    "server_names": {
+      "description": "Server display names\n\nIf a server is not found in this list, the server name (from velocity.toml) will be used instead",
+      "type": "object",
+      "unevaluatedProperties": {
+        "type": "string"
+      },
+      "default": {}
+    },
+    "discord": {
+      "description": "Discord bot configuration",
+      "type": "object",
+      "unevaluatedProperties": false,
+      "allOf": [
+        { "$ref": "#/$defs/discord_overridable" },
+        { "$ref": "#/$defs/discord_non_overridable" }
+      ]
+    },
+    "minecraft": {
+      "description": "Discord > Minecraft message formats\nUses XML-like formatting with https://docs.advntr.dev/minimessage/format.html",
+      "type": "object",
+      "unevaluatedProperties": false,
+      "$ref": "#/$defs/minecraft_overridable"
+    },
+    "override": {
+      "description": "Server-specific configuration overrides",
+      "type": "object",
+      "unevaluatedProperties": {
+        "description": "Configuration override for a specific server",
+        "type": "object",
+        "unevaluatedProperties": false,
+        "properties": {
+          "discord": {
+            "$ref": "#/$defs/discord_overridable"
+          },
+          "minecraft": {
+            "$ref": "#/$defs/minecraft_overridable"
+          }
+        }
+      }
+    }
+  }
+}

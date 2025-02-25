@@ -82,23 +82,23 @@ public class DiscordMessageConfig extends BaseConfig {
   public Optional<String> SERVER_SWITCH_CHANNEL = Optional.empty();
 
   // proxy start
-  @Key("discord.chat.proxy_start.format")
+  @Key(value = "discord.chat.proxy_start.format", overridable = false)
   public Optional<String> PROXY_START_FORMAT = Optional.of("**Proxy started**");
-  @Key("discord.chat.proxy_start.type")
+  @Key(value = "discord.chat.proxy_start.type", overridable = false)
   public MessageType PROXY_START_TYPE = MessageType.TEXT;
-  @Key("discord.chat.proxy_start.embed_color")
+  @Key(value = "discord.chat.proxy_start.embed_color", overridable = false)
   public Optional<Color> PROXY_START_EMBED_COLOR = Optional.of(GREEN);
-  @Key("discord.chat.proxy_start.channel")
+  @Key(value = "discord.chat.proxy_start.channel", overridable = false)
   public Optional<String> PROXY_START_CHANNEL = Optional.empty();
 
   // proxy stop
-  @Key("discord.chat.proxy_stop.format")
+  @Key(value = "discord.chat.proxy_stop.format", overridable = false)
   public Optional<String> PROXY_STOP_FORMAT = Optional.of("**Proxy stopped**");
-  @Key("discord.chat.proxy_stop.type")
+  @Key(value = "discord.chat.proxy_stop.type", overridable = false)
   public MessageType PROXY_STOP_TYPE = MessageType.TEXT;
-  @Key("discord.chat.proxy_stop.embed_color")
+  @Key(value = "discord.chat.proxy_stop.embed_color", overridable = false)
   public Optional<Color> PROXY_STOP_EMBED_COLOR = Optional.of(RED);
-  @Key("discord.chat.proxy_stop.channel")
+  @Key(value = "discord.chat.proxy_stop.channel", overridable = false)
   public Optional<String> PROXY_STOP_CHANNEL = Optional.empty();
 
   // server start

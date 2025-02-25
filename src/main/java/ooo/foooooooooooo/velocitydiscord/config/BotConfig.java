@@ -32,13 +32,13 @@ public class BotConfig extends BaseConfig {
   public Boolean ENABLE_EVERYONE_AND_HERE = false;
 
   // bot activity
-  @Key("discord.show_activity")
+  @Key(value = "discord.show_activity", overridable = false)
   public Boolean SHOW_ACTIVITY = true;
-  @Key("discord.activity_text")
+  @Key(value = "discord.activity_text", overridable = false)
   public String ACTIVITY_FORMAT = "with {amount} players online";
 
   // update channel topic
-  @Key("discord.update_channel_topic_interval")
+  @Key(value = "discord.update_channel_topic_interval", overridable = false)
   public int UPDATE_CHANNEL_TOPIC_INTERVAL_MINUTES = -1;
 
   public BotConfig(Config config) {
