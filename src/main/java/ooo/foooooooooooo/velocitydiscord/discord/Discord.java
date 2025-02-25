@@ -121,7 +121,8 @@ public class Discord extends ListenerAdapter {
 
   @Override
   public void onReady(@Nonnull ReadyEvent event) {
-    VelocityDiscord.LOGGER.info("Bot ready, Guilds: {} ({} available)",
+    VelocityDiscord.LOGGER.info(
+      "Bot ready, Guilds: {} ({} available)",
       event.getGuildTotalCount(),
       event.getGuildAvailableCount()
     );
@@ -158,7 +159,8 @@ public class Discord extends ListenerAdapter {
     this.mentionCompletions.clear();
     for (var channels : this.serverChannels.values()) {
       var members = channels.chatChannel.getMembers();
-      this.mentionCompletions.put(channels.serverName,
+      this.mentionCompletions.put(
+        channels.serverName,
         members.stream().map((m -> "@" + m.getUser().getName())).toList()
       );
     }
@@ -294,7 +296,7 @@ public class Discord extends ListenerAdapter {
       .toString();
 
     var targetChannel = getServerChannels(server).disconnectChannel;
-    switch (serverDiscordConfig.LEAVE_TYPE) {
+    switch (serverDiscordConfig.DISCONNECT_TYPE) {
       case EMBED -> sendEmbedMessage(targetChannel, message, serverDiscordConfig.DISCONNECT_EMBED_COLOR);
       case TEXT -> sendMessage(targetChannel, message);
       case WEBHOOK -> sendWebhookMessage(targetChannel, uuid, username, server, message);
@@ -343,7 +345,12 @@ public class Discord extends ListenerAdapter {
   }
 
   public void onPlayerAdvancement(
-    String username, String uuid, String server, String displayname, String title, String description
+    String username,
+    String uuid,
+    String server,
+    String displayname,
+    String title,
+    String description
   ) {
     var serverDiscordConfig = VelocityDiscord.CONFIG.getServerConfig(server).getDiscordMessageConfig();
 
@@ -445,7 +452,7 @@ public class Discord extends ListenerAdapter {
 
     // only generate player list if it's in the TOPIC_FORMAT
     if (VelocityDiscord.CONFIG.discord.TOPIC_FORMAT.get().contains("{player_list}")) {
-      playerList = VelocityDiscord.SERVER
+      var players = VelocityDiscord.SERVER
         .getAllPlayers()
         .stream()
         .limit(VelocityDiscord.CONFIG.discord.TOPIC_PLAYER_LIST_MAX_COUNT)
@@ -455,8 +462,14 @@ public class Discord extends ListenerAdapter {
           .toString())
         .reduce("", (a, b) -> a + VelocityDiscord.CONFIG.discord.TOPIC_PLAYER_LIST_SEPARATOR + b);
 
-      if (!playerList.isEmpty()) {
-        playerList = playerList.substring(VelocityDiscord.CONFIG.discord.TOPIC_PLAYER_LIST_SEPARATOR.length());
+      if (!players.isEmpty()) {
+        // Remove leading separator and add header if configured
+        players = players.substring(VelocityDiscord.CONFIG.discord.TOPIC_PLAYER_LIST_SEPARATOR.length());
+        if (VelocityDiscord.CONFIG.discord.TOPIC_PLAYER_LIST_HEADER.isPresent()) {
+          playerList = VelocityDiscord.CONFIG.discord.TOPIC_PLAYER_LIST_HEADER.get() + players;
+        } else {
+          playerList = players;
+        }
       } else {
         playerList = VelocityDiscord.CONFIG.discord.TOPIC_PLAYER_LIST_NO_PLAYERS_HEADER.orElse("");
       }
@@ -640,9 +653,7 @@ public class Discord extends ListenerAdapter {
   }
 
   // todo: send webhooks to specific channels
-  private void sendWebhookMessage(
-    TextChannel channel, String uuid, String username, String server, String content
-  ) {
+  private void sendWebhookMessage(TextChannel channel, String uuid, String username, String server, String content) {
     if (this.webhookClient == null) {
       VelocityDiscord.LOGGER.debug("Webhook client was not created due to configuration error, skipping sending "
         + "message");
