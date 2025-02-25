@@ -175,24 +175,21 @@ public class Config extends BaseConfig implements ServerConfig {
 
   public @Nullable String reloadConfig(Path dataDirectory) {
     this.dataDir = dataDirectory;
-    //    VelocityDiscord.LOGGER.info("prev inner:");
-    //    VelocityDiscord.LOGGER.info("---");
-    //    logInner();
-    //    VelocityDiscord.LOGGER.info("---");
+
+    // reset old values
+    this.serverDisplayNames.clear();
+    this.serverOverridesMap.clear();
+    this.EXCLUDED_SERVERS.clear();
+
     setInner(Config.loadFile(this.dataDir));
-    //    VelocityDiscord.LOGGER.info("new inner:");
-    //    VelocityDiscord.LOGGER.info("---");
-    //    logInner();
-    //    VelocityDiscord.LOGGER.info("---");
+
+    // reset configs
+    this.bot.setInner(this.inner);
+    this.discord.setInner(this.inner);
+    this.minecraft.setInner(this.inner);
 
     try {
       loadConfig();
-
-      for (var overrideConfigEntry : this.serverOverridesMap.entrySet()) {
-        var overrideConfig = overrideConfigEntry.getValue();
-        overrideConfig.setInner(this.inner);
-        overrideConfig.loadConfig();
-      }
 
       return checkInvalidValues();
     } catch (Exception e) {
@@ -250,18 +247,6 @@ public class Config extends BaseConfig implements ServerConfig {
       this.bot = new BotConfig(config, main.bot);
       this.discord = new DiscordMessageConfig(config, main.discord);
       this.minecraft = new MinecraftMessageConfig(config, main.minecraft);
-    }
-
-    public void loadConfig() {
-      this.bot.loadConfig();
-      this.discord.loadConfig();
-      this.minecraft.loadConfig();
-    }
-
-    public void setInner(com.electronwill.nightconfig.core.Config config) {
-      this.bot.setInner(config);
-      this.discord.setInner(config);
-      this.minecraft.setInner(config);
     }
 
     @Override

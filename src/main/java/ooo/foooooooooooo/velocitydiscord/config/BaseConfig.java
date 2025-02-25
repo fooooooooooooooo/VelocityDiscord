@@ -88,6 +88,7 @@ public class BaseConfig {
     }
   }
 
+  @SuppressWarnings("unchecked")
   private <T> void loadField(Field field, String key, Getter<T> getter) {
     T defaultValue = null;
 
@@ -188,6 +189,7 @@ public class BaseConfig {
     return Arrays.stream(clazz.getFields()).filter(f -> f.isAnnotationPresent(Key.class)).collect(Collectors.toSet());
   }
 
+  @SuppressWarnings("unused")
   public void logInner() {
     this.inner.entrySet().forEach(entry -> logInnerEntry(entry.getKey(), entry.getValue(), 0));
   }
