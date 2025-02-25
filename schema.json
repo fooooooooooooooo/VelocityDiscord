@@ -9,7 +9,7 @@
       "type": "object",
       "properties": {
         "type": {
-          "description": "Type of message to send\n\n- text: Normal text only message with the associated format\n- webhook: Use a Discord webhook to have the bot use the player's username and avatar when sending messages. Requires a webhook URL to be set. Ignores the message format, and just sends the message as the content of the webhook\n- embed: Discord embed with the format as the description field",
+          "description": "Type of message to send\n\n- text: Normal text only message with the associated format\n\n- webhook: Use a Discord webhook to have the bot use the player's username and avatar when sending messages. Requires a webhook URL to be set. Ignores the message format, and just sends the message as the content of the webhook\n\n- embed: Discord embed with the format as the description field",
           "type": "string",
           "enum": ["text", "webhook", "embed"]
         },
@@ -47,7 +47,7 @@
           "type": "object",
           "properties": {
             "format": {
-              "description": "Format for the channel topic\n\nPlaceholders available:\n{players} - Total number of players online\n{player_list} - List of players (format is defined below)\n{servers} - Number of servers\n{server_list} - List of server names\n{hostname} - Server hostname\n{port} - Server port\n{motd} - Message of the Day (MOTD)\n{query_port} - Query port\n{max_players} - Maximum number of players\n{plugins} - Number of plugins\n{plugin_list} - List of plugin names\n{version} - Server version\n{software} - Software name\n{average_ping} - Average ping of all players\n{uptime} - Server uptime in hours and minutes\n{server[SERVERNAME]} - Dynamic placeholder for each server's name and status (e.g., {server[MyServer]}, {server[AnotherServer]}, {server[Lobby]}, etc.)",
+              "description": "Format for the channel topic\n\nPlaceholders available:\n\n{players} - Total number of players online\n\n{player_list} - List of players (format is defined below)\n\n{servers} - Number of servers\n\n{server_list} - List of server names\n\n{hostname} - Server hostname\n\n{port} - Server port\n\n{motd} - Message of the Day (MOTD)\n\n{query_port} - Query port\n\n{max_players} - Maximum number of players\n\n{plugins} - Number of plugins\n\n{plugin_list} - List of plugin names\n\n{version} - Server version\n\n{software} - Software name\n\n{average_ping} - Average ping of all players\n\n{uptime} - Server uptime in hours and minutes\n\n{server[SERVERNAME]} - Dynamic placeholder for each server's name and status (e.g., {server[MyServer]}, {server[AnotherServer]}, {server[Lobby]}, etc.)",
               "type": "string",
               "default": "{players}/{max_players}\n{player_list}\n{hostname}:{port}\nUptime: {uptime}"
             },
@@ -72,7 +72,7 @@
               "default": "{username}"
             },
             "player_list_separator": {
-              "description": "Separator between players in the player list\n\\n can be used for new line",
+              "description": "Separator between players in the player list\n\n\\n can be used for new line",
               "type": "string",
               "default": ", "
             },
@@ -407,24 +407,24 @@
           "type": "boolean"
         },
         "discord_chunk": {
-          "description": "Format for Discord part of messages\n\nUses MiniMessage format\nPlaceholders available: {discord}",
+          "description": "Format for Discord part of messages\n\nUses MiniMessage format\n\nPlaceholders available: {discord}",
           "type": "string",
           "default": "<dark_gray>[<{discord_color}>Discord<dark_gray>]<reset>"
         },
         "username_chunk": {
-          "description": "Format for username part of messages\n\nUses MiniMessage format\nPlaceholders available: {role_color}, {display_name}, {username}, {nickname}\n<insert> tag allows you to shift right-click the username to insert @{username} in the chat",
+          "description": "Format for username part of messages\n\nUses MiniMessage format\n\nPlaceholders available: {role_color}, {display_name}, {username}, {nickname}\n<insert> tag allows you to shift right-click the username to insert @{username} in the chat",
           "type": "string"
         },
         "message": {
-          "description": "Format for chat messages\n\nUses MiniMessage format\nPlaceholders available: {discord_chunk}, {username_chunk}, {attachments}, {message}",
+          "description": "Format for chat messages\n\nUses MiniMessage format\n\nPlaceholders available: {discord_chunk}, {username_chunk}, {attachments}, {message}",
           "type": "string"
         },
         "attachments": {
-          "description": "Format for attachments in chat messages\n\nUses MiniMessage format\nPlaceholders available: {url}, {attachment_color}",
+          "description": "Format for attachments in chat messages\n\nUses MiniMessage format\n\nPlaceholders available: {url}, {attachment_color}",
           "type": "string"
         },
         "links": {
-          "description": "Format for links in chat messages\n\nUses MiniMessage format\nPlaceholders available: {url}, {link_color}\nCan be disabled with \"\" or false",
+          "description": "Format for links in chat messages\n\nUses MiniMessage format\n\nPlaceholders available: {url}, {link_color}\n\nCan be disabled with \"\" or false",
           "type": ["string", "boolean"]
         },
         "discord_color": {
@@ -440,7 +440,7 @@
           "type": "string"
         },
         "role_prefixes": {
-          "description": "Role prefixes for Discord users using MiniMessage format\n\nExample format:\n\"123456789\" = \"<dark_gray>[</dark_gray><red><b>OWNER</b></red><dark_gray>]</dark_gray>\"",
+          "description": "Role prefixes for Discord users using MiniMessage format\n\nExample format:\n\n\"123456789\" = \"<dark_gray>[</dark_gray><red><b>OWNER</b></red><dark_gray>]</dark_gray>\"",
           "type": "object",
           "unevaluatedProperties": {
             "type": "string"
@@ -497,7 +497,7 @@
       ]
     },
     "minecraft": {
-      "description": "Discord > Minecraft message formats\nUses XML-like formatting with https://docs.advntr.dev/minimessage/format.html",
+      "description": "Discord > Minecraft message formats\n\nUses XML-like formatting with https://docs.advntr.dev/minimessage/format.html",
       "type": "object",
       "unevaluatedProperties": false,
       "$ref": "#/$defs/minecraft_overridable"
