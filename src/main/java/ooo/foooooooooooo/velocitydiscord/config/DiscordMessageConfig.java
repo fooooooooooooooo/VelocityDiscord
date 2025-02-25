@@ -7,16 +7,6 @@ import java.util.Optional;
 
 @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
 public class DiscordMessageConfig extends BaseConfig {
-  public DiscordMessageConfig(Config config) {
-    super(config);
-    loadConfig();
-  }
-
-  public DiscordMessageConfig(Config config, DiscordMessageConfig main) {
-    super(config, main);
-    loadConfig();
-  }
-
   private static final Color RED = new Color(0xbf4040);
   private static final Color GREEN = new Color(0x40bf4f);
 
@@ -154,6 +144,16 @@ public class DiscordMessageConfig extends BaseConfig {
   public String TOPIC_PLAYER_LIST_SEPARATOR = ", ";
   @Key("discord.channel_topic.player_list_max_count")
   public int TOPIC_PLAYER_LIST_MAX_COUNT = 10;
+
+  public DiscordMessageConfig(Config config) {
+    super(config);
+    loadConfig();
+  }
+
+  public DiscordMessageConfig(Config config, DiscordMessageConfig main) {
+    super(config, main);
+    loadConfig();
+  }
 
   public boolean isWebhookEnabled() {
     return this.MESSAGE_TYPE == UserMessageType.WEBHOOK;

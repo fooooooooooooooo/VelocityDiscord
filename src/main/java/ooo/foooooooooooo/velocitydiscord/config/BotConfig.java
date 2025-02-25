@@ -4,30 +4,12 @@ import com.electronwill.nightconfig.core.Config;
 import ooo.foooooooooooo.velocitydiscord.config.commands.ListCommandConfig;
 
 public class BotConfig extends BaseConfig {
-  public final ListCommandConfig listCommand;
-
-  public BotConfig(Config config) {
-    super(config);
-    this.listCommand = new ListCommandConfig(config);
-    loadConfig();
-  }
-
-  public BotConfig(Config config, BotConfig main) {
-    super(config, main);
-    this.listCommand = new ListCommandConfig(config, main.listCommand);
-    loadConfig();
-  }
-
-  @Override
-  protected void loadConfig() {
-    super.loadConfig();
-    this.listCommand.loadConfig();
-  }
-
   private static final String DefaultToken = "TOKEN";
   private static final String DefaultChannelId = "000000000000000000";
   private static final String DefaultWebhookUrl = "";
   private static final String DefaultAvatarUrl = "https://crafatar.com/avatars/{uuid}?overlay";
+
+  public final ListCommandConfig listCommand;
 
   // bot
   @Key(value = "discord.token", overridable = false)
@@ -58,6 +40,24 @@ public class BotConfig extends BaseConfig {
   // update channel topic
   @Key("discord.update_channel_topic_interval")
   public int UPDATE_CHANNEL_TOPIC_INTERVAL_MINUTES = -1;
+
+  public BotConfig(Config config) {
+    super(config);
+    this.listCommand = new ListCommandConfig(config);
+    loadConfig();
+  }
+
+  public BotConfig(Config config, BotConfig main) {
+    super(config, main);
+    this.listCommand = new ListCommandConfig(config, main.listCommand);
+    loadConfig();
+  }
+
+  @Override
+  protected void loadConfig() {
+    super.loadConfig();
+    this.listCommand.loadConfig();
+  }
 
   public boolean isDefaultValues() {
     return this.DISCORD_TOKEN.equals(DefaultToken) || this.MAIN_CHANNEL_ID.equals(DefaultChannelId);

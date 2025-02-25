@@ -8,8 +8,10 @@ import ooo.foooooooooooo.velocitydiscord.VelocityDiscord;
 
 public final class TopicPreviewCommand {
   public static LiteralArgumentBuilder<CommandSource> create() {
-    return BrigadierCommand.literalArgumentBuilder("topic")
-      .then(BrigadierCommand.literalArgumentBuilder("preview")
+    return BrigadierCommand
+      .literalArgumentBuilder("topic")
+      .then(BrigadierCommand
+        .literalArgumentBuilder("preview")
         .requires(source -> source.hasPermission("discord.topic.preview"))
         .executes(source -> {
           var discord = VelocityDiscord.getDiscord();
@@ -24,7 +26,6 @@ public final class TopicPreviewCommand {
           source.getSource().sendPlainMessage("Generated channel topic: \n\n" + topic + "\n");
 
           return Command.SINGLE_SUCCESS;
-        })
-      );
+        }));
   }
 }

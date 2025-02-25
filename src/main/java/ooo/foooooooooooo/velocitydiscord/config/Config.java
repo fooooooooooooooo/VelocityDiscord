@@ -17,8 +17,6 @@ public class Config extends BaseConfig implements ServerConfig {
   private static final String configVersion = splitVersion[0] + '.' + splitVersion[1];
   private static final String configMajorVersion = splitVersion[0];
 
-  private Path dataDir;
-
   private static boolean configCreatedThisRun = false;
 
   public final BotConfig bot;
@@ -32,7 +30,9 @@ public class Config extends BaseConfig implements ServerConfig {
   @Key("ping_interval")
   public int PING_INTERVAL_SECONDS = 15;
 
-  public Map<String, String> serverDisplayNames = new HashMap<>();
+  private final Map<String, String> serverDisplayNames = new HashMap<>();
+
+  private Path dataDir;
   private HashMap<String, OverrideConfig> serverOverridesMap = new HashMap<>();
 
   public Config(Path dataDir) {
@@ -83,6 +83,10 @@ public class Config extends BaseConfig implements ServerConfig {
     return fileConfig;
   }
 
+  private static boolean versionCompatible(String newVersion) {
+    return newVersion.split("\\.")[0].equals(configMajorVersion);
+  }
+
   private void checkConfig() {
     // make sure the config makes sense for the current plugin's version
     var version = get(this, "config_version", configVersion);
@@ -95,10 +99,6 @@ public class Config extends BaseConfig implements ServerConfig {
       );
       throw new RuntimeException(error);
     }
-  }
-
-  private static boolean versionCompatible(String newVersion) {
-    return newVersion.split("\\.")[0].equals(configMajorVersion);
   }
 
   // Assume it's the first run if the config hasn't been edited or has been created this run
@@ -127,8 +127,6 @@ public class Config extends BaseConfig implements ServerConfig {
       }
     }
 
-    // VelocityDiscord.LOGGER.info("serverDisplayNames: {}", this.serverDisplayNames.toString());
-
     // server overrides
 
     CommentedConfig serverOverrides = this.inner.get("override");
@@ -137,10 +135,6 @@ public class Config extends BaseConfig implements ServerConfig {
       VelocityDiscord.LOGGER.debug("No server overrides found");
       return;
     }
-
-    // dump to logger
-
-    // VelocityDiscord.LOGGER.info("Server overrides found ({}):", serverOverrides.size());
 
     this.serverOverridesMap = new HashMap<>();
 
@@ -154,15 +148,11 @@ public class Config extends BaseConfig implements ServerConfig {
           continue;
         }
 
-        // VelocityDiscord.LOGGER.info("serverOverride: {} -> {}", serverName, serverOverride);
-
         this.serverOverridesMap.put(serverName, new OverrideConfig(serverOverride, this));
       } else {
         VelocityDiscord.LOGGER.warn("Invalid server override for `{}`: `{}`", entry.getKey(), entry.getValue());
       }
     }
-
-    // VelocityDiscord.LOGGER.info("serverOverridesMap: {}", this.serverOverridesMap);
   }
 
   public boolean serverDisabled(String name) {

@@ -9,18 +9,6 @@ public class MinecraftMessageConfig extends BaseConfig {
   // role prefixes
   public final RolePrefixConfig rolePrefixes;
 
-  public MinecraftMessageConfig(Config config) {
-    super(config);
-    this.rolePrefixes = new RolePrefixConfig(config);
-    loadConfig();
-  }
-
-  public MinecraftMessageConfig(Config config, MinecraftMessageConfig main) {
-    super(config, main);
-    this.rolePrefixes = new RolePrefixConfig(config, main.rolePrefixes);
-    loadConfig();
-  }
-
   // discord
   @Key("minecraft.show_bot_messages")
   public Boolean SHOW_BOT_MESSAGES = false;
@@ -51,6 +39,18 @@ public class MinecraftMessageConfig extends BaseConfig {
   public String ATTACHMENT_COLOR = "#4abdff";
   @Key("minecraft.link_color")
   public String LINK_COLOR = "#4abdff";
+
+  public MinecraftMessageConfig(Config config) {
+    super(config);
+    this.rolePrefixes = new RolePrefixConfig(config);
+    loadConfig();
+  }
+
+  public MinecraftMessageConfig(Config config, MinecraftMessageConfig main) {
+    super(config, main);
+    this.rolePrefixes = new RolePrefixConfig(config, main.rolePrefixes);
+    loadConfig();
+  }
 
   @Override
   protected void loadConfig() {

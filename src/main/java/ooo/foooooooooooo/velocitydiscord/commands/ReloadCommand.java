@@ -10,7 +10,8 @@ import java.text.MessageFormat;
 
 public final class ReloadCommand {
   public static LiteralArgumentBuilder<CommandSource> create() {
-    return BrigadierCommand.literalArgumentBuilder("reload")
+    return BrigadierCommand
+      .literalArgumentBuilder("reload")
       .requires(source -> source.hasPermission("discord.reload"))
       .executes(source -> {
         String error;
@@ -25,7 +26,11 @@ public final class ReloadCommand {
           source.getSource().sendPlainMessage("Config reloaded");
           return Command.SINGLE_SUCCESS;
         } else {
-          source.getSource().sendPlainMessage(MessageFormat.format("Error reloading config:\n{0}\n\nFix the error and reload again", error));
+          source
+            .getSource()
+            .sendPlainMessage(MessageFormat.format("Error reloading config:\n{0}\n\nFix the error and reload again",
+              error
+            ));
           return 0;
         }
       });

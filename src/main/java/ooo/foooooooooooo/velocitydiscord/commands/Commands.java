@@ -6,9 +6,11 @@ import ooo.foooooooooooo.velocitydiscord.VelocityDiscord;
 
 public final class Commands {
   public static void RegisterCommands(CommandManager commandManager) {
-    var node = BrigadierCommand.literalArgumentBuilder("discord")
+    var node = BrigadierCommand
+      .literalArgumentBuilder("discord")
       .then(ReloadCommand.create())
-      .then(TopicPreviewCommand.create()).build();
+      .then(TopicPreviewCommand.create())
+      .build();
 
     var command = new BrigadierCommand(node);
 

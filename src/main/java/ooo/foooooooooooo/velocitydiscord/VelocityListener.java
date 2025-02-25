@@ -200,6 +200,21 @@ public class VelocityListener {
     return CompletableFuture.completedFuture(null);
   }
 
+  public ServerState getServerState(RegisteredServer server) {
+    var name = server.getServerInfo().getName();
+    return this.serverState.getOrDefault(name, ServerState.empty());
+  }
+
+  private void setServerOnline(String server) {
+    var state = this.serverState.getOrDefault(server, ServerState.empty());
+
+    if (!state.online) {
+      onServerOnline(server);
+      state.online = true;
+      this.serverState.put(server, state);
+    }
+  }
+
   public static class ServerState {
     public boolean online;
     public int players;
@@ -213,21 +228,6 @@ public class VelocityListener {
 
     public static ServerState empty() {
       return new ServerState(false, 0, 0);
-    }
-  }
-
-  public ServerState getServerState(RegisteredServer server) {
-    var name = server.getServerInfo().getName();
-    return this.serverState.getOrDefault(name, ServerState.empty());
-  }
-
-  private void setServerOnline(String server) {
-    var state = this.serverState.getOrDefault(server, ServerState.empty());
-
-    if (!state.online) {
-      onServerOnline(server);
-      state.online = true;
-      this.serverState.put(server, state);
     }
   }
 }

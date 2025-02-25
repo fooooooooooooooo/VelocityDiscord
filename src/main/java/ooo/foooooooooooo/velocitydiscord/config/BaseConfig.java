@@ -15,8 +15,10 @@ import java.util.stream.Collectors;
 
 @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
 public class BaseConfig {
-  public Config inner;
+  private static final String INVALID_VALUE_FORMAT_STRING =
+    "ERROR: `%s` is not a valid value for `%s`, acceptable values: `false`, any string";
 
+  public Config inner;
   private @Nullable BaseConfig main;
 
   public BaseConfig(com.electronwill.nightconfig.core.Config config) {
@@ -27,6 +29,68 @@ public class BaseConfig {
     this.inner = config;
     // get every field as optional, fallback to main
     this.main = main;
+  }
+
+  public static <T> T get(BaseConfig config, String key, T defaultValue) {
+    return config.inner.getOrElse(key, defaultValue);
+  }
+
+  public static Optional<String> getOptional(BaseConfig config, String key, Optional<String> defaultValue) {
+    var value = config.inner.getRaw(key);
+
+    if (value == null) {
+      return defaultValue;
+    }
+
+    if (value instanceof Boolean bool) {
+      if (!bool) {
+        return Optional.empty();
+
+      } else {
+        throw new RuntimeException(String.format(INVALID_VALUE_FORMAT_STRING, "true", key));
+      }
+    }
+
+    if (value instanceof String str) {
+      if (str.isEmpty()) {
+        return Optional.empty();
+      }
+
+      return Optional.of(str);
+    }
+
+    throw new RuntimeException(String.format(INVALID_VALUE_FORMAT_STRING, value, key));
+  }
+
+  public static Optional<Color> getColor(BaseConfig config, String key, Optional<Color> defaultValue) {
+    var defaultHex = defaultValue.map((c) -> String.format("#%06X", (0xFFFFFF & c.getRGB())));
+    return BaseConfig.getOptional(config, key, defaultHex).map(Color::decode);
+  }
+
+  public static MessageType getMessageType(BaseConfig config, String key, MessageType defaultValue) {
+    var type = BaseConfig.get(config, key, defaultValue.toString().toLowerCase());
+    return switch (type) {
+      case "text" -> MessageType.TEXT;
+      case "embed" -> MessageType.EMBED;
+      case "" -> defaultValue;
+      default -> throw new RuntimeException("Invalid message type: " + type);
+    };
+  }
+
+  public static UserMessageType getUserMessageType(BaseConfig config, String key, UserMessageType defaultValue) {
+    var type = BaseConfig.get(config, key, defaultValue.toString().toLowerCase());
+    return switch (type) {
+      case "text" -> UserMessageType.TEXT;
+      case "webhook" -> UserMessageType.WEBHOOK;
+      case "embed" -> UserMessageType.EMBED;
+      case "" -> defaultValue;
+      default -> throw new RuntimeException("Invalid message type: " + type);
+    };
+  }
+
+  public static Set<Field> getConfigFields(Object instance) {
+    var clazz = instance.getClass();
+    return Arrays.stream(clazz.getFields()).filter(f -> f.isAnnotationPresent(Key.class)).collect(Collectors.toSet());
   }
 
   public void setInner(com.electronwill.nightconfig.core.Config config) {
@@ -110,85 +174,6 @@ public class BaseConfig {
     }
   }
 
-  public static <T> T get(BaseConfig config, String key, T defaultValue) {
-    return config.inner.getOrElse(key, defaultValue);
-  }
-
-  // @formatter:off
-  private static final String INVALID_VALUE_FORMAT_STRING = "ERROR: `%s` is not a valid value for `%s`, acceptable values: `false`, any string";
-  // @formatter:on
-
-  public static Optional<String> getOptional(BaseConfig config, String key, Optional<String> defaultValue) {
-    var value = config.inner.getRaw(key);
-
-    if (value == null) {
-      return defaultValue;
-    }
-
-    if (value instanceof Boolean bool) {
-      if (!bool) {
-        return Optional.empty();
-
-      } else {
-        throw new RuntimeException(String.format(INVALID_VALUE_FORMAT_STRING, "true", key));
-      }
-    }
-
-    if (value instanceof String str) {
-      if (str.isEmpty()) {
-        return Optional.empty();
-      }
-
-      return Optional.of(str);
-    }
-
-    throw new RuntimeException(String.format(INVALID_VALUE_FORMAT_STRING, value, key));
-  }
-
-  public static Optional<Color> getColor(BaseConfig config, String key, Optional<Color> defaultValue) {
-    var defaultHex = defaultValue.map((c) -> String.format("#%06X", (0xFFFFFF & c.getRGB())));
-    return BaseConfig.getOptional(config, key, defaultHex).map(Color::decode);
-  }
-
-  public static MessageType getMessageType(BaseConfig config, String key, MessageType defaultValue) {
-    var type = BaseConfig.get(config, key, defaultValue.toString().toLowerCase());
-    return switch (type) {
-      case "text" -> MessageType.TEXT;
-      case "embed" -> MessageType.EMBED;
-      case "" -> defaultValue;
-      default -> throw new RuntimeException("Invalid message type: " + type);
-    };
-  }
-
-  public static UserMessageType getUserMessageType(BaseConfig config, String key, UserMessageType defaultValue) {
-    var type = BaseConfig.get(config, key, defaultValue.toString().toLowerCase());
-    return switch (type) {
-      case "text" -> UserMessageType.TEXT;
-      case "webhook" -> UserMessageType.WEBHOOK;
-      case "embed" -> UserMessageType.EMBED;
-      case "" -> defaultValue;
-      default -> throw new RuntimeException("Invalid message type: " + type);
-    };
-  }
-
-  @FunctionalInterface
-  private interface Getter<T> {
-    T get(BaseConfig config, String key, T defaultValue);
-  }
-
-  public enum UserMessageType {
-    TEXT, WEBHOOK, EMBED
-  }
-
-  public enum MessageType {
-    TEXT, EMBED
-  }
-
-  public static Set<Field> getConfigFields(Object instance) {
-    var clazz = instance.getClass();
-    return Arrays.stream(clazz.getFields()).filter(f -> f.isAnnotationPresent(Key.class)).collect(Collectors.toSet());
-  }
-
   @SuppressWarnings("unused")
   public void logInner() {
     this.inner.entrySet().forEach(entry -> logInnerEntry(entry.getKey(), entry.getValue(), 0));
@@ -206,5 +191,18 @@ public class BaseConfig {
         System.out.printf("%s%s: %s%n", indent, key, value);
       }
     }
+  }
+
+  public enum UserMessageType {
+    TEXT, WEBHOOK, EMBED
+  }
+
+  public enum MessageType {
+    TEXT, EMBED
+  }
+
+  @FunctionalInterface
+  private interface Getter<T> {
+    T get(BaseConfig config, String key, T defaultValue);
   }
 }
