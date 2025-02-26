@@ -5,46 +5,48 @@ config_version = "2.0"
 
 # Comma separated list of server names to exclude from the bridge (defined under [servers] inside your velocity.toml)
 # e.g., exclude_servers = ["lobby", "survival"]
-exclude_servers = []
-excluded_servers_receive_messages = false
+exclude_servers = [
+  "survival"
+]
+excluded_servers_receive_messages = true
 
 # How often to ping all servers to check for online status (seconds)
 # Excluded servers will not be pinged
 # Use a value of 0 to disable
-ping_interval = 30
+ping_interval = 123
 
 # Server display names
 # If a server is not found in this list, the server name (from velocity.toml) will be used instead
 [server_names]
-# lobby = "Lobby"
+lobby = "lobby_test_name"
 
 [discord]
 # Bot token from https://discordapp.com/developers/applications/
 # Not server overridable
-token = "TOKEN"
+token = "test_token"
 # Default channel ID to send Minecraft chat messages to
-channel = "000000000000000000"
+channel = "123456789012345678"
 
 # Show messages from bots in Minecraft chat
-show_bot_messages = false
+show_bot_messages = true
 # Show clickable links for attachments in Minecraft chat
-show_attachments_ingame = true
+show_attachments_ingame = false
 
 # Activity text of the bot to show in Discord
 # Placeholders available: {amount}
 # Can be disabled with "" or false
 # Not server overridable
-activity_text = "with {amount} players online"
+activity_format = "activity_format_test"
 
 # Enable mentioning Discord users from Minecraft chat
-enable_mentions = true
+enable_mentions = false
 # Enable @everyone and @here pings from Minecraft chat
-enable_everyone_and_here = false
+enable_everyone_and_here = true
 
 # Set the interval (in minutes) for updating the channel topic
 # Use a value of 0 to disable
 # Not server overridable
-update_channel_topic_interval = 0
+update_channel_topic_interval = 123
 
 # Channel topic config (if enabled)
 [discord.channel_topic]
@@ -66,45 +68,41 @@ update_channel_topic_interval = 0
 # {average_ping} - Average ping of all players
 # {uptime} - Server uptime in hours and minutes
 # {server[SERVERNAME]} - Dynamic placeholder for each server's name and status (e.g., {server[MyServer]}, {server[AnotherServer]}, {server[Lobby]}, etc.)
-format = """{players}/{max_players}
-{player_list}
-{hostname}:{port}
-Uptime: {uptime}"""
+format = "format_test"
 
 # Template for server[SERVERNAME] placeholder in the channel topic
 # Placeholders available: {name}, {players}, {max_players}, {motd}, {version}, {protocol}
-server = "{name}: {players}/{max_players}"
+server = "server_test"
 
 # Template for server[SERVERNAME] placeholder in the channel topic when the server is offline
 # Placeholders available: {name}
-server_offline = "{name}: Offline"
+server_offline = "server_offline_test"
 
 # Can be disabled with "" or false to hide the list completely when no players are online
-player_list_no_players_header = "No players online"
+player_list_no_players_header = "players_no_players_header_test"
 
 # Can be disabled with "" or false to hide the header and only show the player list
-player_list_header = "Players: "
+player_list_header = "player_list_header_test"
 
 # Placeholders available: {username}, {ping}
-player_list_player = "{username}"
+player_list_player = "player_list_player_test"
 
 # Separator between players in the list, \n can be used for new line
-player_list_separator = ", "
+player_list_separator = "player_list_separator_test"
 
 # Maximum number of players to show in the topic
 # Set to < 1 to show all players
-player_list_max_count = 10
+player_list_max_count = 123
 
 [discord.webhook]
 # Full webhook URL to send more fancy Minecraft chat messages to
-webhook_url = ""
+url = "webhook_url_test"
 # Full URL of an avatar service to get the player's avatar from
 # Placeholders available: {uuid}, {username}
-avatar_url = "https://visage.surgeplay.com/face/96/{uuid}"
-
+avatar_url = "avatar_url_test"
 # The format of the webhook's username
 # Placeholders available: {username}, {server}
-webhook_username = "{username}"
+username = "webhook_username_test"
 
 # Minecraft > Discord message formats
 # Uses the same formatting as the Discord client (a subset of markdown)
@@ -119,7 +117,7 @@ webhook_username = "{username}"
 [discord.chat.message]
 # Placeholders available: {username}, {prefix}, {server}, {message}
 # Can be disabled with "" or false
-format = "{username}: {message}"
+format = "format_test"
 
 # for user messages, the following types can be used
 # "text"    - Normal text only message with the above
@@ -129,141 +127,169 @@ format = "{username}: {message}"
 #             Ignores the above message format, and just sends the message as the content of the webhook
 #
 # "embed"   - Discord embed with the above format as the description field
-type = "text"
+type = "embed"
 # Can be disabled with "" or false
-embed_color = ""
+embed_color = "#ff00ff"
 # Channel override for this message type, set to "" or false or remove to use the default channel
 # Can be applied to all message types
 # channel = "000000000000000000"
+[discord.chat.message.webhook]
+url = "message_webhook_url_test"
+username = "message_webhook_username_test"
+avatar_url = "message_webhook_avatar_url_test"
 
 [discord.chat.join]
 # Placeholders available: {username}, {prefix}, {server}
 # Can be disabled with "" or false
-format = "**{username} joined the game**"
-type = "text"
+format = "format_test"
+type = "embed"
 # Can be disabled with "" or false
-embed_color = "#40bf4f"
+embed_color = "#ff00ff"
+[discord.chat.join.webhook]
+url = "join_webhook_url_test"
+username = "join_webhook_username_test"
+avatar_url = "join_webhook_avatar_url_test"
 
 [discord.chat.leave]
 # Placeholders available: {username}, {prefix}, {server}
 # Can be disabled with "" or false
-format = "**{username} left the game**"
-type = "text"
+format = "format_test"
+type = "embed"
 # Can be disabled with "" or false
-embed_color = "#bf4040"
+embed_color = "#ff00ff"
+[discord.chat.leave.webhook]
+url = "leave_webhook_url_test"
+username = "leave_webhook_username_test"
+avatar_url = "leave_webhook_avatar_url_test"
 
 [discord.chat.disconnect]
 # Possible different format for timeouts or other terminating connections
 # Placeholders available: {username}, {prefix}
 # Can be disabled with "" or false
-format = "**{username} disconnected**"
-type = "text"
+format = "format_test"
+type = "embed"
 # Can be disabled with "" or false
-embed_color = "#bf4040"
+embed_color = "#ff00ff"
+[discord.chat.disconnect.webhook]
+url = "disconnect_webhook_url_test"
+username = "disconnect_webhook_username_test"
+avatar_url = "disconnect_webhook_avatar_url_test"
 
 [discord.chat.server_switch]
 # Placeholders available: {username}, {prefix}, {current}, {previous}
 # Can be disabled with "" or false
-format = "**{username} moved to {current} from {previous}**"
-type = "text"
+format = "format_test"
+type = "embed"
 # Can be disabled with "" or false
-embed_color = "#40bf4f"
+embed_color = "#ff00ff"
+[discord.chat.server_switch.webhook]
+url = "server_switch_webhook_url_test"
+username = "server_switch_webhook_username_test"
+avatar_url = "server_switch_webhook_avatar_url_test"
 
 [discord.chat.death]
 # Placeholders available: {username}, {death_message}
 # death_message includes the username just as it is shown ingame
 # Can be disabled with "" or false
-format = "**{death_message}**"
-type = "text"
+format = "format_test"
+type = "embed"
 # Can be disabled with "" or false
-embed_color = "#bf4040"
+embed_color = "#ff00ff"
+[discord.chat.death.webhook]
+url = "death_webhook_url_test"
+username = "death_webhook_username_test"
+avatar_url = "death_webhook_avatar_url_test"
 
 [discord.chat.advancement]
 # Placeholders available: {username}, {advancement_title}, {advancement_description}
 # Can be disabled with "" or false
-format = "**{username} has made the advancement __{advancement_title}__**\n_{advancement_description}_"
-type = "text"
+format = "format_test"
+type = "embed"
 # Can be disabled with "" or false
-embed_color = "#40bf4f"
+embed_color = "#ff00ff"
+[discord.chat.advancement.webhook]
+url = "advancement_webhook_url_test"
+username = "advancement_webhook_username_test"
+avatar_url = "advancement_webhook_avatar_url_test"
 
 # Not server overridable
 [discord.chat.proxy_start]
 # Can be disabled with "" or false
-format = "**Proxy started**"
-type = "text"
+format = "format_test"
+type = "embed"
 # Can be disabled with "" or false
-embed_color = "#40bf4f"
+embed_color = "#ff00ff"
 
 # Not server overridable
 [discord.chat.proxy_stop]
 # Can be disabled with "" or false
-format = "**Proxy stopped**"
-type = "text"
+format = "format_test"
+type = "embed"
 # Can be disabled with "" or false
-embed_color = "#bf4040"
+embed_color = "#ff00ff"
 
 [discord.chat.server_start]
 # Placeholders available: {server}
 # Can be disabled with "" or false
-format = "**{server} has started**"
-type = "text"
+format = "format_test"
+type = "embed"
 # Can be disabled with "" or false
-embed_color = "#40bf4f"
+embed_color = "#ff00ff"
 
 [discord.chat.server_stop]
 # Placeholders available: {server}
 # Can be disabled with "" or false
-format = "**{server} has stopped**"
-type = "text"
+format = "format_test"
+type = "embed"
 # Can be disabled with "" or false
-embed_color = "#bf4040"
+embed_color = "#ff00ff"
 
 [discord.commands.list]
 # Not server overridable
-enabled = true
+enabled = false
 
 # Ephemeral messages are only visible to the user who sent the command
 # Not server overridable
-ephemeral = true
+ephemeral = false
 
 # Placeholders available: {server_name}, {online_players}, {max_players}
-server_format = "[{server_name} {online_players}/{max_players}]"
+server_format = "server_format_test"
 
 # Placeholders available: {username}
-player_format = "- {username}"
+player_format = "player_format_test"
 
 # Can be disabled with "" or false
-no_players = "No players online"
+no_players = "no_players_test"
 
 # Can be disabled with "" or false
-server_offline = "Server offline"
+server_offline = "server_offline_test"
 # Not server overridable
-codeblock_lang = "asciidoc"
+codeblock_lang = "codeblock_lang_test"
 
 # Discord > Minecraft message formats
 # Uses XML-like formatting with https://docs.advntr.dev/minimessage/format.html
 [minecraft]
 # Placeholders available: {discord}
-discord_chunk = "<dark_gray>[<{discord_color}>Discord<dark_gray>]<reset>"
+discord_chunk = "discord_chunk_test"
 
 # Placeholders available: {role_color}, {display_name}, {username}, {nickname}
 # <insert> tag allows you to shift right-click the username to insert @{username} in the chat
-username_chunk = "<{role_color}><insert:@{username}><hover:show_text:{display_name}>{nickname}</hover></insert><reset>"
+username_chunk = "username_chunk_test"
 
 # Placeholders available: {discord_chunk}, {username_chunk}, {attachments}, {message}
-message = "{discord_chunk} {role_prefix} {username_chunk}<dark_gray>: <reset>{message} {attachments}"
+message = "message_test"
 
 # Placeholders available: {url}, {attachment_color}
-attachments = "<dark_gray><click:open_url:{url}>[<{attachment_color}>Attachment<dark_gray>]</click><reset>"
+attachments = "attachments_test"
 
 # Placeholders available: {url}, {link_color}
 # Can be disabled with "" or false
-links = "<click:open_url:\"{url}\"><hover:show_text:\"Click to open {url}\"><dark_gray>[</dark_gray><{link_color}>Link<dark_gray>]</hover></click>"
+links = "links_test"
 
 # Colors for the <{discord_color}>, <{attachment_color}> and <{link_color}> tags
-discord_color = "#7289da"
-attachment_color = "#4abdff"
-link_color = "#4abdff"
+discord_color = "#ff00ff"
+attachment_color = "#ff00ff"
+link_color = "#ff00ff"
 
 # Role prefix configuration
 # Format: "role_id" = "prefix format using MiniMessage"

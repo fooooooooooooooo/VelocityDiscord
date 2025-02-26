@@ -1,9 +1,9 @@
 package ooo.foooooooooooo.velocitydiscord.config;
 
 public interface ServerConfig {
-  BotConfig getBotConfig();
+  DiscordConfig getDiscordConfig();
 
-  DiscordMessageConfig getDiscordMessageConfig();
+  DiscordChatConfig getDiscordChatConfig();
 
-  MinecraftMessageConfig getMinecraftMessageConfig();
+  MinecraftConfig getMinecraftConfig();
 }

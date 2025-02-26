@@ -40,6 +40,7 @@ dependencies {
   testImplementation platform("org.junit:junit-bom:$junit_version")
   testImplementation 'org.junit.jupiter:junit-jupiter'
   testImplementation "com.electronwill.night-config:toml:$night_config_version"
+  testImplementation "ch.qos.logback:logback-classic:$logback_version"
 
   compileOnly 'net.luckperms:api:5.4'
 }

@@ -1,4 +1,4 @@
-package ooo.foooooooooooo.velocitydiscord.config;
+package ooo.foooooooooooo.config;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

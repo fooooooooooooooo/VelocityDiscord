@@ -14,31 +14,21 @@ import java.awt.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class MessageListener extends ListenerAdapter {
-  private static final Pattern WEBHOOK_ID_REGEX = Pattern.compile("^https://discord\\.com/api/webhooks/(\\d+)/.+$");
   private static final Pattern LINK_REGEX =
     Pattern.compile("[^:/?#\\s]+:(?://)?(?:[^?#\\s]+)?(?:\\?[^#\\s]+)?(?:#\\S+)?");
+  private static final Pattern WEBHOOK_ID_REGEX = Pattern.compile(".*/webhooks/\\d+/([a-zA-Z0-9_-]+)");
   private final HashMap<String, Discord.Channels> serverChannels;
   private final HashMap<Long, List<String>> channelToServersMap = new HashMap<>();
-
-  private String webhookId;
 
   private JDA jda;
 
   public MessageListener(HashMap<String, Discord.Channels> serverChannels) {
     this.serverChannels = serverChannels;
-    updateWebhookId();
     onServerChannelsUpdated();
-  }
-
-  public void updateWebhookId() {
-    final var matcher = WEBHOOK_ID_REGEX.matcher(VelocityDiscord.CONFIG.bot.WEBHOOK_URL);
-    this.webhookId = matcher.find() ? matcher.group(1) : null;
-    VelocityDiscord.LOGGER.debug("Found webhook id: {}", this.webhookId);
   }
 
   public void onServerChannelsUpdated() {
@@ -69,7 +59,8 @@ public class MessageListener extends ListenerAdapter {
       return;
     }
 
-    VelocityDiscord.LOGGER.trace("Received message from Discord channel {} for servers {}",
+    VelocityDiscord.LOGGER.trace(
+      "Received message from Discord channel {} for servers {}",
       channel.getName(),
       targetServerNames
     );
@@ -95,16 +86,16 @@ public class MessageListener extends ListenerAdapter {
 
   private String serializeMinecraftMessage(MessageReceivedEvent event, String server) {
     var serverConfig = VelocityDiscord.CONFIG.getServerConfig(server);
-    var serverMinecraftConfig = serverConfig.getMinecraftMessageConfig();
+    var serverMinecraftConfig = serverConfig.getMinecraftConfig();
 
     var author = event.getAuthor();
-    if (!serverConfig.getMinecraftMessageConfig().SHOW_BOT_MESSAGES && author.isBot()) {
+    if (!serverConfig.getMinecraftConfig().SHOW_BOT_MESSAGES && author.isBot()) {
       VelocityDiscord.LOGGER.debug("ignoring bot message");
       return null;
     }
 
     if (author.getId().equals(this.jda.getSelfUser().getId()) || (
-      Objects.nonNull(this.webhookId) && author.getId().equals(this.webhookId))) {
+      author.getId().equals(serverConfig.getDiscordConfig().WEBHOOK.webhookId))) {
       VelocityDiscord.LOGGER.debug("ignoring own message");
       return null;
     }
