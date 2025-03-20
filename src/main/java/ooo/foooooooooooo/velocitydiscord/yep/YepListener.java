@@ -21,8 +21,8 @@ public class YepListener {
       .getDiscord()
       .onPlayerAdvancement(event.getUsername(),
         uuid,
-        event.getDisplayName(),
         server,
+        event.getDisplayName(),
         event.getTitle(),
         event.getDescription()
       );
