@@ -269,6 +269,11 @@ codeblock_lang = "codeblock_lang_test"
 # Discord > Minecraft message formats
 # Uses XML-like formatting with https://docs.advntr.dev/minimessage/format.html
 [minecraft]
+# Ingame command for plugin
+# Not server overridable
+# e.g., /discord, /discord reload, /discord topic preview
+plugin_command = "discord"
+
 # Placeholders available: {discord}
 discord_chunk = "discord_chunk_test"
 

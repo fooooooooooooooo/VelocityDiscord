@@ -2,6 +2,7 @@ package ooo.foooooooooooo.velocitydiscord.commands;
 
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
+import com.mojang.brigadier.context.CommandContext;
 import com.velocitypowered.api.command.BrigadierCommand;
 import com.velocitypowered.api.command.CommandSource;
 import ooo.foooooooooooo.velocitydiscord.VelocityDiscord;
@@ -13,19 +14,21 @@ public final class TopicPreviewCommand {
       .then(BrigadierCommand
         .literalArgumentBuilder("preview")
         .requires(source -> source.hasPermission("discord.topic.preview"))
-        .executes(source -> {
-          var discord = VelocityDiscord.getDiscord();
+        .executes(TopicPreviewCommand::execute));
+  }
 
-          if (discord == null) {
-            source.getSource().sendPlainMessage("Plugin not initialized");
-            return 0;
-          }
+  private static int execute(CommandContext<CommandSource> source) {
+    var discord = VelocityDiscord.getDiscord();
 
-          var topic = discord.generateChannelTopic();
+    if (discord == null) {
+      source.getSource().sendPlainMessage("Plugin not initialized");
+      return 0;
+    }
 
-          source.getSource().sendPlainMessage("Generated channel topic: \n\n" + topic + "\n");
+    var topic = discord.generateChannelTopic();
 
-          return Command.SINGLE_SUCCESS;
-        }));
+    source.getSource().sendPlainMessage("Generated channel topic: \n\n" + topic + "\n");
+
+    return Command.SINGLE_SUCCESS;
   }
 }

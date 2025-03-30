@@ -119,7 +119,7 @@ public class VelocityDiscord {
       tryStartTopicScheduler();
     }
 
-    Commands.RegisterCommands(SERVER.getCommandManager());
+    Commands.registerCommands(SERVER.getCommandManager(), CONFIG);
 
     try {
       if (SERVER.getPluginManager().getPlugin("luckperms").isPresent()) {
@@ -175,6 +175,10 @@ public class VelocityDiscord {
       if (this.discord != null) {
         this.discord.onConfigReload();
       }
+
+      // unregister and re register commands
+      Commands.unregisterCommands(SERVER.getCommandManager());
+      Commands.registerCommands(SERVER.getCommandManager(), CONFIG);
 
       if (error != null) {
         LOGGER.error("Error reloading config:");

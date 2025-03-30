@@ -16,6 +16,9 @@ public class MinecraftConfig extends Config {
   @Key("show_attachments_ingame")
   public Boolean SHOW_ATTACHMENTS = true;
 
+  @Key(value = "plugin_command", overridable = false)
+  public String PLUGIN_COMMAND = "discord";
+
   // formats
   @Key("discord_chunk")
   public String DISCORD_CHUNK_FORMAT = "<dark_gray>[<{discord_color}>Discord<dark_gray>]<reset>";

@@ -252,6 +252,11 @@ codeblock_lang = "asciidoc"
 # Discord > Minecraft message formats
 # Uses XML-like formatting with https://docs.advntr.dev/minimessage/format.html
 [minecraft]
+# Ingame command for plugin
+# Not server overridable
+# e.g., /discord, /discord reload, /discord topic preview
+plugin_command = "discord"
+
 # Placeholders available: {discord}
 discord_chunk = "<dark_gray>[<{discord_color}>Discord<dark_gray>]<reset>"
 

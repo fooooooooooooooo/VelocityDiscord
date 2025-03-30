@@ -2,12 +2,16 @@ package ooo.foooooooooooo.velocitydiscord.commands;
 
 import com.velocitypowered.api.command.BrigadierCommand;
 import com.velocitypowered.api.command.CommandManager;
+import com.velocitypowered.api.command.CommandMeta;
 import ooo.foooooooooooo.velocitydiscord.VelocityDiscord;
+import ooo.foooooooooooo.velocitydiscord.config.PluginConfig;
 
 public final class Commands {
-  public static void RegisterCommands(CommandManager commandManager) {
+  private static CommandMeta COMMAND;
+
+  public static void registerCommands(CommandManager commandManager, PluginConfig config) {
     var node = BrigadierCommand
-      .literalArgumentBuilder("discord")
+      .literalArgumentBuilder(config.getMinecraftConfig().PLUGIN_COMMAND)
       .then(ReloadCommand.create())
       .then(TopicPreviewCommand.create())
       .build();
@@ -16,6 +20,12 @@ public final class Commands {
 
     var meta = commandManager.metaBuilder(command).plugin(VelocityDiscord.getInstance()).build();
 
+    COMMAND = meta;
+
     commandManager.register(meta, command);
+  }
+
+  public static void unregisterCommands(CommandManager commandManager) {
+    commandManager.unregister(COMMAND);
   }
 }
