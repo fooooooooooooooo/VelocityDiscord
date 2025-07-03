@@ -1,13 +1,14 @@
 package ooo.foooooooooooo.velocitydiscord.config;
 
-import ooo.foooooooooooo.config.Config;
-import ooo.foooooooooooo.config.TestUtils;
+import com.electronwill.nightconfig.core.file.FileConfig;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.awt.*;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
@@ -15,11 +16,34 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.*;
 
 class PluginConfigTest {
-  PluginConfigTest() {
-    TestUtils.setLogLevel();
+  Logger logger = LoggerFactory.getLogger(PluginConfig.class);
+
+  private PluginConfig createConfig(String content, Path tempDir) {
+    var test = tempDir.resolve("test.toml");
+
+    try (var w = new FileWriter(test.toFile())) {
+      w.write(content);
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+
+    var config = FileConfig.of(test);
+    config.load();
+
+    return new PluginConfig(config, this.logger);
   }
 
-  Logger logger = LoggerFactory.getLogger(PluginConfig.class);
+  private static String readResource(String path) {
+    try (var s = PluginConfigTest.class.getResourceAsStream(path)) {
+      if (s == null) {
+        fail("Resource not found: " + path);
+      }
+
+      return new String(s.readAllBytes());
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+  }
 
   String invalidVersionTestConfig = """
     config_version = "1.0"
@@ -101,7 +125,7 @@ class PluginConfigTest {
     try {
       var config = new PluginConfig((com.electronwill.nightconfig.core.Config) null, this.logger);
 
-      config.loadConfig();
+      config.loadOverrides();
 
       fail("Expected RuntimeException");
     } catch (RuntimeException e) {
@@ -112,25 +136,17 @@ class PluginConfigTest {
   @Test
   void shouldThrowGivenInvalidConfigVersion(@TempDir Path tempDir) {
     try {
-      var config =
-        TestUtils.createConfig(this.invalidVersionTestConfig, tempDir, (c, p) -> new PluginConfig(c, this.logger));
-
-      config.loadConfig();
+      createConfig(this.invalidVersionTestConfig, tempDir);
 
       fail("Expected RuntimeException");
     } catch (RuntimeException e) {
-      assertEquals(
-        "ERROR: Can't use the existing configuration file: version mismatch (mod: 2.0, config: 1.0)",
-        e.getMessage()
-      );
+      assertEquals("ERROR: Can't use the existing configuration file: version mismatch (mod: 2.0, config: 1.0)", e.getMessage());
     }
   }
 
   @Test
   void shouldBeOptionalEmptyGivenEmptyColorString(@TempDir Path tempDir) {
-    var config = TestUtils.createConfig(this.emptyColorTestConfig, tempDir, (c, p) -> new PluginConfig(c, this.logger));
-
-    config.loadConfig();
+    var config = createConfig(this.emptyColorTestConfig, tempDir);
 
     assertEquals(Optional.empty(), config.getDiscordChatConfig().MESSAGE_EMBED_COLOR);
   }
@@ -138,9 +154,7 @@ class PluginConfigTest {
   @Test
   void shouldThrowGivenInvalidColorFormat(@TempDir Path tempDir) {
     try {
-      var config = TestUtils.createConfig(this.invalidColorTestConfig, tempDir, (c, p) -> new PluginConfig(c, this.logger));
-
-      config.loadConfig();
+      createConfig(this.invalidColorTestConfig, tempDir);
 
       fail("Expected RuntimeException");
     } catch (RuntimeException e) {
@@ -151,9 +165,7 @@ class PluginConfigTest {
 
   @Test
   void shouldUseDefaultColorGivenNoColorSpecified(@TempDir Path tempDir) {
-    var config = TestUtils.createConfig(this.nullColorTestConfig, tempDir, (c, p) -> new PluginConfig(c, this.logger));
-
-    config.loadConfig();
+    var config = createConfig(this.nullColorTestConfig, tempDir);
 
     // Default is Optional.empty() based on the field declaration in DiscordChatConfig
     assertTrue(config.getDiscordChatConfig().MESSAGE_EMBED_COLOR.isEmpty());
@@ -162,7 +174,7 @@ class PluginConfigTest {
   @SuppressWarnings("OptionalGetWithoutIsPresent")
   @Test
   void shouldHandleServerOverrides(@TempDir Path tempDir) {
-    var config = TestUtils.createConfig(this.serverOverridesTestConfig, tempDir, (c, p) -> new PluginConfig(c, this.logger));
+    var config = createConfig(this.serverOverridesTestConfig, tempDir);
 
     // Test main config
     assertEquals("main format", config.getDiscordChatConfig().MESSAGE_FORMAT.get());
@@ -192,13 +204,11 @@ class PluginConfigTest {
   @SuppressWarnings("OptionalGetWithoutIsPresent")
   @Test
   void shouldLoadConfig(@TempDir Path tempDir) {
-    var testConfig = TestUtils.readResource("/config.toml");
-    var config = TestUtils.createConfig(testConfig, tempDir, (c, p) -> new PluginConfig(c, this.logger));
-
-    config.loadConfig();
+    var testConfig = readResource("/config.toml");
+    var config = createConfig(testConfig, tempDir);
 
     // Test root level config
-    assertEquals(PluginConfig.ConfigVersion, Config.get(config, "config_version"));
+    assertEquals(PluginConfig.ConfigVersion, config.getInner().get("config_version"));
     assertEquals(List.of("survival"), config.EXCLUDED_SERVERS);
     assertTrue(config.EXCLUDED_SERVERS_RECEIVE_MESSAGES);
     assertEquals(123, config.PING_INTERVAL_SECONDS);
@@ -207,14 +217,15 @@ class PluginConfigTest {
     assertEquals("lobby_test_name", config.serverName("lobby"));
 
     var discord = config.getDiscordConfig();
+    var bot = config.BOT;
 
     // Bot config
-    assertEquals("test_token", discord.DISCORD_TOKEN);
+    assertEquals("test_token", bot.TOKEN);
     assertEquals("123456789012345678", discord.MAIN_CHANNEL_ID);
     assertFalse(discord.ENABLE_MENTIONS);
     assertTrue(discord.ENABLE_EVERYONE_AND_HERE);
-    assertEquals("activity_format_test", discord.ACTIVITY_FORMAT.get());
-    assertEquals(123, discord.UPDATE_CHANNEL_TOPIC_INTERVAL_MINUTES);
+    assertEquals("activity_format_test", bot.ACTIVITY_FORMAT.get());
+    assertEquals(123, bot.UPDATE_CHANNEL_TOPIC_INTERVAL_MINUTES);
 
     // Channel topic config
     assertEquals("format_test", discord.TOPIC_FORMAT.get());
@@ -287,13 +298,15 @@ class PluginConfigTest {
     assertEquals("advancement_webhook_username_test", chatConfig.ADVANCEMENT_WEBHOOK.USERNAME);
     assertEquals("advancement_webhook_avatar_url_test", chatConfig.ADVANCEMENT_WEBHOOK.AVATAR_URL);
 
-    assertEquals("format_test", chatConfig.PROXY_START_FORMAT.get());
-    assertEquals(DiscordChatConfig.ServerMessageType.EMBED, chatConfig.PROXY_START_TYPE);
-    assertEquals(Color.decode("#ff00ff"), chatConfig.PROXY_START_EMBED_COLOR.get());
+    var proxyConfig = config.DISCORD_CHAT_PROXY;
 
-    assertEquals("format_test", chatConfig.PROXY_STOP_FORMAT.get());
-    assertEquals(DiscordChatConfig.ServerMessageType.EMBED, chatConfig.PROXY_STOP_TYPE);
-    assertEquals(Color.decode("#ff00ff"), chatConfig.PROXY_STOP_EMBED_COLOR.get());
+    assertEquals("format_test", proxyConfig.START_FORMAT.get());
+    assertEquals(DiscordChatConfig.ServerMessageType.EMBED, proxyConfig.START_TYPE);
+    assertEquals(Color.decode("#ff00ff"), proxyConfig.START_EMBED_COLOR.get());
+
+    assertEquals("format_test", proxyConfig.STOP_FORMAT.get());
+    assertEquals(DiscordChatConfig.ServerMessageType.EMBED, proxyConfig.STOP_TYPE);
+    assertEquals(Color.decode("#ff00ff"), proxyConfig.STOP_EMBED_COLOR.get());
 
     assertEquals("format_test", chatConfig.SERVER_START_FORMAT.get());
     assertEquals(DiscordChatConfig.ServerMessageType.EMBED, chatConfig.SERVER_START_TYPE);
@@ -304,8 +317,8 @@ class PluginConfigTest {
     assertEquals(Color.decode("#ff00ff"), chatConfig.SERVER_STOP_EMBED_COLOR.get());
 
     // Discord commands config
-    assertFalse(discord.COMMANDS_LIST.DISCORD_LIST_ENABLED);
-    assertFalse(discord.COMMANDS_LIST.EPHEMERAL);
+    assertFalse(discord.COMMANDS_LIST_GLOBAL.ENABLED);
+    assertFalse(discord.COMMANDS_LIST_GLOBAL.EPHEMERAL);
     assertEquals("server_format_test", discord.COMMANDS_LIST.SERVER_FORMAT);
     assertEquals("player_format_test", discord.COMMANDS_LIST.PLAYER_FORMAT);
     assertEquals("no_players_test", discord.COMMANDS_LIST.NO_PLAYERS_FORMAT.get());
@@ -326,12 +339,11 @@ class PluginConfigTest {
 
   @Test
   void shouldLoadRealConfig(@TempDir Path tempDir) {
-    var testConfig = TestUtils.readResource("/real_test_config.toml");
-    var config = TestUtils.createConfig(testConfig, tempDir, (c, p) -> new PluginConfig(c, this.logger));
+    var testConfig = readResource("/real_test_config.toml");
+    var config = createConfig(testConfig, tempDir);
 
-    config.loadConfig();
 
     // Test root level config
-    assertEquals(PluginConfig.ConfigVersion, Config.get(config, "config_version"));
+    assertEquals(PluginConfig.ConfigVersion, config.getInner().get("config_version"));
   }
 }

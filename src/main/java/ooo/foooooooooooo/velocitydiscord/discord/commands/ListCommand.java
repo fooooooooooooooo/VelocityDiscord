@@ -57,7 +57,7 @@ public class ListCommand implements ICommand {
 
     interaction
       .reply(sb.toString())
-      .setEphemeral(VelocityDiscord.CONFIG.getDiscordConfig().COMMANDS_LIST.EPHEMERAL)
+      .setEphemeral(VelocityDiscord.CONFIG.DISCORD.COMMANDS_LIST_GLOBAL.EPHEMERAL)
       .queue();
   }
 

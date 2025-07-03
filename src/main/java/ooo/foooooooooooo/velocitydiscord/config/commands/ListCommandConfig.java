@@ -1,34 +1,19 @@
 package ooo.foooooooooooo.velocitydiscord.config.commands;
 
-import ooo.foooooooooooo.config.Config;
-import ooo.foooooooooooo.config.Key;
+import com.electronwill.nightconfig.core.serde.annotations.SerdeKey;
 
 import java.util.Optional;
 
 @SuppressWarnings({"OptionalUsedAsFieldOrParameterType"})
-public class ListCommandConfig extends Config {
-  @Key(value = "enabled", overridable = false)
-  public Boolean DISCORD_LIST_ENABLED = true;
-  @Key(value = "ephemeral", overridable = false)
-  public Boolean EPHEMERAL = true;
-  @Key("server_format")
+public class ListCommandConfig {
+  @SerdeKey("server_format")
   public String SERVER_FORMAT = "[{server_name} {online_players}/{max_players}]";
-  @Key("player_format")
+  @SerdeKey("player_format")
   public String PLAYER_FORMAT = "- {username}";
-  @Key("no_players")
+  @SerdeKey("no_players")
   public Optional<String> NO_PLAYERS_FORMAT = Optional.of("No players online");
-  @Key("server_offline")
+  @SerdeKey("server_offline")
   public Optional<String> SERVER_OFFLINE_FORMAT = Optional.of("Server offline");
-  @Key(value = "codeblock_lang", overridable = false)
+  @SerdeKey("codeblock_lang")
   public String CODEBLOCK_LANG = "asciidoc";
-
-  @SuppressWarnings("unused")
-  public ListCommandConfig(com.electronwill.nightconfig.core.Config config, String parentPath) {
-    super(config, parentPath);
-  }
-
-  @SuppressWarnings("unused")
-  public ListCommandConfig(com.electronwill.nightconfig.core.Config config, String parentPath, ListCommandConfig main) {
-    super(config, parentPath, main);
-  }
 }

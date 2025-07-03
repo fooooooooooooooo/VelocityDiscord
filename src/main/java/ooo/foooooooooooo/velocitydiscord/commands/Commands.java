@@ -11,7 +11,7 @@ public final class Commands {
 
   public static void registerCommands(CommandManager commandManager, PluginConfig config) {
     var node = BrigadierCommand
-      .literalArgumentBuilder(config.getMinecraftConfig().PLUGIN_COMMAND)
+      .literalArgumentBuilder(config.MINECRAFT_GLOBAL.PLUGIN_COMMAND)
       .then(ReloadCommand.create())
       .then(TopicPreviewCommand.create())
       .build();

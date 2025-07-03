@@ -1,84 +1,130 @@
 package ooo.foooooooooooo.velocitydiscord.config;
 
-import ooo.foooooooooooo.config.Config;
-import ooo.foooooooooooo.config.Key;
+import com.electronwill.nightconfig.core.UnmodifiableConfig;
+import com.electronwill.nightconfig.core.serde.ObjectDeserializer;
+import com.electronwill.nightconfig.core.serde.annotations.SerdeAssert;
+import com.electronwill.nightconfig.core.serde.annotations.SerdeDefault;
+import com.electronwill.nightconfig.core.serde.annotations.SerdeKey;
 import ooo.foooooooooooo.velocitydiscord.config.commands.ListCommandConfig;
+import ooo.foooooooooooo.velocitydiscord.config.commands.ListCommandGlobalConfig;
 
 import java.util.Optional;
+import java.util.function.Supplier;
+
+import static com.electronwill.nightconfig.core.serde.annotations.SerdeAssert.AssertThat.NOT_NULL;
 
 @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
-public class DiscordConfig extends Config {
-  private static final String DefaultToken = "TOKEN";
+public class DiscordConfig {
   private static final String DefaultChannelId = "000000000000000000";
 
   // bot
-  @Key(value = "token", overridable = false)
-  public String DISCORD_TOKEN = DefaultToken;
-  @Key("channel")
-  public String MAIN_CHANNEL_ID = DefaultChannelId;
+  @SerdeKey("channel")
+  @SerdeDefault(provider = "defaultChannelId")
+  public String MAIN_CHANNEL_ID;
+
+  @SuppressWarnings("unused")
+  private final transient Supplier<String> defaultChannelId = () -> DefaultChannelId;
 
   // pings
-  @Key("enable_mentions")
-  public Boolean ENABLE_MENTIONS = true;
-  @Key("enable_everyone_and_here")
-  public Boolean ENABLE_EVERYONE_AND_HERE = false;
+  @SerdeKey("enable_mentions")
+  @SerdeDefault(provider = "defaultEnableMentions")
+  public Boolean ENABLE_MENTIONS;
 
-  // bot activity
-  @Key(value = "activity_format", overridable = false)
-  public Optional<String> ACTIVITY_FORMAT = Optional.of("with {amount} players online");
+  @SuppressWarnings("unused")
+  private final transient Supplier<Boolean> defaultEnableMentions = () -> true;
 
-  // update channel topic
-  @Key(value = "update_channel_topic_interval", overridable = false)
-  public int UPDATE_CHANNEL_TOPIC_INTERVAL_MINUTES = 0;
+  @SerdeKey("enable_everyone_and_here")
+  @SerdeDefault(provider = "defaultEnableEveryoneAndHere")
+  public Boolean ENABLE_EVERYONE_AND_HERE;
+
+  @SuppressWarnings("unused")
+  private final transient Supplier<Boolean> defaultEnableEveryoneAndHere = () -> false;
 
   // base webhook
-  @Key("webhook")
+  @SerdeKey("webhook")
+  @SerdeDefault(provider = "defaultWebhookConfig")
   public WebhookConfig WEBHOOK;
 
+  @SuppressWarnings("unused")
+  private final transient Supplier<WebhookConfig> defaultWebhookConfig = () -> EmptyConfig.deserialize(new WebhookConfig());
+
   // list command
-  @Key("commands.list")
+  @SerdeKey("commands.list")
+  @SerdeDefault(provider = "defaultCommandsListConfig")
   public ListCommandConfig COMMANDS_LIST;
 
+  @SuppressWarnings("unused")
+  private final transient Supplier<ListCommandConfig> defaultCommandsListConfig = () -> EmptyConfig.deserialize(new ListCommandConfig());
+
+  @SerdeKey("commands.list.global")
+  @SerdeDefault(provider = "defaultCommandsListGlobalConfig")
+  public ListCommandGlobalConfig COMMANDS_LIST_GLOBAL;
+
+  @SuppressWarnings("unused")
+  private final transient Supplier<ListCommandGlobalConfig> defaultCommandsListGlobalConfig = () -> EmptyConfig.deserialize(new ListCommandGlobalConfig());
+
   // channel topic
-  @Key("channel_topic.format")
-  public Optional<String> TOPIC_FORMAT = Optional.of("""
+  @SerdeKey("channel_topic.format")
+  @SerdeDefault(provider = "defaultTopicFormat")
+  public Optional<String> TOPIC_FORMAT;
+
+  @SuppressWarnings("unused")
+  private final transient Supplier<Optional<String>> defaultTopicFormat = () -> Optional.of("""
     {players}/{max_players}
     {player_list}
     {hostname}:{port}
     Uptime: {uptime}""");
 
-  @Key("channel_topic.server")
-  public Optional<String> TOPIC_SERVER_FORMAT = Optional.of("{name}: {players}/{max_players}");
-  @Key("channel_topic.server_offline")
-  public Optional<String> TOPIC_SERVER_OFFLINE_FORMAT = Optional.of("{name}: Offline");
-
-  @Key("channel_topic.player_list_no_players_header")
-  public Optional<String> TOPIC_PLAYER_LIST_NO_PLAYERS_HEADER = Optional.of("No players online");
-  @Key("channel_topic.player_list_header")
-  public Optional<String> TOPIC_PLAYER_LIST_HEADER = Optional.of("Players: ");
-  @Key("channel_topic.player_list_player")
-  public String TOPIC_PLAYER_LIST_FORMAT = "{username}";
-  @Key("channel_topic.player_list_separator")
-  public String TOPIC_PLAYER_LIST_SEPARATOR = ", ";
-  @Key("channel_topic.player_list_max_count")
-  public int TOPIC_PLAYER_LIST_MAX_COUNT = 10;
-
-  public boolean updateChannelTopicDisabled() {
-    return this.UPDATE_CHANNEL_TOPIC_INTERVAL_MINUTES == 0;
-  }
+  @SerdeKey("channel_topic.server")
+  @SerdeDefault(provider = "defaultTopicServerFormat")
+  public Optional<String> TOPIC_SERVER_FORMAT;
 
   @SuppressWarnings("unused")
-  public DiscordConfig(com.electronwill.nightconfig.core.Config config, String parentPath) {
-    super(config, parentPath);
-  }
+  private final transient Supplier<Optional<String>> defaultTopicServerFormat = () -> Optional.of("{name}: {players}/{max_players}");
+
+  @SerdeKey("channel_topic.server_offline")
+  @SerdeDefault(provider = "defaultTopicServerOfflineFormat")
+  public Optional<String> TOPIC_SERVER_OFFLINE_FORMAT;
 
   @SuppressWarnings("unused")
-  public DiscordConfig(com.electronwill.nightconfig.core.Config config, String parentPath, DiscordConfig main) {
-    super(config, parentPath, main);
-  }
+  private final transient Supplier<Optional<String>> defaultTopicServerOfflineFormat = () -> Optional.of("{name}: Offline");
+
+  @SerdeKey("channel_topic.player_list_no_players_header")
+  @SerdeDefault(provider = "defaultTopicPlayerListNoPlayersHeader")
+  public Optional<String> TOPIC_PLAYER_LIST_NO_PLAYERS_HEADER;
+
+  @SuppressWarnings("unused")
+  private final transient Supplier<Optional<String>> defaultTopicPlayerListNoPlayersHeader = () -> Optional.of("No players online");
+
+  @SerdeKey("channel_topic.player_list_header")
+  @SerdeDefault(provider = "defaultTopicPlayerListHeader")
+  public Optional<String> TOPIC_PLAYER_LIST_HEADER;
+
+  @SuppressWarnings("unused")
+  private final transient Supplier<Optional<String>> defaultTopicPlayerListHeader = () -> Optional.of("Players: ");
+
+  @SerdeKey("channel_topic.player_list_player")
+  @SerdeDefault(provider = "defaultTopicPlayerListFormat")
+  public String TOPIC_PLAYER_LIST_FORMAT;
+
+  @SuppressWarnings("unused")
+  private final transient Supplier<String> defaultTopicPlayerListFormat = () -> "{username}";
+
+  @SerdeKey("channel_topic.player_list_separator")
+  @SerdeDefault(provider = "defaultTopicPlayerListSeparator")
+  public String TOPIC_PLAYER_LIST_SEPARATOR;
+
+  @SuppressWarnings("unused")
+  private final transient Supplier<String> defaultTopicPlayerListSeparator = () -> ", ";
+
+  @SerdeKey("channel_topic.player_list_max_count")
+  @SerdeDefault(provider = "defaultTopicPlayerListMaxCount")
+  public int TOPIC_PLAYER_LIST_MAX_COUNT;
+
+  @SuppressWarnings("unused")
+  private final transient Supplier<Integer> defaultTopicPlayerListMaxCount = () -> 10;
 
   public boolean isDefaultValues() {
-    return this.DISCORD_TOKEN.equals(DefaultToken) || this.MAIN_CHANNEL_ID.equals(DefaultChannelId);
+    return this.MAIN_CHANNEL_ID.equals(DefaultChannelId);
   }
-
 }

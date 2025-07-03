@@ -1,9 +1,11 @@
 package ooo.foooooooooooo.velocitydiscord.config;
 
 import com.electronwill.nightconfig.core.CommentedConfig;
+import com.electronwill.nightconfig.core.Config;
 import com.electronwill.nightconfig.core.file.FileConfig;
-import ooo.foooooooooooo.config.Config;
-import ooo.foooooooooooo.config.Key;
+import com.electronwill.nightconfig.core.serde.ObjectDeserializer;
+import com.electronwill.nightconfig.core.serde.annotations.SerdeDefault;
+import com.electronwill.nightconfig.core.serde.annotations.SerdeKey;
 import ooo.foooooooooooo.velocitydiscord.Constants;
 import org.slf4j.Logger;
 
@@ -12,56 +14,111 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
+import java.util.function.Supplier;
 
-public class PluginConfig extends Config implements ServerConfig {
+public class PluginConfig implements ServerConfig {
   private static final String[] splitVersion = Constants.PluginVersion.split("\\.");
   public static final String ConfigVersion = splitVersion[0] + '.' + splitVersion[1];
   private static final String configMajorVersion = splitVersion[0];
 
   private static boolean configCreatedThisRun = false;
 
-  @Key("exclude_servers")
-  public List<String> EXCLUDED_SERVERS = new ArrayList<>();
-  @Key("excluded_servers_receive_messages")
-  public boolean EXCLUDED_SERVERS_RECEIVE_MESSAGES = false;
-  @Key("ping_interval")
-  public int PING_INTERVAL_SECONDS = 15;
+  @SerdeKey("exclude_servers")
+  @SerdeDefault(provider = "defaultExcludedServers")
+  public List<String> EXCLUDED_SERVERS;
 
-  @Key("discord")
+  @SuppressWarnings("unused")
+  private final transient Supplier<List<String>> defaultExcludedServers = List::of;
+
+  @SerdeKey("excluded_servers_receive_messages")
+  @SerdeDefault(provider = "defaultExcludedServersReceiveMessages")
+  public boolean EXCLUDED_SERVERS_RECEIVE_MESSAGES;
+
+  @SuppressWarnings("unused")
+  private final transient Supplier<Boolean> defaultExcludedServersReceiveMessages = () -> false;
+
+  @SerdeKey("ping_interval")
+  @SerdeDefault(provider = "defaultPingIntervalSeconds")
+  public int PING_INTERVAL_SECONDS;
+
+  @SuppressWarnings("unused")
+  private final transient Supplier<Integer> defaultPingIntervalSeconds = () -> 15;
+
+  @SerdeKey("discord")
+  @SerdeDefault(provider = "defaultDiscordConfig")
   public DiscordConfig DISCORD;
-  @Key("discord.chat")
+
+  @SuppressWarnings("unused")
+  private final transient Supplier<DiscordConfig> defaultDiscordConfig = () -> EmptyConfig.deserialize(new DiscordConfig());
+
+  @SerdeKey("discord.chat")
+  @SerdeDefault(provider = "defaultDiscordChatConfig")
   public DiscordChatConfig DISCORD_CHAT;
-  @Key("minecraft")
+
+  @SuppressWarnings("unused")
+  private final transient Supplier<DiscordChatConfig> defaultDiscordChatConfig = () -> EmptyConfig.deserialize(new DiscordChatConfig());
+
+  @SerdeKey("minecraft")
+  @SerdeDefault(provider = "defaultMinecraftConfig")
   public MinecraftConfig MINECRAFT;
 
-  private final Map<String, String> serverDisplayNames = new HashMap<>();
+  @SuppressWarnings("unused")
+  private final transient Supplier<MinecraftConfig> defaultMinecraftConfig = () -> EmptyConfig.deserialize(new MinecraftConfig());
 
-  private Path dataDir;
-  private HashMap<String, OverrideConfig> serverOverridesMap = new HashMap<>();
+  @SerdeKey("discord.bot")
+  @SerdeDefault(provider = "defaultDiscordBotConfig")
+  public DiscordBotConfig BOT;
 
-  private final Logger logger;
+  @SuppressWarnings("unused")
+  private final transient Supplier<DiscordBotConfig> defaultDiscordBotConfig = () -> EmptyConfig.deserialize(new DiscordBotConfig());
+
+  @SerdeKey("discord.chat.proxy")
+  @SerdeDefault(provider = "defaultProxyDiscordChatConfig")
+  public ProxyDiscordChatConfig DISCORD_CHAT_PROXY;
+
+  @SuppressWarnings("unused")
+  private final transient Supplier<ProxyDiscordChatConfig> defaultProxyDiscordChatConfig = () -> EmptyConfig.deserialize(new ProxyDiscordChatConfig());
+
+  @SerdeKey("minecraft.global")
+  @SerdeDefault(provider = "defaultMinecraftGlobalConfig")
+  public MinecraftGlobalConfig MINECRAFT_GLOBAL;
+
+  @SuppressWarnings("unused")
+  private final transient Supplier<MinecraftGlobalConfig> defaultMinecraftGlobalConfig = () -> EmptyConfig.deserialize(new MinecraftGlobalConfig());
+
+  private transient final Map<String, String> serverDisplayNames = new HashMap<>();
+
+  private transient Path dataDir;
+  private transient HashMap<String, OverrideConfig> serverOverridesMap = new HashMap<>();
+
+  private transient final Logger logger;
+  private transient Config config;
 
   public PluginConfig(Path dataDir, Logger logger) {
-    super(loadFile(dataDir), "");
     this.logger = logger;
     this.dataDir = dataDir;
+    this.config = PluginConfig.loadFile(dataDir);
+    this.loadConfig();
     this.onLoad();
   }
 
-  public PluginConfig(com.electronwill.nightconfig.core.Config config, Logger logger) {
-    super(config, "");
+  public PluginConfig(Config config, Logger logger) {
     this.logger = logger;
+    this.dataDir = null;
+    this.config = config;
+    this.loadConfig();
     this.onLoad();
+  }
+
+  private void loadConfig() {
+    var deserializer = ObjectDeserializer.standard();
+    deserializer.deserializeFields(this.config, this);
   }
 
   private void onLoad() {
-    if (this.inner == null || this.inner.isEmpty()) {
-      throw new RuntimeException("ERROR: Config is empty");
-    }
-
     checkConfig();
 
-    loadConfig();
+    loadOverrides();
 
     var error = checkInvalidValues();
 
@@ -70,7 +127,7 @@ public class PluginConfig extends Config implements ServerConfig {
     }
   }
 
-  private static com.electronwill.nightconfig.core.Config loadFile(Path dataDir) {
+  private static Config loadFile(Path dataDir) {
     if (Files.notExists(dataDir)) {
       try {
         Files.createDirectory(dataDir);
@@ -103,8 +160,8 @@ public class PluginConfig extends Config implements ServerConfig {
   }
 
   private void checkConfig() {
-    // make sure the config makes sense for the current plugin's version
-    String version = get(this, "config_version");
+    // check for compatible config version
+    String version = this.config.get("config_version");
 
     if (!versionCompatible(version)) {
       var error = String.format(
@@ -121,18 +178,10 @@ public class PluginConfig extends Config implements ServerConfig {
     return this.DISCORD.isDefaultValues() || configCreatedThisRun;
   }
 
-  @Override
-  public void loadConfig() {
-    super.loadConfig();
-
-    if (this.inner == null) {
-      throw new RuntimeException("ERROR: Config is empty");
-    }
-
-    CommentedConfig server_names = this.inner.get("server_names");
+  public void loadOverrides() {
+    CommentedConfig server_names = this.config.get("server_names");
 
     if (server_names != null) {
-
       for (var entry : server_names.entrySet()) {
         if (entry.getValue() instanceof String) {
           this.serverDisplayNames.put(entry.getKey(), entry.getValue());
@@ -145,7 +194,7 @@ public class PluginConfig extends Config implements ServerConfig {
 
     // server overrides
 
-    CommentedConfig serverOverrides = this.inner.get("override");
+    CommentedConfig serverOverrides = this.config.get("override");
 
     if (serverOverrides == null) {
       this.logger.debug("No server overrides found");
@@ -155,7 +204,7 @@ public class PluginConfig extends Config implements ServerConfig {
     this.serverOverridesMap = new HashMap<>();
 
     for (var entry : serverOverrides.entrySet()) {
-      if (entry.getValue() instanceof com.electronwill.nightconfig.core.Config serverOverride) {
+      if (entry.getValue() instanceof Config serverOverride) {
         var serverName = entry.getKey();
 
         // todo: maybe better than this
@@ -164,7 +213,8 @@ public class PluginConfig extends Config implements ServerConfig {
           continue;
         }
 
-        this.serverOverridesMap.put(serverName, new OverrideConfig(serverOverride, serverName, this));
+        // todo: load normal config then load override config on top of it
+        // this.serverOverridesMap.put(serverName, new OverrideConfig(serverOverride, serverName, this));
       } else {
         this.logger.warn("Invalid server override for `{}`: `{}`", entry.getKey(), entry.getValue());
       }
@@ -187,10 +237,10 @@ public class PluginConfig extends Config implements ServerConfig {
     this.serverOverridesMap.clear();
     this.EXCLUDED_SERVERS.clear();
 
-    this.setInner(PluginConfig.loadFile(this.dataDir));
+    this.config = PluginConfig.loadFile(this.dataDir);
 
     try {
-      loadConfig();
+      loadOverrides();
 
       return checkInvalidValues();
     } catch (Exception e) {
@@ -263,19 +313,17 @@ public class PluginConfig extends Config implements ServerConfig {
     return this.MINECRAFT;
   }
 
-  public static class OverrideConfig extends Config implements ServerConfig {
-    @Key("discord")
-    public DiscordConfig DISCORD;
-    @Key("discord.chat")
-    public DiscordChatConfig DISCORD_CHAT;
-    @Key("minecraft")
-    public MinecraftConfig MINECRAFT;
+  public Config getInner() {
+    return this.config;
+  }
 
-    public OverrideConfig(com.electronwill.nightconfig.core.Config config, String serverName, PluginConfig fallback) {
-      super(config, "override." + serverName, fallback);
-      // explicitly load the config here
-      loadConfig();
-    }
+  public static class OverrideConfig implements ServerConfig {
+    @SerdeKey("discord")
+    public DiscordConfig DISCORD;
+    @SerdeKey("discord.chat")
+    public DiscordChatConfig DISCORD_CHAT;
+    @SerdeKey("minecraft")
+    public MinecraftConfig MINECRAFT;
 
     @Override
     public DiscordConfig getDiscordConfig() {
@@ -292,4 +340,5 @@ public class PluginConfig extends Config implements ServerConfig {
       return this.MINECRAFT;
     }
   }
+
 }

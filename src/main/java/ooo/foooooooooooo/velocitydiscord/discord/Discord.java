@@ -19,6 +19,7 @@ import net.dv8tion.jda.api.utils.messages.MessageCreateData;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import ooo.foooooooooooo.velocitydiscord.VelocityDiscord;
 import ooo.foooooooooooo.velocitydiscord.config.DiscordChatConfig;
+import ooo.foooooooooooo.velocitydiscord.config.DiscordChatConfig.ServerMessageType;
 import ooo.foooooooooooo.velocitydiscord.config.ServerConfig;
 import ooo.foooooooooooo.velocitydiscord.config.WebhookConfig;
 import ooo.foooooooooooo.velocitydiscord.discord.commands.ICommand;
@@ -67,16 +68,16 @@ public class Discord extends ListenerAdapter {
   }
 
   public void onConfigReload() {
-    if (VelocityDiscord.CONFIG.getDiscordConfig().COMMANDS_LIST.DISCORD_LIST_ENABLED) {
+    if (VelocityDiscord.CONFIG.getDiscordConfig().COMMANDS_LIST_GLOBAL.ENABLED) {
       this.commands.put(ListCommand.COMMAND_NAME, new ListCommand());
     }
 
-    if (!VelocityDiscord.CONFIG.getDiscordConfig().DISCORD_TOKEN.equals(this.lastToken)) {
+    if (!VelocityDiscord.CONFIG.BOT.TOKEN.equals(this.lastToken)) {
       if (this.jda != null) {
         shutdown();
       }
 
-      var builder = JDABuilder.createDefault(VelocityDiscord.CONFIG.getDiscordConfig().DISCORD_TOKEN)
+      var builder = JDABuilder.createDefault(VelocityDiscord.CONFIG.BOT.TOKEN)
         // this seems to download all users at bot startup and keep internal cache updated
         // without it, sometimes mentions miss when they shouldn't
         .setChunkingFilter(ChunkingFilter.ALL)
@@ -87,7 +88,7 @@ public class Discord extends ListenerAdapter {
 
       try {
         this.jda = builder.build();
-        this.lastToken = VelocityDiscord.CONFIG.getDiscordConfig().DISCORD_TOKEN;
+        this.lastToken = VelocityDiscord.CONFIG.BOT.TOKEN;
       } catch (Exception e) {
         VelocityDiscord.LOGGER.error("Failed to login to discord:", e);
       }
@@ -123,9 +124,9 @@ public class Discord extends ListenerAdapter {
   private void loadChannels() {
     this.mainChannel = loadChannel(VelocityDiscord.CONFIG.getDiscordConfig().MAIN_CHANNEL_ID);
     this.proxyStartChannel =
-      loadChannel(VelocityDiscord.CONFIG.getDiscordChatConfig().PROXY_START_CHANNEL.orElse(VelocityDiscord.CONFIG.getDiscordConfig().MAIN_CHANNEL_ID));
+      loadChannel(VelocityDiscord.CONFIG.DISCORD_CHAT_PROXY.START_CHANNEL.orElse(VelocityDiscord.CONFIG.getDiscordConfig().MAIN_CHANNEL_ID));
     this.proxyStopChannel =
-      loadChannel(VelocityDiscord.CONFIG.getDiscordChatConfig().PROXY_STOP_CHANNEL.orElse(VelocityDiscord.CONFIG.getDiscordConfig().MAIN_CHANNEL_ID));
+      loadChannel(VelocityDiscord.CONFIG.DISCORD_CHAT_PROXY.STOP_CHANNEL.orElse(VelocityDiscord.CONFIG.getDiscordConfig().MAIN_CHANNEL_ID));
 
     this.serverChannels.clear();
     for (var server : VelocityDiscord.SERVER.getAllServers()) {
@@ -267,8 +268,7 @@ public class Discord extends ListenerAdapter {
     switch (serverDiscordConfig.SERVER_SWITCH_TYPE) {
       case EMBED -> sendEmbedMessage(targetChannel, message, serverDiscordConfig.SERVER_SWITCH_EMBED_COLOR);
       case TEXT -> sendMessage(targetChannel, message);
-      case WEBHOOK ->
-        sendWebhookMessage(uuid, username, current, message, DiscordChatConfig.MessageCategory.SERVER_SWITCH);
+      case WEBHOOK -> sendWebhookMessage(uuid, username, current, message, DiscordChatConfig.MessageCategory.SERVER_SWITCH);
     }
   }
 
@@ -357,37 +357,36 @@ public class Discord extends ListenerAdapter {
     switch (serverDiscordConfig.ADVANCEMENT_TYPE) {
       case EMBED -> sendEmbedMessage(targetChannel, message, serverDiscordConfig.ADVANCEMENT_EMBED_COLOR);
       case TEXT -> sendMessage(targetChannel, message);
-      case WEBHOOK ->
-        sendWebhookMessage(uuid, username, server, message, DiscordChatConfig.MessageCategory.ADVANCEMENT);
+      case WEBHOOK -> sendWebhookMessage(uuid, username, server, message, DiscordChatConfig.MessageCategory.ADVANCEMENT);
     }
   }
 
   public void onProxyInitialize() {
-    if (VelocityDiscord.CONFIG.getDiscordChatConfig().PROXY_START_FORMAT.isPresent()) {
-      var message = VelocityDiscord.CONFIG.getDiscordChatConfig().PROXY_START_FORMAT.get();
+    if (VelocityDiscord.CONFIG.DISCORD_CHAT_PROXY.START_FORMAT.isPresent()) {
+      var message = VelocityDiscord.CONFIG.DISCORD_CHAT_PROXY.START_FORMAT.get();
 
-      switch (VelocityDiscord.CONFIG.getDiscordChatConfig().PROXY_START_TYPE) {
-        case EMBED -> sendEmbedMessage(
+      switch (VelocityDiscord.CONFIG.DISCORD_CHAT_PROXY.START_TYPE) {
+        case ServerMessageType.EMBED -> sendEmbedMessage(
           this.proxyStartChannel,
           message,
-          VelocityDiscord.CONFIG.getDiscordChatConfig().PROXY_START_EMBED_COLOR
+          VelocityDiscord.CONFIG.getDiscordChatConfig().SERVER_START_EMBED_COLOR
         );
-        case TEXT -> sendMessage(this.proxyStartChannel, message);
+        case ServerMessageType.TEXT -> sendMessage(this.proxyStartChannel, message);
       }
     }
   }
 
   public void onProxyShutdown() {
-    if (VelocityDiscord.CONFIG.getDiscordChatConfig().PROXY_STOP_FORMAT.isPresent()) {
-      var message = VelocityDiscord.CONFIG.getDiscordChatConfig().PROXY_STOP_FORMAT.get();
+    if (VelocityDiscord.CONFIG.DISCORD_CHAT_PROXY.STOP_FORMAT.isPresent()) {
+      var message = VelocityDiscord.CONFIG.DISCORD_CHAT_PROXY.STOP_FORMAT.get();
 
-      switch (VelocityDiscord.CONFIG.getDiscordChatConfig().PROXY_STOP_TYPE) {
-        case EMBED -> sendEmbedMessage(
+      switch (VelocityDiscord.CONFIG.DISCORD_CHAT_PROXY.STOP_TYPE) {
+        case ServerMessageType.EMBED -> sendEmbedMessage(
           this.proxyStopChannel,
           message,
-          VelocityDiscord.CONFIG.getDiscordChatConfig().PROXY_STOP_EMBED_COLOR
+          VelocityDiscord.CONFIG.DISCORD_CHAT_PROXY.STOP_EMBED_COLOR
         );
-        case TEXT -> sendMessage(this.proxyStopChannel, message);
+        case ServerMessageType.TEXT -> sendMessage(this.proxyStopChannel, message);
       }
     }
   }
@@ -425,12 +424,12 @@ public class Discord extends ListenerAdapter {
   }
 
   public void updateActivityPlayerAmount(int count) {
-    if (VelocityDiscord.CONFIG.getDiscordConfig().ACTIVITY_FORMAT.isEmpty() || !this.ready) {
+    if (VelocityDiscord.CONFIG.BOT.ACTIVITY_FORMAT.isEmpty() || !this.ready) {
       return;
     }
 
     if (this.lastPlayerCount != count) {
-      var message = new StringTemplate(VelocityDiscord.CONFIG.getDiscordConfig().ACTIVITY_FORMAT.get())
+      var message = new StringTemplate(VelocityDiscord.CONFIG.BOT.ACTIVITY_FORMAT.get())
         .add("amount", count)
         .toString();
 

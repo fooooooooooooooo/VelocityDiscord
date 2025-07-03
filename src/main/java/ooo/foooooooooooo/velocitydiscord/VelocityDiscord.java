@@ -165,7 +165,7 @@ public class VelocityDiscord {
       tryStartPingScheduler();
 
       // disable channel topic scheduler if it was disabled
-      if (CONFIG.getDiscordConfig().UPDATE_CHANNEL_TOPIC_INTERVAL_MINUTES == 0 && this.topicScheduler != null) {
+      if (CONFIG.BOT.UPDATE_CHANNEL_TOPIC_INTERVAL_MINUTES == 0 && this.topicScheduler != null) {
         this.topicScheduler.cancel();
         this.topicScheduler = null;
       }
@@ -211,9 +211,9 @@ public class VelocityDiscord {
   }
 
   private void tryStartTopicScheduler() {
-    if (CONFIG.getDiscordConfig().updateChannelTopicDisabled()) return;
+    if (CONFIG.BOT.updateChannelTopicDisabled()) return;
 
-    var interval = CONFIG.getDiscordConfig().UPDATE_CHANNEL_TOPIC_INTERVAL_MINUTES;
+    var interval = CONFIG.BOT.UPDATE_CHANNEL_TOPIC_INTERVAL_MINUTES;
     if (interval < 10) {
       LOGGER.warn("Invalid update_channel_topic_interval value: {}. Must be between > 10, setting to 10", interval);
       interval = 10;

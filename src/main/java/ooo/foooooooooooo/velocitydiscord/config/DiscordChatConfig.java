@@ -1,152 +1,123 @@
 package ooo.foooooooooooo.velocitydiscord.config;
 
-import ooo.foooooooooooo.config.Config;
-import ooo.foooooooooooo.config.Key;
-import ooo.foooooooooooo.config.Variants;
+import com.electronwill.nightconfig.core.serde.DeserializerContext;
+import com.electronwill.nightconfig.core.serde.TypeConstraint;
+import com.electronwill.nightconfig.core.serde.ValueDeserializer;
+import com.electronwill.nightconfig.core.serde.annotations.SerdeKey;
 
 import java.awt.*;
 import java.util.Arrays;
 import java.util.Optional;
 
-@SuppressWarnings("OptionalUsedAsFieldOrParameterType")
-public class DiscordChatConfig extends Config {
-  private static final Color RED = new Color(0xbf4040);
-  private static final Color GREEN = new Color(0x40bf4f);
+import static ooo.foooooooooooo.velocitydiscord.config.ConfigConstants.GREEN;
+import static ooo.foooooooooooo.velocitydiscord.config.ConfigConstants.RED;
 
+@SuppressWarnings("OptionalUsedAsFieldOrParameterType")
+public class DiscordChatConfig {
   // chat
-  @Key("message.format")
+  @SerdeKey("message.format")
   public Optional<String> MESSAGE_FORMAT = Optional.of("{username}: {message}");
-  @Key("message.type")
+  @SerdeKey("message.type")
   public UserMessageType MESSAGE_TYPE = UserMessageType.TEXT;
-  @Key("message.embed_color")
+  @SerdeKey("message.embed_color")
   public Optional<Color> MESSAGE_EMBED_COLOR = Optional.empty();
-  @Key("message.channel")
+  @SerdeKey("message.channel")
   public Optional<String> MESSAGE_CHANNEL = Optional.empty();
-  @Key("message.webhook")
+  @SerdeKey("message.webhook")
   public WebhookConfig MESSAGE_WEBHOOK;
 
   // death
-  @Key("death.format")
+  @SerdeKey("death.format")
   public Optional<String> DEATH_FORMAT = Optional.of("**{username} {death_message}**");
-  @Key("death.type")
+  @SerdeKey("death.type")
   public UserMessageType DEATH_TYPE = UserMessageType.TEXT;
-  @Key("death.embed_color")
+  @SerdeKey("death.embed_color")
   public Optional<Color> DEATH_EMBED_COLOR = Optional.of(RED);
-  @Key("death.channel")
+  @SerdeKey("death.channel")
   public Optional<String> DEATH_CHANNEL = Optional.empty();
-  @Key("death.webhook")
+  @SerdeKey("death.webhook")
   public WebhookConfig DEATH_WEBHOOK;
 
   // advancement
-  @Key("advancement.format")
+  @SerdeKey("advancement.format")
   public Optional<String> ADVANCEMENT_FORMAT =
     Optional.of("**{username} has made the advancement __{advancement_title}__**\n_{advancement_description}_");
-  @Key("advancement.type")
+  @SerdeKey("advancement.type")
   public UserMessageType ADVANCEMENT_TYPE = UserMessageType.TEXT;
-  @Key("advancement.embed_color")
+  @SerdeKey("advancement.embed_color")
   public Optional<Color> ADVANCEMENT_EMBED_COLOR = Optional.of(GREEN);
-  @Key("advancement.channel")
+  @SerdeKey("advancement.channel")
   public Optional<String> ADVANCEMENT_CHANNEL = Optional.empty();
-  @Key("advancement.webhook")
+  @SerdeKey("advancement.webhook")
   public WebhookConfig ADVANCEMENT_WEBHOOK;
 
   // join
-  @Key("join.format")
+  @SerdeKey("join.format")
   public Optional<String> JOIN_FORMAT = Optional.of("**{username} joined the game**");
-  @Key("join.type")
+  @SerdeKey("join.type")
   public UserMessageType JOIN_TYPE = UserMessageType.TEXT;
-  @Key("join.embed_color")
+  @SerdeKey("join.embed_color")
   public Optional<Color> JOIN_EMBED_COLOR = Optional.of(GREEN);
-  @Key("join.channel")
+  @SerdeKey("join.channel")
   public Optional<String> JOIN_CHANNEL = Optional.empty();
-  @Key("join.webhook")
+  @SerdeKey("join.webhook")
   public WebhookConfig JOIN_WEBHOOK;
 
   // leave
-  @Key("leave.format")
+  @SerdeKey("leave.format")
   public Optional<String> LEAVE_FORMAT = Optional.of("**{username} left the game**");
-  @Key("leave.type")
+  @SerdeKey("leave.type")
   public UserMessageType LEAVE_TYPE = UserMessageType.TEXT;
-  @Key("leave.embed_color")
+  @SerdeKey("leave.embed_color")
   public Optional<Color> LEAVE_EMBED_COLOR = Optional.of(RED);
-  @Key("leave.channel")
+  @SerdeKey("leave.channel")
   public Optional<String> LEAVE_CHANNEL = Optional.empty();
-  @Key("leave.webhook")
+  @SerdeKey("leave.webhook")
   public WebhookConfig LEAVE_WEBHOOK;
 
   // disconnect
-  @Key("disconnect.format")
+  @SerdeKey("disconnect.format")
   public Optional<String> DISCONNECT_FORMAT = Optional.of("**{username} disconnected**");
-  @Key("disconnect.type")
+  @SerdeKey("disconnect.type")
   public UserMessageType DISCONNECT_TYPE = UserMessageType.TEXT;
-  @Key("disconnect.embed_color")
+  @SerdeKey("disconnect.embed_color")
   public Optional<Color> DISCONNECT_EMBED_COLOR = Optional.of(RED);
-  @Key("disconnect.channel")
+  @SerdeKey("disconnect.channel")
   public Optional<String> DISCONNECT_CHANNEL = Optional.empty();
-  @Key("disconnect.webhook")
+  @SerdeKey("disconnect.webhook")
   public WebhookConfig DISCONNECT_WEBHOOK;
 
   // server switch
-  @Key("server_switch.format")
+  @SerdeKey("server_switch.format")
   public Optional<String> SERVER_SWITCH_FORMAT = Optional.of("**{username} moved to {current} from {previous}**");
-  @Key("server_switch.type")
+  @SerdeKey("server_switch.type")
   public UserMessageType SERVER_SWITCH_TYPE = UserMessageType.TEXT;
-  @Key("server_switch.embed_color")
+  @SerdeKey("server_switch.embed_color")
   public Optional<Color> SERVER_SWITCH_EMBED_COLOR = Optional.of(GREEN);
-  @Key("server_switch.channel")
+  @SerdeKey("server_switch.channel")
   public Optional<String> SERVER_SWITCH_CHANNEL = Optional.empty();
-  @Key("server_switch.webhook")
+  @SerdeKey("server_switch.webhook")
   public WebhookConfig SERVER_SWITCH_WEBHOOK;
 
-  // proxy start
-  @Key(value = "proxy_start.format", overridable = false)
-  public Optional<String> PROXY_START_FORMAT = Optional.of("**Proxy started**");
-  @Key(value = "proxy_start.type", overridable = false)
-  public ServerMessageType PROXY_START_TYPE = ServerMessageType.TEXT;
-  @Key(value = "proxy_start.embed_color", overridable = false)
-  public Optional<Color> PROXY_START_EMBED_COLOR = Optional.of(GREEN);
-  @Key(value = "proxy_start.channel", overridable = false)
-  public Optional<String> PROXY_START_CHANNEL = Optional.empty();
-
-  // proxy stop
-  @Key(value = "proxy_stop.format", overridable = false)
-  public Optional<String> PROXY_STOP_FORMAT = Optional.of("**Proxy stopped**");
-  @Key(value = "proxy_stop.type", overridable = false)
-  public ServerMessageType PROXY_STOP_TYPE = ServerMessageType.TEXT;
-  @Key(value = "proxy_stop.embed_color", overridable = false)
-  public Optional<Color> PROXY_STOP_EMBED_COLOR = Optional.of(RED);
-  @Key(value = "proxy_stop.channel", overridable = false)
-  public Optional<String> PROXY_STOP_CHANNEL = Optional.empty();
-
   // server start
-  @Key("server_start.format")
+  @SerdeKey("server_start.format")
   public Optional<String> SERVER_START_FORMAT = Optional.of("**{server} has started**");
-  @Key("server_start.type")
+  @SerdeKey("server_start.type")
   public ServerMessageType SERVER_START_TYPE = ServerMessageType.TEXT;
-  @Key("server_start.embed_color")
+  @SerdeKey("server_start.embed_color")
   public Optional<Color> SERVER_START_EMBED_COLOR = Optional.of(GREEN);
-  @Key("server_start.channel")
+  @SerdeKey("server_start.channel")
   public Optional<String> SERVER_START_CHANNEL = Optional.empty();
 
   // server stop
-  @Key("server_stop.format")
+  @SerdeKey("server_stop.format")
   public Optional<String> SERVER_STOP_FORMAT = Optional.of("**{server} has stopped**");
-  @Key("server_stop.type")
+  @SerdeKey("server_stop.type")
   public ServerMessageType SERVER_STOP_TYPE = ServerMessageType.TEXT;
-  @Key("server_stop.embed_color")
+  @SerdeKey("server_stop.embed_color")
   public Optional<Color> SERVER_STOP_EMBED_COLOR = Optional.of(RED);
-  @Key("server_stop.channel")
+  @SerdeKey("server_stop.channel")
   public Optional<String> SERVER_STOP_CHANNEL = Optional.empty();
-
-  @SuppressWarnings("unused")
-  public DiscordChatConfig(com.electronwill.nightconfig.core.Config config, String parentPath) {
-    super(config, parentPath);
-  }
-
-  @SuppressWarnings("unused")
-  public DiscordChatConfig(com.electronwill.nightconfig.core.Config config, String parentPath, DiscordChatConfig main) {
-    super(config, parentPath, main);
-  }
 
   public boolean isWebhookUsed() {
     return Arrays.stream(new UserMessageType[]{
@@ -172,22 +143,35 @@ public class DiscordChatConfig extends Config {
     };
   }
 
-  @Variants
-  public enum UserMessageType {
-    @Variants.Key("text")
+  public enum UserMessageType implements ValueDeserializer<String, UserMessageType> {
     TEXT,
-    @Variants.Key("webhook")
     WEBHOOK,
-    @Variants.Key("embed")
-    EMBED
+    EMBED;
+
+    @Override
+    public UserMessageType deserialize(String value, Optional<TypeConstraint> resultType, DeserializerContext ctx) {
+      return switch (value) {
+        case "text" -> TEXT;
+        case "webhook" -> WEBHOOK;
+        case "embed" -> EMBED;
+        default -> throw new IllegalArgumentException("Unknown UserMessageType: " + value + " expected one of [text, webhook, embed]");
+      };
+    }
   }
 
-  @Variants
-  public enum ServerMessageType {
-    @Variants.Key("text")
+
+  public enum ServerMessageType implements ValueDeserializer<String, ServerMessageType> {
     TEXT,
-    @Variants.Key("embed")
-    EMBED
+    EMBED;
+
+    @Override
+    public ServerMessageType deserialize(String value, Optional<TypeConstraint> resultType, DeserializerContext ctx) {
+      return switch (value) {
+        case "text" -> TEXT;
+        case "embed" -> EMBED;
+        default -> throw new IllegalArgumentException("Unknown ServerMessageType: " + value + " expected one of [text, embed]");
+      };
+    }
   }
 
   public enum MessageCategory {
