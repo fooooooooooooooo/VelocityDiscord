@@ -28,8 +28,8 @@ public class ConfigColorTests {
     @Key("null_optional_color")
     public Optional<Color> NULL_OPTIONAL_COLOR = Optional.empty();
 
-    public TestColorConfig(com.electronwill.nightconfig.core.Config config) {
-      super(config);
+    public TestColorConfig(com.electronwill.nightconfig.core.Config config, String parentPath) {
+      super(config, parentPath);
       loadConfig();
     }
   }

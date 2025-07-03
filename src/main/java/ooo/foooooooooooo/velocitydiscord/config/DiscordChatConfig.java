@@ -139,13 +139,13 @@ public class DiscordChatConfig extends Config {
   public Optional<String> SERVER_STOP_CHANNEL = Optional.empty();
 
   @SuppressWarnings("unused")
-  public DiscordChatConfig(com.electronwill.nightconfig.core.Config config) {
-    super(config);
+  public DiscordChatConfig(com.electronwill.nightconfig.core.Config config, String parentPath) {
+    super(config, parentPath);
   }
 
   @SuppressWarnings("unused")
-  public DiscordChatConfig(com.electronwill.nightconfig.core.Config config, DiscordChatConfig main) {
-    super(config, main);
+  public DiscordChatConfig(com.electronwill.nightconfig.core.Config config, String parentPath, DiscordChatConfig main) {
+    super(config, parentPath, main);
   }
 
   public boolean isWebhookUsed() {

@@ -9,6 +9,7 @@ import java.awt.*;
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
 import java.util.Arrays;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -20,14 +21,21 @@ public class Config {
   final static Logger LOGGER = LoggerFactory.getLogger(Config.class);
 
   public @Nullable com.electronwill.nightconfig.core.Config inner;
+  private final String parentPath;
   protected @Nullable Config fallback;
 
-  public Config(@Nullable com.electronwill.nightconfig.core.Config config) {
+  public Config(@Nullable com.electronwill.nightconfig.core.Config config, String parentPath) {
     this.inner = config;
+    this.parentPath = parentPath;
   }
 
-  public Config(@Nullable com.electronwill.nightconfig.core.Config config, @Nullable Config fallback) {
+  public Config(
+    @Nullable com.electronwill.nightconfig.core.Config config,
+    String parentPath,
+    @Nullable Config fallback
+  ) {
     this.inner = config;
+    this.parentPath = parentPath;
     // get every field as optional, otherwise fallback to the value of the same field
     this.fallback = fallback;
   }
@@ -149,14 +157,14 @@ public class Config {
       });
   }
 
-  private void loadField(Field field) {
+  private String loadField(Field field) {
     var annotation = field.getAnnotation(Key.class);
     var path = annotation.value();
 
     // if fallback exists and field is not overridable use the already set fallback value
     if (this.fallback != null && !annotation.overridable()) {
       LOGGER.trace("Using fallback value for non overridable field {}", field.getName());
-      return;
+      return null;
     }
 
     var type = field.getType();
@@ -173,6 +181,8 @@ public class Config {
     } else {
       loadFieldImpl(field, path, type, false);
     }
+
+    return path;
   }
 
   private static boolean extendsConfig(Class<?> type) {
@@ -182,16 +192,17 @@ public class Config {
   private static Config createNested(
     Class<?> type,
     com.electronwill.nightconfig.core.Config inner,
+    String parentPath,
     @Nullable Object fallback
   ) {
     try {
       // use fallback constructor if fallback exists
       if (fallback != null) {
-        var constructor = type.getConstructor(com.electronwill.nightconfig.core.Config.class, type);
-        return (Config) constructor.newInstance(inner, fallback);
+        var constructor = type.getConstructor(com.electronwill.nightconfig.core.Config.class, String.class, type);
+        return (Config) constructor.newInstance(inner, parentPath, fallback);
       } else {
-        var constructor = type.getConstructor(com.electronwill.nightconfig.core.Config.class);
-        return (Config) constructor.newInstance(inner);
+        var constructor = type.getConstructor(com.electronwill.nightconfig.core.Config.class, String.class);
+        return (Config) constructor.newInstance(inner, parentPath);
       }
     } catch (Exception e) {
       throw new RuntimeException(e);
@@ -249,7 +260,9 @@ public class Config {
           nestedFallback = getFieldWithSameKey(this.fallback.getClass().getFields(), path).get(this.fallback);
         }
 
-        var config = createNested(type, nestedConfig, nestedFallback);
+        var parentPath = this.parentPath + "." + path;
+
+        var config = createNested(type, nestedConfig, parentPath, nestedFallback);
 
         setFieldOptional(field, path, config, optional);
 
@@ -334,7 +347,16 @@ public class Config {
           // create a new instance
           if (nestedDst == null) {
             LOGGER.trace("Creating new instance of nested config field {}", f.getName());
-            nestedDst = createNested(f.getType(), dst.inner == null ? null : dst.inner.get(destKey), nestedSrc);
+
+            var parentPath = dst.parentPath + "." + destKey;
+
+            if (dst.inner == null) {
+              nestedDst = createNested(f.getType(), null, parentPath, nestedSrc);
+            } else {
+              com.electronwill.nightconfig.core.Config nestedConfig = dst.inner.get(destKey);
+              nestedDst = createNested(f.getType(), nestedConfig, parentPath, nestedSrc);
+            }
+
             f.set(dst, nestedDst);
             nestedDst.loadConfig();
           } else {
@@ -357,7 +379,26 @@ public class Config {
       inheritFields(this.fallback, this);
     }
 
-    Arrays.stream(this.getClass().getFields()).filter(f -> f.isAnnotationPresent(Key.class)).forEach(this::loadField);
+    var loaded_keys = Arrays
+      .stream(this.getClass().getFields())
+      .filter(f -> f.isAnnotationPresent(Key.class))
+      .map(this::loadField)
+      .filter(Objects::nonNull)
+      // map `root.key` to `root`
+      .map(s -> s.split("\\.")[0])
+      .collect(Collectors.toSet());
+
+    LOGGER.info("Loaded keys: {}", loaded_keys);
+
+    if (this.inner != null) {
+      this.inner.entrySet().forEach(entry -> {
+        if (!loaded_keys.contains(entry.getKey())) {
+          LOGGER.warn("Unused key `{}.{}` in config", this.parentPath, entry.getKey());
+        } else {
+          LOGGER.info("Used key `{}.{}` in config", this.parentPath, entry.getKey());
+        }
+      });
+    }
   }
 
   private <T> void setField(Field field, String path, T value) {

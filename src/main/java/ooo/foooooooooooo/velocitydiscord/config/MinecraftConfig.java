@@ -8,7 +8,8 @@ import java.util.Optional;
 @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
 public class MinecraftConfig extends Config {
   // role prefixes
-  public final RolePrefixConfig rolePrefixes;
+  @Key("role_prefixes")
+  public RolePrefixConfig rolePrefixes;
 
   // discord
   @Key("show_bot_messages")
@@ -45,16 +46,16 @@ public class MinecraftConfig extends Config {
   public String LINK_COLOR = "#4abdff";
 
   @SuppressWarnings("unused")
-  public MinecraftConfig(com.electronwill.nightconfig.core.Config config) {
-    super(config);
-    this.rolePrefixes = new RolePrefixConfig(config);
+  public MinecraftConfig(com.electronwill.nightconfig.core.Config config, String parentPath) {
+    super(config, parentPath);
+//    this.rolePrefixes = new RolePrefixConfig(config);
     loadConfig();
   }
 
   @SuppressWarnings("unused")
-  public MinecraftConfig(com.electronwill.nightconfig.core.Config config, MinecraftConfig main) {
-    super(config, main);
-    this.rolePrefixes = new RolePrefixConfig(config, main.rolePrefixes);
+  public MinecraftConfig(com.electronwill.nightconfig.core.Config config, String parentPath, MinecraftConfig main) {
+    super(config, parentPath, main);
+//    this.rolePrefixes = new RolePrefixConfig(config, main.rolePrefixes);
     loadConfig();
   }
 

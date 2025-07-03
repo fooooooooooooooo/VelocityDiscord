@@ -18,13 +18,13 @@ public class WebhookConfig extends Config {
   public String webhookId = null;
 
   @SuppressWarnings("unused")
-  public WebhookConfig(com.electronwill.nightconfig.core.Config config) {
-    super(config);
+  public WebhookConfig(com.electronwill.nightconfig.core.Config config, String parentPath) {
+    super(config, parentPath);
   }
 
   @SuppressWarnings("unused")
-  public WebhookConfig(com.electronwill.nightconfig.core.Config config, WebhookConfig main) {
-    super(config, main);
+  public WebhookConfig(com.electronwill.nightconfig.core.Config config, String parentPath, WebhookConfig main) {
+    super(config, parentPath, main);
   }
 
   @Override

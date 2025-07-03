@@ -8,12 +8,14 @@ import java.util.Map;
 public class RolePrefixConfig extends Config {
   private final Map<String, String> rolePrefixes = new HashMap<>();
 
-  public RolePrefixConfig(com.electronwill.nightconfig.core.Config config) {
-    super(config);
+  @SuppressWarnings("unused")
+  public RolePrefixConfig(com.electronwill.nightconfig.core.Config config, String parentPath) {
+    super(config, parentPath);
   }
 
-  public RolePrefixConfig(com.electronwill.nightconfig.core.Config config, RolePrefixConfig main) {
-    super(config, main);
+  @SuppressWarnings("unused")
+  public RolePrefixConfig(com.electronwill.nightconfig.core.Config config, String parentPath, RolePrefixConfig main) {
+    super(config, parentPath, main);
   }
 
   @Override
@@ -22,13 +24,15 @@ public class RolePrefixConfig extends Config {
 
     if (this.inner == null) return;
 
-    var prefixConfig = this.inner.get("minecraft.role_prefixes");
+    var prefixConfig = this.inner.get("role_prefixes");
     if (prefixConfig instanceof com.electronwill.nightconfig.core.Config roleConfig) {
       for (var entry : roleConfig.entrySet()) {
         if (entry.getValue() instanceof String) {
           this.rolePrefixes.put(entry.getKey(), entry.getValue());
         }
       }
+    } else {
+
     }
   }
 

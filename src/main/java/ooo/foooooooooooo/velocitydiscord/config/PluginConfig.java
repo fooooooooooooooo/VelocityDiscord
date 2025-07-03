@@ -42,14 +42,14 @@ public class PluginConfig extends Config implements ServerConfig {
   private final Logger logger;
 
   public PluginConfig(Path dataDir, Logger logger) {
-    super(loadFile(dataDir));
+    super(loadFile(dataDir), "");
     this.logger = logger;
     this.dataDir = dataDir;
     this.onLoad();
   }
 
   public PluginConfig(com.electronwill.nightconfig.core.Config config, Logger logger) {
-    super(config);
+    super(config, "");
     this.logger = logger;
     this.onLoad();
   }
@@ -160,11 +160,11 @@ public class PluginConfig extends Config implements ServerConfig {
 
         // todo: maybe better than this
         if (this.EXCLUDED_SERVERS.contains(serverName) && !this.EXCLUDED_SERVERS_RECEIVE_MESSAGES) {
-          this.logger.debug("Ignoring override for excluded server: {}", serverName);
+          this.logger.info("Ignoring override for excluded server: {}", serverName);
           continue;
         }
 
-        this.serverOverridesMap.put(serverName, new OverrideConfig(serverOverride, this));
+        this.serverOverridesMap.put(serverName, new OverrideConfig(serverOverride, serverName, this));
       } else {
         this.logger.warn("Invalid server override for `{}`: `{}`", entry.getKey(), entry.getValue());
       }
@@ -271,8 +271,8 @@ public class PluginConfig extends Config implements ServerConfig {
     @Key("minecraft")
     public MinecraftConfig MINECRAFT;
 
-    public OverrideConfig(com.electronwill.nightconfig.core.Config config, PluginConfig fallback) {
-      super(config, fallback);
+    public OverrideConfig(com.electronwill.nightconfig.core.Config config, String serverName, PluginConfig fallback) {
+      super(config, "override." + serverName, fallback);
       // explicitly load the config here
       loadConfig();
     }

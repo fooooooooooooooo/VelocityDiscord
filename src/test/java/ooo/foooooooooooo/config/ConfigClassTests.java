@@ -20,8 +20,8 @@ public class ConfigClassTests {
     @Key("inner")
     public TestConfigInnerClass INNER;
 
-    public TestConfig(com.electronwill.nightconfig.core.Config config) {
-      super(config);
+    public TestConfig(com.electronwill.nightconfig.core.Config config, String parentPath) {
+      super(config, parentPath);
       loadConfig();
     }
 
@@ -42,7 +42,7 @@ public class ConfigClassTests {
       public TestEnum INNER_TEST_ENUM = TestEnum.THREE;
 
       public TestConfigInnerClass(com.electronwill.nightconfig.core.Config config) {
-        super(config);
+        super(config, "");
       }
     }
   }

@@ -113,7 +113,7 @@ class PluginConfigTest {
   void shouldThrowGivenInvalidConfigVersion(@TempDir Path tempDir) {
     try {
       var config =
-        TestUtils.createConfig(this.invalidVersionTestConfig, tempDir, c -> new PluginConfig(c, this.logger));
+        TestUtils.createConfig(this.invalidVersionTestConfig, tempDir, (c, p) -> new PluginConfig(c, this.logger));
 
       config.loadConfig();
 
@@ -128,7 +128,7 @@ class PluginConfigTest {
 
   @Test
   void shouldBeOptionalEmptyGivenEmptyColorString(@TempDir Path tempDir) {
-    var config = TestUtils.createConfig(this.emptyColorTestConfig, tempDir, c -> new PluginConfig(c, this.logger));
+    var config = TestUtils.createConfig(this.emptyColorTestConfig, tempDir, (c, p) -> new PluginConfig(c, this.logger));
 
     config.loadConfig();
 
@@ -138,7 +138,7 @@ class PluginConfigTest {
   @Test
   void shouldThrowGivenInvalidColorFormat(@TempDir Path tempDir) {
     try {
-      var config = TestUtils.createConfig(this.invalidColorTestConfig, tempDir, c -> new PluginConfig(c, this.logger));
+      var config = TestUtils.createConfig(this.invalidColorTestConfig, tempDir, (c, p) -> new PluginConfig(c, this.logger));
 
       config.loadConfig();
 
@@ -151,7 +151,7 @@ class PluginConfigTest {
 
   @Test
   void shouldUseDefaultColorGivenNoColorSpecified(@TempDir Path tempDir) {
-    var config = TestUtils.createConfig(this.nullColorTestConfig, tempDir, c -> new PluginConfig(c, this.logger));
+    var config = TestUtils.createConfig(this.nullColorTestConfig, tempDir, (c, p) -> new PluginConfig(c, this.logger));
 
     config.loadConfig();
 
@@ -162,7 +162,7 @@ class PluginConfigTest {
   @SuppressWarnings("OptionalGetWithoutIsPresent")
   @Test
   void shouldHandleServerOverrides(@TempDir Path tempDir) {
-    var config = TestUtils.createConfig(this.serverOverridesTestConfig, tempDir, c -> new PluginConfig(c, this.logger));
+    var config = TestUtils.createConfig(this.serverOverridesTestConfig, tempDir, (c, p) -> new PluginConfig(c, this.logger));
 
     // Test main config
     assertEquals("main format", config.getDiscordChatConfig().MESSAGE_FORMAT.get());
@@ -193,7 +193,7 @@ class PluginConfigTest {
   @Test
   void shouldLoadConfig(@TempDir Path tempDir) {
     var testConfig = TestUtils.readResource("/config.toml");
-    var config = TestUtils.createConfig(testConfig, tempDir, c -> new PluginConfig(c, this.logger));
+    var config = TestUtils.createConfig(testConfig, tempDir, (c, p) -> new PluginConfig(c, this.logger));
 
     config.loadConfig();
 
@@ -327,7 +327,7 @@ class PluginConfigTest {
   @Test
   void shouldLoadRealConfig(@TempDir Path tempDir) {
     var testConfig = TestUtils.readResource("/real_test_config.toml");
-    var config = TestUtils.createConfig(testConfig, tempDir, c -> new PluginConfig(c, this.logger));
+    var config = TestUtils.createConfig(testConfig, tempDir, (c, p) -> new PluginConfig(c, this.logger));
 
     config.loadConfig();
 

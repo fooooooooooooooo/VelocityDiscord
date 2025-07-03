@@ -68,16 +68,17 @@ public class DiscordConfig extends Config {
   }
 
   @SuppressWarnings("unused")
-  public DiscordConfig(com.electronwill.nightconfig.core.Config config) {
-    super(config);
+  public DiscordConfig(com.electronwill.nightconfig.core.Config config, String parentPath) {
+    super(config, parentPath);
   }
 
   @SuppressWarnings("unused")
-  public DiscordConfig(com.electronwill.nightconfig.core.Config config, DiscordConfig main) {
-    super(config, main);
+  public DiscordConfig(com.electronwill.nightconfig.core.Config config, String parentPath, DiscordConfig main) {
+    super(config, parentPath, main);
   }
 
   public boolean isDefaultValues() {
     return this.DISCORD_TOKEN.equals(DefaultToken) || this.MAIN_CHANNEL_ID.equals(DefaultChannelId);
   }
+
 }

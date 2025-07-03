@@ -22,11 +22,13 @@ public class ListCommandConfig extends Config {
   @Key(value = "codeblock_lang", overridable = false)
   public String CODEBLOCK_LANG = "asciidoc";
 
-  public ListCommandConfig(com.electronwill.nightconfig.core.Config config) {
-    super(config);
+  @SuppressWarnings("unused")
+  public ListCommandConfig(com.electronwill.nightconfig.core.Config config, String parentPath) {
+    super(config, parentPath);
   }
 
-  public ListCommandConfig(com.electronwill.nightconfig.core.Config config, ListCommandConfig main) {
-    super(config, main);
+  @SuppressWarnings("unused")
+  public ListCommandConfig(com.electronwill.nightconfig.core.Config config, String parentPath, ListCommandConfig main) {
+    super(config, parentPath, main);
   }
 }

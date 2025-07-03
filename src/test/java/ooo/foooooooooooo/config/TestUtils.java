@@ -26,7 +26,7 @@ public class TestUtils {
 
   @FunctionalInterface
   public interface ConfigConstructor<T extends Config> {
-    T get(com.electronwill.nightconfig.core.Config config);
+    T get(com.electronwill.nightconfig.core.Config config, String parentPath);
   }
 
   // this is insane I wish I could just read from a string instead of making a temp file
@@ -42,7 +42,7 @@ public class TestUtils {
     var toml = FileConfig.of(test);
     toml.load();
 
-    return ctor.get(toml);
+    return ctor.get(toml, "");
   }
 
   public static void setLogLevel() {
