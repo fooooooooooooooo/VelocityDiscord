@@ -49,4 +49,11 @@ public class WebhookConfig {
 
     return this.URL.isEmpty() || this.webhookId == null;
   }
+
+  public String debug() {
+    return "url: " + ConfigConstants.debugString(this.URL) + "\n"
+      + "avatar_url: " + ConfigConstants.debugString(this.AVATAR_URL) + "\n"
+      + "username: " + ConfigConstants.debugString(this.USERNAME) + "\n"
+      + "webhookId: " + ConfigConstants.debugString(this.webhookId != null ? this.webhookId : "null") + "\n";
+  }
 }

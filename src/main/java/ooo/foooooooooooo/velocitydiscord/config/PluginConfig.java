@@ -3,7 +3,6 @@ package ooo.foooooooooooo.velocitydiscord.config;
 import com.electronwill.nightconfig.core.CommentedConfig;
 import com.electronwill.nightconfig.core.Config;
 import com.electronwill.nightconfig.core.file.FileConfig;
-import com.electronwill.nightconfig.core.serde.ObjectDeserializer;
 import com.electronwill.nightconfig.core.serde.annotations.SerdeDefault;
 import com.electronwill.nightconfig.core.serde.annotations.SerdeKey;
 import ooo.foooooooooooo.velocitydiscord.Constants;
@@ -16,6 +15,7 @@ import java.nio.file.Path;
 import java.util.*;
 import java.util.function.Supplier;
 
+@SuppressWarnings("unused")
 public class PluginConfig implements ServerConfig {
   private static final String[] splitVersion = Constants.PluginVersion.split("\\.");
   public static final String ConfigVersion = splitVersion[0] + '.' + splitVersion[1];
@@ -26,65 +26,25 @@ public class PluginConfig implements ServerConfig {
   @SerdeKey("exclude_servers")
   @SerdeDefault(provider = "defaultExcludedServers")
   public List<String> EXCLUDED_SERVERS;
-
-  @SuppressWarnings("unused")
   private final transient Supplier<List<String>> defaultExcludedServers = List::of;
 
   @SerdeKey("excluded_servers_receive_messages")
   @SerdeDefault(provider = "defaultExcludedServersReceiveMessages")
   public boolean EXCLUDED_SERVERS_RECEIVE_MESSAGES;
-
-  @SuppressWarnings("unused")
   private final transient Supplier<Boolean> defaultExcludedServersReceiveMessages = () -> false;
 
   @SerdeKey("ping_interval")
   @SerdeDefault(provider = "defaultPingIntervalSeconds")
   public int PING_INTERVAL_SECONDS;
-
-  @SuppressWarnings("unused")
   private final transient Supplier<Integer> defaultPingIntervalSeconds = () -> 15;
 
-  @SerdeKey("discord")
-  @SerdeDefault(provider = "defaultDiscordConfig")
-  public DiscordConfig DISCORD;
+  public transient DiscordConfig DISCORD;
+  public transient DiscordChatConfig DISCORD_CHAT;
+  public transient MinecraftConfig MINECRAFT;
 
-  @SuppressWarnings("unused")
-  private final transient Supplier<DiscordConfig> defaultDiscordConfig = () -> EmptyConfig.deserialize(new DiscordConfig());
-
-  @SerdeKey("discord.chat")
-  @SerdeDefault(provider = "defaultDiscordChatConfig")
-  public DiscordChatConfig DISCORD_CHAT;
-
-  @SuppressWarnings("unused")
-  private final transient Supplier<DiscordChatConfig> defaultDiscordChatConfig = () -> EmptyConfig.deserialize(new DiscordChatConfig());
-
-  @SerdeKey("minecraft")
-  @SerdeDefault(provider = "defaultMinecraftConfig")
-  public MinecraftConfig MINECRAFT;
-
-  @SuppressWarnings("unused")
-  private final transient Supplier<MinecraftConfig> defaultMinecraftConfig = () -> EmptyConfig.deserialize(new MinecraftConfig());
-
-  @SerdeKey("discord.bot")
-  @SerdeDefault(provider = "defaultDiscordBotConfig")
-  public DiscordBotConfig BOT;
-
-  @SuppressWarnings("unused")
-  private final transient Supplier<DiscordBotConfig> defaultDiscordBotConfig = () -> EmptyConfig.deserialize(new DiscordBotConfig());
-
-  @SerdeKey("discord.chat.proxy")
-  @SerdeDefault(provider = "defaultProxyDiscordChatConfig")
-  public ProxyDiscordChatConfig DISCORD_CHAT_PROXY;
-
-  @SuppressWarnings("unused")
-  private final transient Supplier<ProxyDiscordChatConfig> defaultProxyDiscordChatConfig = () -> EmptyConfig.deserialize(new ProxyDiscordChatConfig());
-
-  @SerdeKey("minecraft.global")
-  @SerdeDefault(provider = "defaultMinecraftGlobalConfig")
-  public MinecraftGlobalConfig MINECRAFT_GLOBAL;
-
-  @SuppressWarnings("unused")
-  private final transient Supplier<MinecraftGlobalConfig> defaultMinecraftGlobalConfig = () -> EmptyConfig.deserialize(new MinecraftGlobalConfig());
+  public transient DiscordBotConfig BOT;
+  public transient ProxyDiscordChatConfig DISCORD_CHAT_PROXY;
+  public transient MinecraftGlobalConfig MINECRAFT_GLOBAL;
 
   private transient final Map<String, String> serverDisplayNames = new HashMap<>();
 
@@ -110,9 +70,42 @@ public class PluginConfig implements ServerConfig {
     this.onLoad();
   }
 
+  private void logKeys(Config config, int indent) {
+    var indentStr = "  ".repeat(Math.max(0, indent));
+    for (var entry : config.entrySet()) {
+      if (entry.getValue() instanceof Config) {
+        System.out.println(indentStr + entry.getKey() + ":");
+        logKeys(entry.getValue(), indent + 1);
+      } else {
+        System.out.println(indentStr + entry.getKey() + ": " + entry.getValue());
+      }
+    }
+  }
+
   private void loadConfig() {
-    var deserializer = ObjectDeserializer.standard();
-    deserializer.deserializeFields(this.config, this);
+    if (this.config == null || this.config.isEmpty()) {
+      throw new RuntimeException("ERROR: Config is empty");
+    }
+
+    this.logger.info("raw config:");
+    logKeys(this.config, 0);
+
+    Deserialization.deserializer().deserializeFields(this.config, this);
+
+    this.BOT = Deserialization.deserialize(this.config.get("discord"), new DiscordBotConfig());
+    this.DISCORD = Deserialization.deserialize(this.config.get("discord"), new DiscordConfig());
+
+    Config discordChatConfig = this.config.get("discord.chat");
+    if (discordChatConfig != null) {
+      this.logger.info("raw discord.chat:");
+      logKeys(discordChatConfig, 0);
+    }
+
+    this.DISCORD_CHAT = Deserialization.deserialize(discordChatConfig, new DiscordChatConfig());
+
+    this.DISCORD_CHAT_PROXY = Deserialization.deserialize(this.config.get("discord.chat"), new ProxyDiscordChatConfig());
+    this.MINECRAFT = Deserialization.deserialize(this.config.get("minecraft"), new MinecraftConfig());
+    this.MINECRAFT_GLOBAL = Deserialization.deserialize(this.config.get("minecraft"), new MinecraftGlobalConfig());
   }
 
   private void onLoad() {
@@ -160,6 +153,10 @@ public class PluginConfig implements ServerConfig {
   }
 
   private void checkConfig() {
+    if (this.config == null || this.config.isEmpty()) {
+      throw new RuntimeException("ERROR: Config is empty");
+    }
+
     // check for compatible config version
     String version = this.config.get("config_version");
 
@@ -317,6 +314,58 @@ public class PluginConfig implements ServerConfig {
     return this.config;
   }
 
+  public String debug() {
+    var sb = new StringBuilder();
+
+    sb.append("PluginConfig:\n");
+    sb.append("  config_version: ").append(ConfigVersion).append("\n");
+    sb.append("  excluded_servers: ").append(this.EXCLUDED_SERVERS).append("\n");
+    sb.append("  excluded_servers_receive_messages: ").append(this.EXCLUDED_SERVERS_RECEIVE_MESSAGES).append("\n");
+    sb.append("  ping_interval_seconds: ").append(this.PING_INTERVAL_SECONDS).append("\n");
+    sb.append("  server_names: ").append(this.serverDisplayNames).append("\n");
+
+    sb.append("  discord: ").append("\n");
+    for (var line : this.DISCORD.debug().split("\n")) {
+      sb.append("    ").append(line).append("\n");
+    }
+
+    sb.append("  discord.chat: ").append("\n");
+    for (var line : this.DISCORD_CHAT.debug().split("\n")) {
+      sb.append("    ").append(line).append("\n");
+    }
+
+    sb.append("  minecraft: ").append("\n");
+    for (var line : this.MINECRAFT.debug().split("\n")) {
+      sb.append("    ").append(line).append("\n");
+    }
+
+    sb.append("  discord.bot: ").append("\n");
+    for (var line : this.BOT.debug().split("\n")) {
+      sb.append("    ").append(line).append("\n");
+    }
+
+    sb.append("  discord.chat.proxy: ").append("\n");
+    for (var line : this.DISCORD_CHAT_PROXY.debug().split("\n")) {
+      sb.append("    ").append(line).append("\n");
+    }
+
+    sb.append("  minecraft.global: ").append("\n");
+    for (var line : this.MINECRAFT_GLOBAL.debug().split("\n")) {
+      sb.append("    ").append(line).append("\n");
+    }
+
+    sb.append("  server_overrides: ").append("\n");
+    for (var entry : this.serverOverridesMap.entrySet()) {
+      sb.append("    ").append(entry.getKey()).append(": ").append("\n");
+
+      for (var line : entry.getValue().debug().split("\n")) {
+        sb.append("      ").append(line).append("\n");
+      }
+    }
+
+    return sb.toString();
+  }
+
   public static class OverrideConfig implements ServerConfig {
     @SerdeKey("discord")
     public DiscordConfig DISCORD;
@@ -338,6 +387,27 @@ public class PluginConfig implements ServerConfig {
     @Override
     public MinecraftConfig getMinecraftConfig() {
       return this.MINECRAFT;
+    }
+
+    public String debug() {
+      var sb = new StringBuilder();
+
+      sb.append("discord:\n");
+      for (var line : this.DISCORD.debug().split("\n")) {
+        sb.append("  ").append(line).append("\n");
+      }
+
+      sb.append("discord.chat:\n");
+      for (var line : this.DISCORD_CHAT.debug().split("\n")) {
+        sb.append("  ").append(line).append("\n");
+      }
+
+      sb.append("minecraft:\n");
+      for (var line : this.MINECRAFT.debug().split("\n")) {
+        sb.append("  ").append(line).append("\n");
+      }
+
+      return sb.toString();
     }
   }
 

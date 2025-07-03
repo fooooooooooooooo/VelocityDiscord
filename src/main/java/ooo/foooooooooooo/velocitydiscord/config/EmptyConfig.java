@@ -2,7 +2,6 @@ package ooo.foooooooooooo.velocitydiscord.config;
 
 import com.electronwill.nightconfig.core.ConfigFormat;
 import com.electronwill.nightconfig.core.UnmodifiableConfig;
-import com.electronwill.nightconfig.core.serde.ObjectDeserializer;
 import com.electronwill.nightconfig.toml.TomlFormat;
 
 import java.util.List;
@@ -26,6 +25,7 @@ public class EmptyConfig implements UnmodifiableConfig {
   }
 
   @Override
+  @SuppressWarnings({"deprecation", "RedundantSuppression"})
   public Map<String, Object> valueMap() {
     return Map.of();
   }
@@ -41,7 +41,7 @@ public class EmptyConfig implements UnmodifiableConfig {
   }
 
   public static <T> T deserialize(T object) {
-    ObjectDeserializer.standard().deserializeFields(new EmptyConfig(), object);
+    Deserialization.deserializer().deserializeFields(new EmptyConfig(), object);
     return object;
   }
 }

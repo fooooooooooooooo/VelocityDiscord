@@ -73,10 +73,8 @@ class PluginConfigTest {
     token = "test_token"
     channel = "123456789012345678"
     
-    [discord.chat.message]
-    format = "test_format"
-    type = "embed"
-    embed_color = "not-a-color"
+    [discord.chat]
+    message = { type = "embed", format = "test_format", embed_color = "awa" }
     """;
 
   String nullColorTestConfig = """
@@ -153,14 +151,16 @@ class PluginConfigTest {
 
   @Test
   void shouldThrowGivenInvalidColorFormat(@TempDir Path tempDir) {
-    try {
-      createConfig(this.invalidColorTestConfig, tempDir);
+//    try {
+      var config = createConfig(this.invalidColorTestConfig, tempDir);
+
+      this.logger.info("Config loaded:\n{}", config.debug());
 
       fail("Expected RuntimeException");
-    } catch (RuntimeException e) {
-      assertInstanceOf(NumberFormatException.class, e.getCause());
-      assertTrue(e.getCause().getMessage().contains("not-a-color"));
-    }
+//    } catch (RuntimeException e) {
+//      assertInstanceOf(NumberFormatException.class, e.getCause());
+//      assertTrue(e.getCause().getMessage().contains("not-a-color"));
+//    }
   }
 
   @Test
