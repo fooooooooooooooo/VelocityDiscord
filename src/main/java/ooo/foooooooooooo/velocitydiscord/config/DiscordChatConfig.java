@@ -355,20 +355,10 @@ public class DiscordChatConfig {
     };
   }
 
-  public enum UserMessageType implements ValueDeserializer<String, UserMessageType> {
+  public enum UserMessageType {
     TEXT,
     WEBHOOK,
     EMBED;
-
-    @Override
-    public UserMessageType deserialize(String value, Optional<TypeConstraint> resultType, DeserializerContext ctx) {
-      return switch (value) {
-        case "text" -> TEXT;
-        case "webhook" -> WEBHOOK;
-        case "embed" -> EMBED;
-        default -> throw new IllegalArgumentException("Unknown UserMessageType: " + value + " expected one of [text, webhook, embed]");
-      };
-    }
 
     @Override
     public String toString() {
@@ -380,24 +370,38 @@ public class DiscordChatConfig {
     }
   }
 
-  public enum ServerMessageType implements ValueDeserializer<String, ServerMessageType> {
-    TEXT,
-    EMBED;
-
+  public static class UserMessageTypeDeserializer implements ValueDeserializer<String, UserMessageType> {
     @Override
-    public ServerMessageType deserialize(String value, Optional<TypeConstraint> resultType, DeserializerContext ctx) {
+    public UserMessageType deserialize(String value, Optional<TypeConstraint> resultType, DeserializerContext ctx) {
       return switch (value) {
-        case "text" -> TEXT;
-        case "embed" -> EMBED;
-        default -> throw new IllegalArgumentException("Unknown ServerMessageType: " + value + " expected one of [text, embed]");
+        case "text" -> UserMessageType.TEXT;
+        case "webhook" -> UserMessageType.WEBHOOK;
+        case "embed" -> UserMessageType.EMBED;
+        default -> throw new IllegalArgumentException("Unknown UserMessageType: " + value + " expected one of [text, webhook, embed]");
       };
     }
+  }
+
+  public enum ServerMessageType {
+    TEXT,
+    EMBED;
 
     @Override
     public String toString() {
       return switch (this) {
         case TEXT -> "text";
         case EMBED -> "embed";
+      };
+    }
+  }
+
+  public static class ServerMessageTypeDeserializer implements ValueDeserializer<String, ServerMessageType> {
+    @Override
+    public ServerMessageType deserialize(String value, Optional<TypeConstraint> resultType, DeserializerContext ctx) {
+      return switch (value) {
+        case "text" -> ServerMessageType.TEXT;
+        case "embed" -> ServerMessageType.EMBED;
+        default -> throw new IllegalArgumentException("Unknown ServerMessageType: " + value + " expected one of [text, embed]");
       };
     }
   }

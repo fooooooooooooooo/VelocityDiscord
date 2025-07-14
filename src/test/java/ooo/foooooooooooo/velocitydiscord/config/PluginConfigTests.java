@@ -1,49 +1,19 @@
 package ooo.foooooooooooo.velocitydiscord.config;
 
-import com.electronwill.nightconfig.core.file.FileConfig;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.awt.*;
-import java.io.FileWriter;
-import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class PluginConfigTest {
+class PluginConfigTests {
   Logger logger = LoggerFactory.getLogger(PluginConfig.class);
-
-  private PluginConfig createConfig(String content, Path tempDir) {
-    var test = tempDir.resolve("test.toml");
-
-    try (var w = new FileWriter(test.toFile())) {
-      w.write(content);
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
-
-    var config = FileConfig.of(test);
-    config.load();
-
-    return new PluginConfig(config, this.logger);
-  }
-
-  private static String readResource(String path) {
-    try (var s = PluginConfigTest.class.getResourceAsStream(path)) {
-      if (s == null) {
-        fail("Resource not found: " + path);
-      }
-
-      return new String(s.readAllBytes());
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
-  }
 
   String invalidVersionTestConfig = """
     config_version = "1.0"
@@ -74,7 +44,7 @@ class PluginConfigTest {
     channel = "123456789012345678"
     
     [discord.chat]
-    message = { type = "embed", format = "test_format", embed_color = "awa" }
+    message = { type = "embed", format = "test_format", embed_color = "not-a-color" }
     """;
 
   String nullColorTestConfig = """
@@ -134,7 +104,7 @@ class PluginConfigTest {
   @Test
   void shouldThrowGivenInvalidConfigVersion(@TempDir Path tempDir) {
     try {
-      createConfig(this.invalidVersionTestConfig, tempDir);
+      TestUtils.createPluginConfig(this.invalidVersionTestConfig, tempDir);
 
       fail("Expected RuntimeException");
     } catch (RuntimeException e) {
@@ -144,28 +114,29 @@ class PluginConfigTest {
 
   @Test
   void shouldBeOptionalEmptyGivenEmptyColorString(@TempDir Path tempDir) {
-    var config = createConfig(this.emptyColorTestConfig, tempDir);
+    var config = TestUtils.createPluginConfig(this.emptyColorTestConfig, tempDir);
 
     assertEquals(Optional.empty(), config.getDiscordChatConfig().MESSAGE_EMBED_COLOR);
   }
 
   @Test
   void shouldThrowGivenInvalidColorFormat(@TempDir Path tempDir) {
-//    try {
-      var config = createConfig(this.invalidColorTestConfig, tempDir);
+    try {
+      var config = TestUtils.createPluginConfig(this.invalidColorTestConfig, tempDir);
 
       this.logger.info("Config loaded:\n{}", config.debug());
 
       fail("Expected RuntimeException");
-//    } catch (RuntimeException e) {
-//      assertInstanceOf(NumberFormatException.class, e.getCause());
-//      assertTrue(e.getCause().getMessage().contains("not-a-color"));
-//    }
+    } catch (RuntimeException e) {
+      assertInstanceOf(NumberFormatException.class, e.getCause());
+      this.logger.info("Caught exception: {}", e.getCause().getMessage());
+      assertTrue(e.getCause().getMessage().contains("not-a-color"));
+    }
   }
 
   @Test
   void shouldUseDefaultColorGivenNoColorSpecified(@TempDir Path tempDir) {
-    var config = createConfig(this.nullColorTestConfig, tempDir);
+    var config = TestUtils.createPluginConfig(this.nullColorTestConfig, tempDir);
 
     // Default is Optional.empty() based on the field declaration in DiscordChatConfig
     assertTrue(config.getDiscordChatConfig().MESSAGE_EMBED_COLOR.isEmpty());
@@ -174,7 +145,7 @@ class PluginConfigTest {
   @SuppressWarnings("OptionalGetWithoutIsPresent")
   @Test
   void shouldHandleServerOverrides(@TempDir Path tempDir) {
-    var config = createConfig(this.serverOverridesTestConfig, tempDir);
+    var config = TestUtils.createPluginConfig(this.serverOverridesTestConfig, tempDir);
 
     // Test main config
     assertEquals("main format", config.getDiscordChatConfig().MESSAGE_FORMAT.get());
@@ -204,8 +175,8 @@ class PluginConfigTest {
   @SuppressWarnings("OptionalGetWithoutIsPresent")
   @Test
   void shouldLoadConfig(@TempDir Path tempDir) {
-    var testConfig = readResource("/config.toml");
-    var config = createConfig(testConfig, tempDir);
+    var testConfig = TestUtils.readResource("/config.toml");
+    var config = TestUtils.createPluginConfig(testConfig, tempDir);
 
     // Test root level config
     assertEquals(PluginConfig.ConfigVersion, config.getInner().get("config_version"));
@@ -339,9 +310,8 @@ class PluginConfigTest {
 
   @Test
   void shouldLoadRealConfig(@TempDir Path tempDir) {
-    var testConfig = readResource("/real_test_config.toml");
-    var config = createConfig(testConfig, tempDir);
-
+    var testConfig = TestUtils.readResource("/real_test_config.toml");
+    var config = TestUtils.createPluginConfig(testConfig, tempDir);
 
     // Test root level config
     assertEquals(PluginConfig.ConfigVersion, config.getInner().get("config_version"));
