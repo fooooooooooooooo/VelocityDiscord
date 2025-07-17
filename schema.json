@@ -1,11 +1,51 @@
 {
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$schema": "http://json-schema.org/draft-07/schema",
   "title": "VelocityDiscord Config",
   "type": "object",
   "required": ["config_version", "discord"],
   "unevaluatedProperties": false,
-  "$defs": {
-    "message": {
+  "definitions": {
+    "webhook": {
+      "description": "Webhook configuration for Discord messages",
+      "type": "object",
+      "unevaluatedProperties": false,
+      "properties": {
+        "webhook_url": {
+          "description": "Full webhook URL to send more fancy Minecraft chat messages to",
+          "type": "string"
+        },
+        "avatar_url": {
+          "description": "Full URL of an avatar service to get the player's avatar from\n\nPlaceholders available: {uuid}, {username}",
+          "type": "string"
+        },
+        "webhook_username": {
+          "description": "The format of the webhook's username\n\nPlaceholders available: {username}, {server}",
+          "type": "string"
+        }
+      }
+    },
+    "system_message": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "description": "Type of message to send\n\n- text: Normal text only message with the associated format\n\n- embed: Discord embed with the format as the description field",
+          "type": "string",
+          "enum": ["text", "embed"]
+        },
+        "embed_color": {
+          "description": "Color of the embed in #RRGGBB format\n\nCan be disabled with false or \"\"",
+          "type": ["string", "boolean"],
+          "parsedAs": "java.awt.Color",
+          "disableable": true
+        },
+        "channel": {
+          "description": "Override channel for these messages\n\nCan be disabled with false or \"\"",
+          "type": ["string", "boolean"],
+          "disableable": true
+        }
+      }
+    },
+    "user_message": {
       "type": "object",
       "properties": {
         "type": {
@@ -15,12 +55,16 @@
         },
         "embed_color": {
           "description": "Color of the embed in #RRGGBB format\n\nCan be disabled with false or \"\"",
-          "type": ["string", "boolean"]
+          "type": ["string", "boolean"],
+          "parsedAs": "java.awt.Color",
+          "disableable": true
         },
         "channel": {
           "description": "Override channel for these messages\n\nCan be disabled with false or \"\"",
-          "type": ["string", "boolean"]
-        }
+          "type": ["string", "boolean"],
+          "disableable": true
+        },
+        "webhook": { "$ref": "#/definitions/webhook" }
       }
     },
     "discord_non_overridable": {
@@ -32,9 +76,10 @@
           "type": "string"
         },
         "activity_text": {
-          "description": "Activity text of the bot to show in Discord\n\nPlaceholders available: {amount}",
-          "type": "string",
-          "default": "with {amount} players online"
+          "description": "Activity text of the bot to show in Discord\n\nPlaceholders available: {amount}\n\nCan be disabled with \"\" or false",
+          "type": ["string", "boolean"],
+          "default": "with {amount} players online",
+          "disableable": true
         },
         "update_channel_topic_interval": {
           "description": "Set the interval (in minutes) for updating the channel topic\n\nUse a value of 0 to disable",
@@ -48,13 +93,15 @@
           "properties": {
             "format": {
               "description": "Format for the channel topic\n\nPlaceholders available:\n\n{players} - Total number of players online\n\n{player_list} - List of players (format is defined below)\n\n{servers} - Number of servers\n\n{server_list} - List of server names\n\n{hostname} - Server hostname\n\n{port} - Server port\n\n{motd} - Message of the Day (MOTD)\n\n{query_port} - Query port\n\n{max_players} - Maximum number of players\n\n{plugins} - Number of plugins\n\n{plugin_list} - List of plugin names\n\n{version} - Server version\n\n{software} - Software name\n\n{average_ping} - Average ping of all players\n\n{uptime} - Server uptime in hours and minutes\n\n{server[SERVERNAME]} - Dynamic placeholder for each server's name and status (e.g., {server[MyServer]}, {server[AnotherServer]}, {server[Lobby]}, etc.)",
-              "type": "string",
-              "default": "{players}/{max_players}\n{player_list}\n{hostname}:{port}\nUptime: {uptime}"
+              "type": ["string", "boolean"],
+              "default": "{players}/{max_players}\n{player_list}\n{hostname}:{port}\nUptime: {uptime}",
+              "disableable": true
             },
             "player_list_header": {
               "description": "Header for the player list\n\nCan be disabled with \"\" or false to hide the header and only show the player list",
-              "type": "string",
-              "default": "Players: "
+              "type": ["string", "boolean"],
+              "default": "Players: ",
+              "disableable": true
             },
             "player_list_max_count": {
               "description": "Maximum amount of players to show in the player list",
@@ -63,8 +110,9 @@
             },
             "player_list_no_players_header": {
               "description": "Header for when no players are online\n\nCan be disabled with \"\" or false to hide the list completely when no players are online",
-              "type": "string",
-              "default": "No players online"
+              "type": ["string", "boolean"],
+              "default": "No players online",
+              "disableable": true
             },
             "player_list_player": {
               "description": "Format for each player in the player list\n\nPlaceholders available: {username}, {ping}",
@@ -83,8 +131,9 @@
             },
             "server_offline": {
               "description": "Template for server[SERVERNAME] placeholder in the channel topic when the server is offline\n\nPlaceholders available: {name}\n\nCan be disabled with false or \"\"",
-              "type": "string",
-              "default": "{name}: Offline"
+              "type": ["string", "boolean"],
+              "default": "{name}: Offline",
+              "disableable": true
             }
           }
         },
@@ -134,7 +183,7 @@
                     }
                   }
                 },
-                { "$ref": "#/$defs/message" }
+                { "$ref": "#/definitions/system_message" }
               ]
             },
             "proxy_stop": {
@@ -152,7 +201,7 @@
                     }
                   }
                 },
-                { "$ref": "#/$defs/message" }
+                { "$ref": "#/definitions/system_message" }
               ]
             }
           }
@@ -182,22 +231,22 @@
           "description": "Enable @everyone and @here pings from Minecraft chat",
           "type": "boolean"
         },
-        "webhook": {
-          "description": "Webhook configuration for Discord messages",
+        "webhook": { "$ref": "#/definitions/webhook" },
+        "channel_topic": {
+          "description": "Configuration for the channel topic",
           "type": "object",
-          "unevaluatedProperties": false,
           "properties": {
-            "webhook_url": {
-              "description": "Full webhook URL to send more fancy Minecraft chat messages to",
-              "type": "string"
+            "server": {
+              "description": "Template for server[SERVERNAME] placeholder in the channel topic\n\nPlaceholders available: {name}, {players}, {max_players}, {motd}, {version}, {protocol}",
+              "type": ["string", "boolean"],
+              "default": "{name}: {players}/{max_players}",
+              "disableable": true
             },
-            "avatar_url": {
-              "description": "Full URL of an avatar service to get the player's avatar from\n\nPlaceholders available: {uuid}, {username}",
-              "type": "string"
-            },
-            "webhook_username": {
-              "description": "The format of the webhook's username\n\nPlaceholders available: {username}, {server}",
-              "type": "string"
+            "server_offline": {
+              "description": "Template for server[SERVERNAME] placeholder in the channel topic when the server is offline\n\nPlaceholders available: {name}\n\nCan be disabled with false or \"\"",
+              "type": ["string", "boolean"],
+              "default": "{name}: Offline",
+              "disableable": true
             }
           }
         },
@@ -206,6 +255,7 @@
           "type": "object",
           "properties": {
             "message": {
+              "type": "object",
               "description": "Configuration for player chat messages",
               "unevaluatedProperties": false,
               "allOf": [
@@ -214,11 +264,12 @@
                   "properties": {
                     "format": {
                       "description": "Format for chat messages\n\nPlaceholders available: {username}, {prefix}, {server}, {message}\n\nCan be disabled with false or \"\"",
-                      "type": ["string", "boolean"]
+                      "type": ["string", "boolean"],
+                      "disableable": true
                     }
                   }
                 },
-                { "$ref": "#/$defs/message" }
+                { "$ref": "#/definitions/user_message" }
               ]
             },
             "join": {
@@ -231,11 +282,12 @@
                   "properties": {
                     "format": {
                       "description": "Format for join messages\n\nPlaceholders available: {username}, {prefix}, {server}\n\nCan be disabled with false or \"\"",
-                      "type": ["string", "boolean"]
+                      "type": ["string", "boolean"],
+                      "disableable": true
                     }
                   }
                 },
-                { "$ref": "#/$defs/message" }
+                { "$ref": "#/definitions/user_message" }
               ]
             },
             "leave": {
@@ -248,11 +300,12 @@
                   "properties": {
                     "format": {
                       "description": "Format for leave messages\n\nPlaceholders available: {username}, {prefix}, {server}\n\nCan be disabled with false or \"\"",
-                      "type": ["string", "boolean"]
+                      "type": ["string", "boolean"],
+                      "disableable": true
                     }
                   }
                 },
-                { "$ref": "#/$defs/message" }
+                { "$ref": "#/definitions/user_message" }
               ]
             },
             "disconnect": {
@@ -265,11 +318,12 @@
                   "properties": {
                     "format": {
                       "description": "Format for disconnect messages\n\nPlaceholders available: {username}, {prefix}\n\nCan be disabled with false or \"\"",
-                      "type": ["string", "boolean"]
+                      "type": ["string", "boolean"],
+                      "disableable": true
                     }
                   }
                 },
-                { "$ref": "#/$defs/message" }
+                { "$ref": "#/definitions/user_message" }
               ]
             },
             "server_switch": {
@@ -282,11 +336,12 @@
                   "properties": {
                     "format": {
                       "description": "Format for server switch messages\n\nPlaceholders available: {username}, {prefix}, {current}, {previous}\n\nCan be disabled with false or \"\"",
-                      "type": ["string", "boolean"]
+                      "type": ["string", "boolean"],
+                      "disableable": true
                     }
                   }
                 },
-                { "$ref": "#/$defs/message" }
+                { "$ref": "#/definitions/user_message" }
               ]
             },
             "death_message": {
@@ -299,11 +354,12 @@
                   "properties": {
                     "format": {
                       "description": "Format for death messages\n\nPlaceholders available: {username}, {death_message}\n\nCan be disabled with false or \"\"",
-                      "type": ["string", "boolean"]
+                      "type": ["string", "boolean"],
+                      "disableable": true
                     }
                   }
                 },
-                { "$ref": "#/$defs/message" }
+                { "$ref": "#/definitions/user_message" }
               ]
             },
             "advancement": {
@@ -316,11 +372,12 @@
                   "properties": {
                     "format": {
                       "description": "Format for advancement messages\n\nPlaceholders available: {username}, {advancement_title}, {advancement_description}\n\nCan be disabled with false or \"\"",
-                      "type": ["string", "boolean"]
+                      "type": ["string", "boolean"],
+                      "disableable": true
                     }
                   }
                 },
-                { "$ref": "#/$defs/message" }
+                { "$ref": "#/definitions/user_message" }
               ]
             },
             "server_start": {
@@ -334,11 +391,12 @@
                     "format": {
                       "description": "Format for server start messages\n\nPlaceholders available: {server}\n\nCan be disabled with false or \"\"",
                       "type": ["string", "boolean"],
-                      "default": "**{server} has started**"
+                      "default": "**{server} has started**",
+                      "disableable": true
                     }
                   }
                 },
-                { "$ref": "#/$defs/message" }
+                { "$ref": "#/definitions/user_message" }
               ]
             },
             "server_stop": {
@@ -352,11 +410,12 @@
                     "format": {
                       "description": "Format for server stop messages\n\nPlaceholders available: {server}\n\nCan be disabled with false or \"\"",
                       "type": ["string", "boolean"],
-                      "default": "**{server} has stopped**"
+                      "default": "**{server} has stopped**",
+                      "disableable": true
                     }
                   }
                 },
-                { "$ref": "#/$defs/message" }
+                { "$ref": "#/definitions/user_message" }
               ]
             }
           }
@@ -372,7 +431,8 @@
                 "no_players": {
                   "description": "Message to show when no players are online",
                   "type": "string",
-                  "default": "No players online"
+                  "default": "No players online",
+                  "disableable": true
                 },
                 "player_format": {
                   "description": "Format for each player in the list",
@@ -387,7 +447,8 @@
                 "server_offline": {
                   "description": "Message to show when a server is offline",
                   "type": "string",
-                  "default": "Server offline"
+                  "default": "Server offline",
+                  "disableable": true
                 }
               }
             }
@@ -425,7 +486,8 @@
         },
         "links": {
           "description": "Format for links in chat messages\n\nUses MiniMessage format\n\nPlaceholders available: {url}, {link_color}\n\nCan be disabled with \"\" or false",
-          "type": ["string", "boolean"]
+          "type": ["string", "boolean"],
+          "disableable": true
         },
         "discord_color": {
           "description": "Color for Discord tag in MiniMessage format",
@@ -442,7 +504,7 @@
         "role_prefixes": {
           "description": "Role prefixes for Discord users using MiniMessage format\n\nExample format:\n\n\"123456789\" = \"<dark_gray>[</dark_gray><red><b>OWNER</b></red><dark_gray>]</dark_gray>\"",
           "type": "object",
-          "unevaluatedProperties": {
+          "additionalProperties": {
             "type": "string"
           }
         }
@@ -482,39 +544,38 @@
     "server_names": {
       "description": "Server display names\n\nIf a server is not found in this list, the server name (from velocity.toml) will be used instead",
       "type": "object",
-      "unevaluatedProperties": {
+      "additionalProperties": {
         "type": "string"
       },
       "default": {}
     },
     "discord": {
+      "title": "Discord Bot",
       "description": "Discord bot configuration",
       "type": "object",
       "unevaluatedProperties": false,
-      "allOf": [
-        { "$ref": "#/$defs/discord_overridable" },
-        { "$ref": "#/$defs/discord_non_overridable" }
-      ]
+      "allOf": [{ "$ref": "#/definitions/discord_overridable" }, { "$ref": "#/definitions/discord_non_overridable" }]
     },
     "minecraft": {
+      "title": "Minecraft Chat",
       "description": "Discord > Minecraft message formats\n\nUses XML-like formatting with https://docs.advntr.dev/minimessage/format.html",
       "type": "object",
       "unevaluatedProperties": false,
-      "$ref": "#/$defs/minecraft_overridable"
+      "$ref": "#/definitions/minecraft_overridable"
     },
     "override": {
       "description": "Server-specific configuration overrides",
       "type": "object",
-      "unevaluatedProperties": {
+      "additionalProperties": {
         "description": "Configuration override for a specific server",
         "type": "object",
         "unevaluatedProperties": false,
         "properties": {
           "discord": {
-            "$ref": "#/$defs/discord_overridable"
+            "$ref": "#/definitions/discord_overridable"
           },
           "minecraft": {
-            "$ref": "#/$defs/minecraft_overridable"
+            "$ref": "#/definitions/minecraft_overridable"
           }
         }
       }
