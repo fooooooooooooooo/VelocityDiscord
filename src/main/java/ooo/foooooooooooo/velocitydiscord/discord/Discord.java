@@ -18,10 +18,9 @@ import net.dv8tion.jda.api.utils.messages.MessageCreateBuilder;
 import net.dv8tion.jda.api.utils.messages.MessageCreateData;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import ooo.foooooooooooo.velocitydiscord.VelocityDiscord;
-import ooo.foooooooooooo.velocitydiscord.config.DiscordChatConfig;
-import ooo.foooooooooooo.velocitydiscord.config.DiscordChatConfig.ServerMessageType;
-import ooo.foooooooooooo.velocitydiscord.config.ServerConfig;
-import ooo.foooooooooooo.velocitydiscord.config.WebhookConfig;
+import ooo.foooooooooooo.velocitydiscord.config.Webhook;
+import ooo.foooooooooooo.velocitydiscord.config.definitions.LocalConfig;
+import ooo.foooooooooooo.velocitydiscord.config.definitions.WebhookConfig;
 import ooo.foooooooooooo.velocitydiscord.discord.commands.ICommand;
 import ooo.foooooooooooo.velocitydiscord.discord.commands.ListCommand;
 import ooo.foooooooooooo.velocitydiscord.discord.message.IQueuedMessage;
@@ -68,27 +67,25 @@ public class Discord extends ListenerAdapter {
   }
 
   public void onConfigReload() {
-    if (VelocityDiscord.CONFIG.getDiscordConfig().COMMANDS_LIST_GLOBAL.ENABLED) {
+    if (VelocityDiscord.CONFIG.global.discord.commands.list.enabled) {
       this.commands.put(ListCommand.COMMAND_NAME, new ListCommand());
     }
 
-    if (!VelocityDiscord.CONFIG.BOT.TOKEN.equals(this.lastToken)) {
+    if (!VelocityDiscord.CONFIG.global.discord.token.equals(this.lastToken)) {
       if (this.jda != null) {
         shutdown();
       }
 
-      var builder = JDABuilder.createDefault(VelocityDiscord.CONFIG.BOT.TOKEN)
+      var builder = JDABuilder.createDefault(VelocityDiscord.CONFIG.global.discord.token)
         // this seems to download all users at bot startup and keep internal cache updated
         // without it, sometimes mentions miss when they shouldn't
-        .setChunkingFilter(ChunkingFilter.ALL)
-        .enableIntents(GatewayIntent.GUILD_MEMBERS, GatewayIntent.GUILD_MESSAGES, GatewayIntent.MESSAGE_CONTENT)
+        .setChunkingFilter(ChunkingFilter.ALL).enableIntents(GatewayIntent.GUILD_MEMBERS, GatewayIntent.GUILD_MESSAGES, GatewayIntent.MESSAGE_CONTENT)
         // mentions always miss without this
-        .setMemberCachePolicy(MemberCachePolicy.ALL)
-        .addEventListeners(this.messageListener, this);
+        .setMemberCachePolicy(MemberCachePolicy.ALL).addEventListeners(this.messageListener, this);
 
       try {
         this.jda = builder.build();
-        this.lastToken = VelocityDiscord.CONFIG.BOT.TOKEN;
+        this.lastToken = VelocityDiscord.CONFIG.global.discord.token;
       } catch (Exception e) {
         VelocityDiscord.LOGGER.error("Failed to login to discord:", e);
       }
@@ -106,11 +103,7 @@ public class Discord extends ListenerAdapter {
 
   @Override
   public void onReady(@Nonnull ReadyEvent event) {
-    VelocityDiscord.LOGGER.info(
-      "Bot ready, Guilds: {} ({} available)",
-      event.getGuildTotalCount(),
-      event.getGuildAvailableCount()
-    );
+    VelocityDiscord.LOGGER.info("Bot ready, Guilds: {} ({} available)", event.getGuildTotalCount(), event.getGuildAvailableCount());
 
     loadChannels();
 
@@ -122,21 +115,20 @@ public class Discord extends ListenerAdapter {
   }
 
   private void loadChannels() {
-    this.mainChannel = loadChannel(VelocityDiscord.CONFIG.getDiscordConfig().MAIN_CHANNEL_ID);
-    this.proxyStartChannel =
-      loadChannel(VelocityDiscord.CONFIG.DISCORD_CHAT_PROXY.START_CHANNEL.orElse(VelocityDiscord.CONFIG.getDiscordConfig().MAIN_CHANNEL_ID));
-    this.proxyStopChannel =
-      loadChannel(VelocityDiscord.CONFIG.DISCORD_CHAT_PROXY.STOP_CHANNEL.orElse(VelocityDiscord.CONFIG.getDiscordConfig().MAIN_CHANNEL_ID));
+    var defaultChannelId = VelocityDiscord.CONFIG.local.discord.defaultChannelId;
+    this.mainChannel = loadChannel(defaultChannelId);
+    this.proxyStartChannel = loadChannel(VelocityDiscord.CONFIG.global.discord.chat.proxyStart.channel.orElse(defaultChannelId));
+    this.proxyStopChannel = loadChannel(VelocityDiscord.CONFIG.global.discord.chat.proxyStop.channel.orElse(defaultChannelId));
 
     this.serverChannels.clear();
     for (var server : VelocityDiscord.SERVER.getAllServers()) {
       var serverName = server.getServerInfo().getName();
       var config = VelocityDiscord.CONFIG.getServerConfig(serverName);
-      var defaultChannel = this.jda.getTextChannelById(config.getDiscordConfig().MAIN_CHANNEL_ID);
-      this.serverChannels.put(serverName, new Channels(this, serverName, config, defaultChannel));
+      var defaultChannel = this.jda.getTextChannelById(config.getDiscordConfig().defaultChannelId);
+      this.serverChannels.put(serverName, new Channels(this, serverName, config.local, defaultChannel));
     }
 
-    this.defaultChannels = new Channels(this, "default", VelocityDiscord.CONFIG, this.mainChannel);
+    this.defaultChannels = new Channels(this, "default", VelocityDiscord.CONFIG.local, this.mainChannel);
 
     this.messageListener.onServerChannelsUpdated();
 
@@ -144,10 +136,7 @@ public class Discord extends ListenerAdapter {
     this.mentionCompletions.clear();
     for (var channels : this.serverChannels.values()) {
       var members = channels.chatChannel.getMembers();
-      this.mentionCompletions.put(
-        channels.serverName,
-        members.stream().map((m -> "@" + m.getUser().getName())).toList()
-      );
+      this.mentionCompletions.put(channels.serverName, members.stream().map((m -> "@" + m.getUser().getName())).toList());
     }
 
     if (!this.commands.isEmpty()) {
@@ -180,32 +169,31 @@ public class Discord extends ListenerAdapter {
   public void onPlayerChat(String username, String uuid, Optional<String> prefix, String server, String content) {
     var serverConfig = VelocityDiscord.CONFIG.getServerConfig(server);
     var serverBotConfig = serverConfig.getDiscordConfig();
-    var serverDiscordConfig = serverConfig.getDiscordChatConfig();
+    var serverDiscordConfig = serverConfig.getChatConfig();
 
     content = filterRawPings(content);
 
-    if (serverBotConfig.ENABLE_MENTIONS) {
+    if (serverBotConfig.enableMentions) {
       content = parseMentions(server, content);
     }
 
-    if (!serverBotConfig.ENABLE_EVERYONE_AND_HERE) {
+    if (!serverBotConfig.enableEveryoneAndHere) {
       content = filterEveryoneAndHere(content);
     }
 
-    if (serverDiscordConfig.MESSAGE_FORMAT.isPresent()) {
-      var message = new StringTemplate(serverDiscordConfig.MESSAGE_FORMAT.get())
-        .add("username", username)
+    if (serverDiscordConfig.message.format.isPresent()) {
+      var message = new StringTemplate(serverDiscordConfig.message.format.get()).add("username", username)
         .add("server", VelocityDiscord.CONFIG.serverName(server))
         .add("message", content)
         .add("prefix", prefix.orElse(""))
         .toString();
 
       var targetChannel = getServerChannels(server).chatChannel;
-      switch (serverDiscordConfig.MESSAGE_TYPE) {
-        case EMBED -> sendEmbedMessage(targetChannel, message, serverDiscordConfig.MESSAGE_EMBED_COLOR);
+      switch (serverDiscordConfig.message.type) {
+        case EMBED -> sendEmbedMessage(targetChannel, message, serverDiscordConfig.message.embedColor);
         case TEXT -> sendMessage(targetChannel, message);
-        case WEBHOOK -> sendWebhookMessage(uuid, username, server, content, DiscordChatConfig.MessageCategory.MESSAGE);
-        default -> throw new IllegalArgumentException("Unexpected value: " + serverDiscordConfig.MESSAGE_TYPE);
+        case WEBHOOK -> sendWebhookMessage(uuid, username, server, content, MessageCategory.MESSAGE);
+        default -> throw new IllegalArgumentException("Unexpected value: " + serverDiscordConfig.message.type);
       }
     }
   }
@@ -222,42 +210,34 @@ public class Discord extends ListenerAdapter {
   public void onJoin(Player player, Optional<String> prefix, String server) {
     sendChatCompletions(server, player);
 
-    var serverDiscordConfig = VelocityDiscord.CONFIG.getServerConfig(server).getDiscordChatConfig();
+    var serverDiscordConfig = VelocityDiscord.CONFIG.getServerConfig(server).getChatConfig();
 
-    if (serverDiscordConfig.JOIN_FORMAT.isEmpty()) {
+    if (serverDiscordConfig.join.format.isEmpty()) {
       return;
     }
 
-    var message = new StringTemplate(serverDiscordConfig.JOIN_FORMAT.get())
-      .add("username", player.getUsername())
+    var message = new StringTemplate(serverDiscordConfig.join.format.get()).add("username", player.getUsername())
       .add("server", VelocityDiscord.CONFIG.serverName(server))
       .add("prefix", prefix.orElse(""))
       .toString();
 
     var targetChannel = getServerChannels(server).joinChannel;
-    switch (serverDiscordConfig.JOIN_TYPE) {
-      case EMBED -> sendEmbedMessage(targetChannel, message, serverDiscordConfig.JOIN_EMBED_COLOR);
+    switch (serverDiscordConfig.join.type) {
+      case EMBED -> sendEmbedMessage(targetChannel, message, serverDiscordConfig.join.embedColor);
       case TEXT -> sendMessage(targetChannel, message);
-      case WEBHOOK -> sendWebhookMessage(
-        player.getUniqueId().toString(),
-        player.getUsername(),
-        server,
-        message,
-        DiscordChatConfig.MessageCategory.JOIN
-      );
+      case WEBHOOK -> sendWebhookMessage(player.getUniqueId().toString(), player.getUsername(), server, message, MessageCategory.JOIN);
     }
   }
 
   @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
   public void onServerSwitch(String username, String uuid, Optional<String> prefix, String current, String previous) {
-    var serverDiscordConfig = VelocityDiscord.CONFIG.getServerConfig(current).getDiscordChatConfig();
+    var serverDiscordConfig = VelocityDiscord.CONFIG.getServerConfig(current).getChatConfig();
 
-    if (serverDiscordConfig.SERVER_SWITCH_FORMAT.isEmpty()) {
+    if (serverDiscordConfig.serverSwitch.format.isEmpty()) {
       return;
     }
 
-    var message = new StringTemplate(serverDiscordConfig.SERVER_SWITCH_FORMAT.get())
-      .add("username", username)
+    var message = new StringTemplate(serverDiscordConfig.serverSwitch.format.get()).add("username", username)
       .add("current", VelocityDiscord.CONFIG.serverName(current))
       .add("previous", VelocityDiscord.CONFIG.serverName(previous))
       .add("prefix", prefix.orElse(""))
@@ -265,173 +245,146 @@ public class Discord extends ListenerAdapter {
 
     // todo: send to current or previous server or both
     var targetChannel = getServerChannels(current).serverSwitchChannel;
-    switch (serverDiscordConfig.SERVER_SWITCH_TYPE) {
-      case EMBED -> sendEmbedMessage(targetChannel, message, serverDiscordConfig.SERVER_SWITCH_EMBED_COLOR);
+    switch (serverDiscordConfig.serverSwitch.type) {
+      case EMBED -> sendEmbedMessage(targetChannel, message, serverDiscordConfig.serverSwitch.embedColor);
       case TEXT -> sendMessage(targetChannel, message);
-      case WEBHOOK -> sendWebhookMessage(uuid, username, current, message, DiscordChatConfig.MessageCategory.SERVER_SWITCH);
+      case WEBHOOK -> sendWebhookMessage(uuid, username, current, message, MessageCategory.SERVER_SWITCH);
     }
   }
 
   @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
   public void onDisconnect(String username, String uuid, Optional<String> prefix, String server) {
-    var serverDiscordConfig = VelocityDiscord.CONFIG.getServerConfig(server).getDiscordChatConfig();
+    var serverDiscordConfig = VelocityDiscord.CONFIG.getServerConfig(server).getChatConfig();
 
-    if (serverDiscordConfig.DISCONNECT_FORMAT.isEmpty()) {
+    if (serverDiscordConfig.disconnect.format.isEmpty()) {
       return;
     }
 
-    var message = new StringTemplate(serverDiscordConfig.DISCONNECT_FORMAT.get())
-      .add("username", username)
-      .add("prefix", prefix.orElse(""))
-      .toString();
+    var message = new StringTemplate(serverDiscordConfig.disconnect.format.get()).add("username", username).add("prefix", prefix.orElse("")).toString();
 
     var targetChannel = getServerChannels(server).disconnectChannel;
-    switch (serverDiscordConfig.DISCONNECT_TYPE) {
-      case EMBED -> sendEmbedMessage(targetChannel, message, serverDiscordConfig.DISCONNECT_EMBED_COLOR);
+    switch (serverDiscordConfig.disconnect.type) {
+      case EMBED -> sendEmbedMessage(targetChannel, message, serverDiscordConfig.disconnect.embedColor);
       case TEXT -> sendMessage(targetChannel, message);
-      case WEBHOOK -> sendWebhookMessage(uuid, username, server, message, DiscordChatConfig.MessageCategory.DISCONNECT);
+      case WEBHOOK -> sendWebhookMessage(uuid, username, server, message, MessageCategory.DISCONNECT);
     }
   }
 
   @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
   public void onLeave(String username, String uuid, Optional<String> prefix, String server) {
-    var serverDiscordConfig = VelocityDiscord.CONFIG.getServerConfig(server).getDiscordChatConfig();
+    var serverDiscordConfig = VelocityDiscord.CONFIG.getServerConfig(server).getChatConfig();
 
-    if (serverDiscordConfig.LEAVE_FORMAT.isEmpty()) {
+    if (serverDiscordConfig.leave.format.isEmpty()) {
       return;
     }
 
-    var message = new StringTemplate(serverDiscordConfig.LEAVE_FORMAT.get())
-      .add("username", username)
+    var message = new StringTemplate(serverDiscordConfig.leave.format.get()).add("username", username)
       .add("server", VelocityDiscord.CONFIG.serverName(server))
       .add("prefix", prefix.orElse(""))
       .toString();
 
     var targetChannel = getServerChannels(server).leaveChannel;
-    switch (serverDiscordConfig.LEAVE_TYPE) {
-      case EMBED -> sendEmbedMessage(targetChannel, message, serverDiscordConfig.LEAVE_EMBED_COLOR);
+    switch (serverDiscordConfig.leave.type) {
+      case EMBED -> sendEmbedMessage(targetChannel, message, serverDiscordConfig.leave.embedColor);
       case TEXT -> sendMessage(targetChannel, message);
-      case WEBHOOK -> sendWebhookMessage(uuid, username, server, message, DiscordChatConfig.MessageCategory.LEAVE);
+      case WEBHOOK -> sendWebhookMessage(uuid, username, server, message, MessageCategory.LEAVE);
     }
   }
 
   public void onPlayerDeath(String username, String uuid, String server, String displayName, String death) {
-    var serverDiscordConfig = VelocityDiscord.CONFIG.getServerConfig(server).getDiscordChatConfig();
+    var serverDiscordConfig = VelocityDiscord.CONFIG.getServerConfig(server).getChatConfig();
 
-    if (serverDiscordConfig.DEATH_FORMAT.isEmpty()) return;
+    if (serverDiscordConfig.death.format.isEmpty()) return;
 
-    var message = new StringTemplate(serverDiscordConfig.DEATH_FORMAT.get())
-      .add("username", username)
+    var message = new StringTemplate(serverDiscordConfig.death.format.get()).add("username", username)
       .add("displayname", displayName)
       .add("death_message", death)
       .toString();
 
     var targetChannel = getServerChannels(server).deathChannel;
-    switch (serverDiscordConfig.DEATH_TYPE) {
-      case EMBED -> sendEmbedMessage(targetChannel, message, serverDiscordConfig.DEATH_EMBED_COLOR);
+    switch (serverDiscordConfig.death.type) {
+      case EMBED -> sendEmbedMessage(targetChannel, message, serverDiscordConfig.death.embedColor);
       case TEXT -> sendMessage(targetChannel, message);
-      case WEBHOOK -> sendWebhookMessage(uuid, username, server, message, DiscordChatConfig.MessageCategory.DEATH);
+      case WEBHOOK -> sendWebhookMessage(uuid, username, server, message, MessageCategory.DEATH);
     }
   }
 
-  public void onPlayerAdvancement(
-    String username,
-    String uuid,
-    String server,
-    String displayname,
-    String title,
-    String description
-  ) {
-    var serverDiscordConfig = VelocityDiscord.CONFIG.getServerConfig(server).getDiscordChatConfig();
+  public void onPlayerAdvancement(String username, String uuid, String server, String displayname, String title, String description) {
+    var serverDiscordConfig = VelocityDiscord.CONFIG.getServerConfig(server).getChatConfig();
 
-    if (serverDiscordConfig.ADVANCEMENT_FORMAT.isEmpty()) return;
+    if (serverDiscordConfig.advancement.format.isEmpty()) return;
 
-    var message = new StringTemplate(serverDiscordConfig.ADVANCEMENT_FORMAT.get())
-      .add("username", username)
+    var message = new StringTemplate(serverDiscordConfig.advancement.format.get()).add("username", username)
       .add("displayname", displayname)
       .add("advancement_title", title)
       .add("advancement_description", description)
       .toString();
 
     var targetChannel = getServerChannels(server).advancementChannel;
-    switch (serverDiscordConfig.ADVANCEMENT_TYPE) {
-      case EMBED -> sendEmbedMessage(targetChannel, message, serverDiscordConfig.ADVANCEMENT_EMBED_COLOR);
+    switch (serverDiscordConfig.advancement.type) {
+      case EMBED -> sendEmbedMessage(targetChannel, message, serverDiscordConfig.advancement.embedColor);
       case TEXT -> sendMessage(targetChannel, message);
-      case WEBHOOK -> sendWebhookMessage(uuid, username, server, message, DiscordChatConfig.MessageCategory.ADVANCEMENT);
+      case WEBHOOK -> sendWebhookMessage(uuid, username, server, message, MessageCategory.ADVANCEMENT);
     }
   }
 
   public void onProxyInitialize() {
-    if (VelocityDiscord.CONFIG.DISCORD_CHAT_PROXY.START_FORMAT.isPresent()) {
-      var message = VelocityDiscord.CONFIG.DISCORD_CHAT_PROXY.START_FORMAT.get();
+    if (VelocityDiscord.CONFIG.global.discord.chat.proxyStart.format.isPresent()) {
+      var message = VelocityDiscord.CONFIG.global.discord.chat.proxyStart.format.get();
 
-      switch (VelocityDiscord.CONFIG.DISCORD_CHAT_PROXY.START_TYPE) {
-        case ServerMessageType.EMBED -> sendEmbedMessage(
-          this.proxyStartChannel,
-          message,
-          VelocityDiscord.CONFIG.getDiscordChatConfig().SERVER_START_EMBED_COLOR
-        );
-        case ServerMessageType.TEXT -> sendMessage(this.proxyStartChannel, message);
+      switch (VelocityDiscord.CONFIG.global.discord.chat.proxyStart.type) {
+        case EMBED -> sendEmbedMessage(this.proxyStartChannel, message, VelocityDiscord.CONFIG.global.discord.chat.proxyStart.embedColor);
+        case TEXT -> sendMessage(this.proxyStartChannel, message);
       }
     }
   }
 
   public void onProxyShutdown() {
-    if (VelocityDiscord.CONFIG.DISCORD_CHAT_PROXY.STOP_FORMAT.isPresent()) {
-      var message = VelocityDiscord.CONFIG.DISCORD_CHAT_PROXY.STOP_FORMAT.get();
+    if (VelocityDiscord.CONFIG.global.discord.chat.proxyStop.format.isPresent()) {
+      var message = VelocityDiscord.CONFIG.global.discord.chat.proxyStop.format.get();
 
-      switch (VelocityDiscord.CONFIG.DISCORD_CHAT_PROXY.STOP_TYPE) {
-        case ServerMessageType.EMBED -> sendEmbedMessage(
-          this.proxyStopChannel,
-          message,
-          VelocityDiscord.CONFIG.DISCORD_CHAT_PROXY.STOP_EMBED_COLOR
-        );
-        case ServerMessageType.TEXT -> sendMessage(this.proxyStopChannel, message);
+      switch (VelocityDiscord.CONFIG.global.discord.chat.proxyStop.type) {
+        case EMBED -> sendEmbedMessage(this.proxyStopChannel, message, VelocityDiscord.CONFIG.global.discord.chat.proxyStop.embedColor);
+        case TEXT -> sendMessage(this.proxyStopChannel, message);
       }
     }
   }
 
   public void onServerStart(String server) {
-    var serverDiscordConfig = VelocityDiscord.CONFIG.getServerConfig(server).getDiscordChatConfig();
+    var serverDiscordConfig = VelocityDiscord.CONFIG.getServerConfig(server).getChatConfig();
 
-    if (serverDiscordConfig.SERVER_START_FORMAT.isPresent()) {
-      var message = new StringTemplate(serverDiscordConfig.SERVER_START_FORMAT.get())
-        .add("server", VelocityDiscord.CONFIG.serverName(server))
-        .toString();
+    if (serverDiscordConfig.serverStart.format.isPresent()) {
+      var message = new StringTemplate(serverDiscordConfig.serverStart.format.get()).add("server", VelocityDiscord.CONFIG.serverName(server)).toString();
 
       var targetChannel = this.serverChannels.get(server).serverStartChannel;
-      switch (serverDiscordConfig.SERVER_START_TYPE) {
-        case EMBED -> sendEmbedMessage(targetChannel, message, serverDiscordConfig.SERVER_START_EMBED_COLOR);
+      switch (serverDiscordConfig.serverStart.type) {
+        case EMBED -> sendEmbedMessage(targetChannel, message, serverDiscordConfig.serverStart.embedColor);
         case TEXT -> sendMessage(targetChannel, message);
       }
     }
   }
 
   public void onServerStop(String server) {
-    var serverDiscordConfig = VelocityDiscord.CONFIG.getServerConfig(server).getDiscordChatConfig();
+    var serverDiscordConfig = VelocityDiscord.CONFIG.getServerConfig(server).getChatConfig();
 
-    if (serverDiscordConfig.SERVER_STOP_FORMAT.isPresent()) {
-      var message = new StringTemplate(serverDiscordConfig.SERVER_STOP_FORMAT.get())
-        .add("server", VelocityDiscord.CONFIG.serverName(server))
-        .toString();
+    if (serverDiscordConfig.serverStart.format.isPresent()) {
+      var message = new StringTemplate(serverDiscordConfig.serverStart.format.get()).add("server", VelocityDiscord.CONFIG.serverName(server)).toString();
 
       var targetChannel = this.serverChannels.get(server).serverStopChannel;
-      switch (serverDiscordConfig.SERVER_STOP_TYPE) {
-        case EMBED -> sendEmbedMessage(targetChannel, message, serverDiscordConfig.SERVER_STOP_EMBED_COLOR);
+      switch (serverDiscordConfig.serverStart.type) {
+        case EMBED -> sendEmbedMessage(targetChannel, message, serverDiscordConfig.serverStart.embedColor);
         case TEXT -> sendMessage(targetChannel, message);
       }
     }
   }
 
   public void updateActivityPlayerAmount(int count) {
-    if (VelocityDiscord.CONFIG.BOT.ACTIVITY_FORMAT.isEmpty() || !this.ready) {
+    if (VelocityDiscord.CONFIG.global.discord.activityText.isEmpty() || !this.ready) {
       return;
     }
 
     if (this.lastPlayerCount != count) {
-      var message = new StringTemplate(VelocityDiscord.CONFIG.BOT.ACTIVITY_FORMAT.get())
-        .add("amount", count)
-        .toString();
+      var message = new StringTemplate(VelocityDiscord.CONFIG.global.discord.activityText.get()).add("amount", count).toString();
 
       this.jda.getPresence().setActivity(Activity.playing(message));
 
@@ -441,8 +394,8 @@ public class Discord extends ListenerAdapter {
 
   // todo: per server channel overrides for topic
   public String generateChannelTopic() {
-    var config = VelocityDiscord.CONFIG.getDiscordConfig();
-    if (config.TOPIC_FORMAT.isEmpty()) return null;
+    var config = VelocityDiscord.CONFIG.local.discord;
+    if (config.channelTopic.format.isEmpty()) return null;
 
     // Collect additional information
     var playerCount = VelocityDiscord.SERVER.getPlayerCount();
@@ -450,47 +403,36 @@ public class Discord extends ListenerAdapter {
     var playerList = "";
 
     // only generate player list if it's in the TOPIC_FORMAT
-    if (config.TOPIC_FORMAT.get().contains("{player_list}")) {
-      var players = VelocityDiscord.SERVER
-        .getAllPlayers()
+    if (config.channelTopic.format.get().contains("{player_list}")) {
+      var players = VelocityDiscord.SERVER.getAllPlayers()
         .stream()
-        .limit(config.TOPIC_PLAYER_LIST_MAX_COUNT)
-        .map(player -> new StringTemplate(config.TOPIC_PLAYER_LIST_FORMAT)
-          .add("username", player.getUsername())
-          .add("ping", player.getPing())
-          .toString())
-        .reduce("", (a, b) -> a + config.TOPIC_PLAYER_LIST_SEPARATOR + b);
+        .limit(config.channelTopic.playerListMaxCount)
+        .map(player -> new StringTemplate(config.channelTopic.playerListPlayerFormat).add("username", player.getUsername()).add("ping", player.getPing()).toString())
+        .reduce("", (a, b) -> a + config.channelTopic.playerListSeparator + b);
 
       if (!players.isEmpty()) {
         // Remove leading separator and add header if configured
-        players = players.substring(config.TOPIC_PLAYER_LIST_SEPARATOR.length());
-        if (config.TOPIC_PLAYER_LIST_HEADER.isPresent()) {
-          playerList = config.TOPIC_PLAYER_LIST_HEADER.get() + players;
+        players = players.substring(config.channelTopic.playerListSeparator.length());
+        if (config.channelTopic.playerListHeader.isPresent()) {
+          playerList = config.channelTopic.playerListHeader.get() + players;
         } else {
           playerList = players;
         }
       } else {
-        playerList = config.TOPIC_PLAYER_LIST_NO_PLAYERS_HEADER.orElse("");
+        playerList = config.channelTopic.playerListNoPlayersHeader.orElse("");
       }
     }
 
     var s = VelocityDiscord.SERVER;
     var serverCount = s.getAllServers().size();
-    var serverList =
-      s.getAllServers().stream().map(registeredServer -> registeredServer.getServerInfo().getName()).toList();
+    var serverList = s.getAllServers().stream().map(registeredServer -> registeredServer.getServerInfo().getName()).toList();
     var hostname = s.getBoundAddress().getHostName();
     var port = String.valueOf(s.getBoundAddress().getPort());
     var queryMotd = PlainTextComponentSerializer.plainText().serialize(s.getConfiguration().getMotd());
     var queryPort = s.getConfiguration().getQueryPort();
     var queryMaxPlayers = s.getConfiguration().getShowMaxPlayers();
     var pluginCount = s.getPluginManager().getPlugins().size();
-    var pluginList = s
-      .getPluginManager()
-      .getPlugins()
-      .stream()
-      .map(plugin -> plugin.getDescription().getName())
-      .flatMap(Optional::stream)
-      .toList();
+    var pluginList = s.getPluginManager().getPlugins().stream().map(plugin -> plugin.getDescription().getName()).flatMap(Optional::stream).toList();
     var proxyVersion = s.getVersion().getVersion();
     var proxySoftware = s.getVersion().getName();
 
@@ -512,7 +454,7 @@ public class Discord extends ListenerAdapter {
 
       var serverDiscordConfig = VelocityDiscord.CONFIG.getServerConfig(name).getDiscordConfig();
 
-      if (serverDiscordConfig.TOPIC_SERVER_FORMAT.isEmpty()) {
+      if (serverDiscordConfig.channelTopic.serverFormat.isEmpty()) {
         serverStatuses.put(name, "");
       }
 
@@ -532,8 +474,7 @@ public class Discord extends ListenerAdapter {
           var protocol = serverPing.getVersion().getProtocol();
           var motd = PlainTextComponentSerializer.plainText().serialize(serverPing.getDescriptionComponent());
 
-          var serverStatus = new StringTemplate(serverDiscordConfig.TOPIC_SERVER_FORMAT.get())
-            .add("name", VelocityDiscord.CONFIG.serverName(name))
+          var serverStatus = new StringTemplate(serverDiscordConfig.channelTopic.serverFormat.get()).add("name", VelocityDiscord.CONFIG.serverName(name))
             .add("players", online)
             .add("max_players", max)
             .add("version", ver)
@@ -544,27 +485,24 @@ public class Discord extends ListenerAdapter {
           serverStatuses.put(name, serverStatus);
         }).get(5, TimeUnit.SECONDS);
       } catch (Exception e) {
-        if (serverDiscordConfig.TOPIC_SERVER_OFFLINE_FORMAT.isEmpty()) {
+        if (serverDiscordConfig.channelTopic.serverOfflineFormat.isEmpty()) {
           serverStatuses.put(name, "");
           continue;
         }
 
-        var serverStatus = new StringTemplate(serverDiscordConfig.TOPIC_SERVER_OFFLINE_FORMAT.get())
-          .add("name", VelocityDiscord.CONFIG.serverName(name))
-          .toString();
+        var serverStatus = new StringTemplate(serverDiscordConfig.channelTopic.serverOfflineFormat.get()).add("name", VelocityDiscord.CONFIG.serverName(name)).toString();
 
         serverStatuses.put(name, serverStatus);
       }
     }
 
     // todo: per server channel overrides for topic
-    var serverDiscordConfig = VelocityDiscord.CONFIG.getDiscordConfig();
+    var serverDiscordConfig = VelocityDiscord.CONFIG.local.discord;
 
-    if (serverDiscordConfig.TOPIC_FORMAT.isEmpty()) return "";
+    if (serverDiscordConfig.channelTopic.format.isEmpty()) return "";
 
     // Build the message
-    var template = new StringTemplate(serverDiscordConfig.TOPIC_FORMAT.get())
-      .add("players", playerCount)
+    var template = new StringTemplate(serverDiscordConfig.channelTopic.format.get()).add("players", playerCount)
       .add("player_list", playerList)
       .add("servers", serverCount)
       .add("server_list", String.join(", ", serverList.stream().map(VelocityDiscord.CONFIG::serverName).toList()))
@@ -653,23 +591,13 @@ public class Discord extends ListenerAdapter {
     }
   }
 
-  private void sendWebhookMessage(
-    String uuid,
-    String username,
-    String server,
-    String content,
-    DiscordChatConfig.MessageCategory type
-  ) {
+  private void sendWebhookMessage(String uuid, String username, String server, String content, MessageCategory type) {
     var serverConfig = VelocityDiscord.CONFIG.getServerConfig(server);
-    var discordConfig = serverConfig.getDiscordChatConfig();
-    var webhookConfig = discordConfig.getWebhookConfig(type);
+    var webhookConfig = serverConfig.getWebhookConfig(type);
 
-    var avatar = new StringTemplate(webhookConfig.AVATAR_URL).add("username", username).add("uuid", uuid).toString();
+    var avatar = new StringTemplate(webhookConfig.avatarUrl).add("username", username).add("uuid", uuid).toString();
 
-    var discordName = new StringTemplate(webhookConfig.USERNAME)
-      .add("username", username)
-      .add("server", VelocityDiscord.CONFIG.serverName(server))
-      .toString();
+    var discordName = new StringTemplate(webhookConfig.username).add("username", username).add("server", VelocityDiscord.CONFIG.serverName(server)).toString();
 
     var webhookMessage = new MessageCreateBuilder().setContent(content).build();
 
@@ -705,10 +633,7 @@ public class Discord extends ListenerAdapter {
     var msg = message;
 
     for (var member : channels.chatChannel.getMembers()) {
-      msg = Pattern
-        .compile(Pattern.quote("@" + member.getUser().getName()), Pattern.CASE_INSENSITIVE)
-        .matcher(msg)
-        .replaceAll(member.getAsMention());
+      msg = Pattern.compile(Pattern.quote("@" + member.getUser().getName()), Pattern.CASE_INSENSITIVE).matcher(msg).replaceAll(member.getAsMention());
     }
 
     return msg;
@@ -742,18 +667,13 @@ public class Discord extends ListenerAdapter {
     return this.serverChannels.getOrDefault(server, this.defaultChannels);
   }
 
-  private record QueuedWebhookMessage(
-    String server, DiscordChatConfig.MessageCategory type, MessageCreateData message, String avatar, String username
-  ) implements IQueuedMessage {
+  private record QueuedWebhookMessage(String server, MessageCategory type, MessageCreateData message, String avatar, String username) implements IQueuedMessage {
 
     @Override
     public void send(Discord discord) {
       var channels = discord.serverChannels.get(this.server);
       if (channels == null) {
-        VelocityDiscord.LOGGER.error(
-          "[Queued] Failed to get webhook client for server `{}`: serverChannels is null",
-          this.server
-        );
+        VelocityDiscord.LOGGER.error("[Queued] Failed to get webhook client for server `{}`: serverChannels is null", this.server);
         return;
       }
 
@@ -762,10 +682,7 @@ public class Discord extends ListenerAdapter {
       if (client != null) {
         client.sendMessage(this.message).setAvatarUrl(this.avatar).setUsername(this.username).queue();
       } else {
-        VelocityDiscord.LOGGER.error(
-          "[Queued] Failed to get webhook client for server `{}`: client is null",
-          this.server
-        );
+        VelocityDiscord.LOGGER.error("[Queued] Failed to get webhook client for server `{}`: client is null", this.server);
       }
     }
   }
@@ -813,35 +730,36 @@ public class Discord extends ListenerAdapter {
     public TextChannel serverStartChannel;
     public TextChannel serverStopChannel;
 
-    public Channels(Discord discord, String serverName, ServerConfig config, TextChannel defaultChannel) {
+    public Channels(Discord discord, String serverName, LocalConfig config, TextChannel defaultChannel) {
       this.serverName = serverName;
 
-      var msgCfg = config.getDiscordChatConfig();
+      var msgCfg = config.discord.chat;
 
-      this.chatChannel = getChannel(discord, msgCfg.MESSAGE_CHANNEL, defaultChannel);
-      this.deathChannel = getChannel(discord, msgCfg.DEATH_CHANNEL, defaultChannel);
-      this.advancementChannel = getChannel(discord, msgCfg.ADVANCEMENT_CHANNEL, defaultChannel);
-      this.joinChannel = getChannel(discord, msgCfg.JOIN_CHANNEL, defaultChannel);
-      this.leaveChannel = getChannel(discord, msgCfg.LEAVE_CHANNEL, defaultChannel);
-      this.disconnectChannel = getChannel(discord, msgCfg.DISCONNECT_CHANNEL, defaultChannel);
-      this.serverSwitchChannel = getChannel(discord, msgCfg.SERVER_SWITCH_CHANNEL, defaultChannel);
-      this.serverStartChannel = getChannel(discord, msgCfg.SERVER_START_CHANNEL, defaultChannel);
-      this.serverStopChannel = getChannel(discord, msgCfg.SERVER_STOP_CHANNEL, defaultChannel);
+      this.chatChannel = getChannel(discord, msgCfg.message.channelId, defaultChannel);
+      this.deathChannel = getChannel(discord, msgCfg.death.channelId, defaultChannel);
+      this.advancementChannel = getChannel(discord, msgCfg.advancement.channelId, defaultChannel);
+      this.joinChannel = getChannel(discord, msgCfg.join.channelId, defaultChannel);
+      this.leaveChannel = getChannel(discord, msgCfg.leave.channelId, defaultChannel);
+      this.disconnectChannel = getChannel(discord, msgCfg.disconnect.channelId, defaultChannel);
+      this.serverSwitchChannel = getChannel(discord, msgCfg.serverSwitch.channelId, defaultChannel);
+      this.serverStartChannel = getChannel(discord, msgCfg.serverStart.channel, defaultChannel);
+      this.serverStopChannel = getChannel(discord, msgCfg.serverStop.channel, defaultChannel);
 
       this.mainWebhook = null;
 
-      if (msgCfg.isWebhookUsed()) {
-        this.chatWebhook = getClient(discord, msgCfg.MESSAGE_WEBHOOK);
-        this.deathWebhook = getClient(discord, msgCfg.DEATH_WEBHOOK);
-        this.advancementWebhook = getClient(discord, msgCfg.ADVANCEMENT_WEBHOOK);
-        this.joinWebhook = getClient(discord, msgCfg.JOIN_WEBHOOK);
-        this.leaveWebhook = getClient(discord, msgCfg.LEAVE_WEBHOOK);
-        this.disconnectWebhook = getClient(discord, msgCfg.DISCONNECT_WEBHOOK);
-        this.serverSwitchWebhook = getClient(discord, msgCfg.SERVER_SWITCH_WEBHOOK);
+      if (config.isWebhookUsed()) {
+        var defaultWebhook = config.discord.webhook;
+        this.chatWebhook = getClient(discord, msgCfg.message.webhook.orElse(defaultWebhook));
+        this.deathWebhook = getClient(discord, msgCfg.death.webhook.orElse(defaultWebhook));
+        this.advancementWebhook = getClient(discord, msgCfg.advancement.webhook.orElse(defaultWebhook));
+        this.joinWebhook = getClient(discord, msgCfg.join.webhook.orElse(defaultWebhook));
+        this.leaveWebhook = getClient(discord, msgCfg.leave.webhook.orElse(defaultWebhook));
+        this.disconnectWebhook = getClient(discord, msgCfg.disconnect.webhook.orElse(defaultWebhook));
+        this.serverSwitchWebhook = getClient(discord, msgCfg.serverSwitch.webhook.orElse(defaultWebhook));
       }
     }
 
-    public IncomingWebhookClient getClientForCategory(DiscordChatConfig.MessageCategory category) {
+    public IncomingWebhookClient getClientForCategory(MessageCategory category) {
       return switch (category) {
         case MESSAGE -> this.chatWebhook;
         case DEATH -> this.deathWebhook;
@@ -864,7 +782,7 @@ public class Discord extends ListenerAdapter {
 
     private IncomingWebhookClient createClient(Discord discord, WebhookConfig config) {
       try {
-        return WebhookClient.createClient(discord.jda, config.URL);
+        return WebhookClient.createClient(discord.jda, config.url);
       } catch (Exception e) {
         VelocityDiscord.LOGGER.error("Failed to create webhook client for server {}", this.serverName, e);
         return null;
@@ -873,8 +791,8 @@ public class Discord extends ListenerAdapter {
 
     private IncomingWebhookClient getMainWebhook(Discord discord) {
       if (this.mainWebhook == null) {
-        var config = VelocityDiscord.CONFIG.getServerConfig(this.serverName).getDiscordConfig().WEBHOOK;
-        if (!config.invalid()) {
+        var config = VelocityDiscord.CONFIG.getServerConfig(this.serverName).getDiscordConfig().webhook;
+        if (Webhook.isValidWebhookUrl(config.url)) {
           this.mainWebhook = createClient(discord, config);
         }
       }
@@ -883,7 +801,7 @@ public class Discord extends ListenerAdapter {
     }
 
     private IncomingWebhookClient getClient(Discord discord, WebhookConfig config) {
-      if (config.invalid()) {
+      if (Webhook.isValidWebhookUrl(config.url)) {
         return getMainWebhook(discord);
       }
 

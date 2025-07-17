@@ -7,6 +7,7 @@ import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import ooo.foooooooooooo.velocitydiscord.VelocityDiscord;
+import ooo.foooooooooooo.velocitydiscord.config.Webhook;
 import ooo.foooooooooooo.velocitydiscord.util.StringTemplate;
 
 import javax.annotation.Nonnull;
@@ -20,7 +21,7 @@ import java.util.regex.Pattern;
 public class MessageListener extends ListenerAdapter {
   private static final Pattern LINK_REGEX =
     Pattern.compile("[^:/?#\\s]+:(?://)?(?:[^?#\\s]+)?(?:\\?[^#\\s]+)?(?:#\\S+)?");
-  private static final Pattern WEBHOOK_ID_REGEX = Pattern.compile(".*/webhooks/\\d+/([a-zA-Z0-9_-]+)");
+
   private final HashMap<String, Discord.Channels> serverChannels;
   private final HashMap<Long, List<String>> channelToServersMap = new HashMap<>();
 
@@ -72,8 +73,7 @@ public class MessageListener extends ListenerAdapter {
 
     for (var server : VelocityDiscord.SERVER.getAllServers()) {
       var serverName = server.getServerInfo().getName();
-      if (!VelocityDiscord.CONFIG.EXCLUDED_SERVERS_RECEIVE_MESSAGES
-        && VelocityDiscord.CONFIG.serverDisabled(serverName)) {
+      if (!VelocityDiscord.CONFIG.global.excludedServersReceiveMessages && VelocityDiscord.CONFIG.serverDisabled(serverName)) {
         continue;
       }
 
@@ -87,15 +87,16 @@ public class MessageListener extends ListenerAdapter {
   private String serializeMinecraftMessage(MessageReceivedEvent event, String server) {
     var serverConfig = VelocityDiscord.CONFIG.getServerConfig(server);
     var serverMinecraftConfig = serverConfig.getMinecraftConfig();
+    var serverDiscordConfig = serverConfig.getDiscordConfig();
 
     var author = event.getAuthor();
-    if (!serverConfig.getMinecraftConfig().SHOW_BOT_MESSAGES && author.isBot()) {
+    if (!serverDiscordConfig.showBotMessages && author.isBot()) {
       VelocityDiscord.LOGGER.debug("ignoring bot message");
       return null;
     }
 
     if (author.getId().equals(this.jda.getSelfUser().getId()) || (
-      author.getId().equals(serverConfig.getDiscordConfig().WEBHOOK.webhookId))) {
+      author.getId().equals(Webhook.getWebhookId(serverDiscordConfig.webhook.url)))) {
       VelocityDiscord.LOGGER.debug("ignoring own message");
       return null;
     }
@@ -119,18 +120,18 @@ public class MessageListener extends ListenerAdapter {
       var highestRole = member
         .getRoles()
         .stream()
-        .filter(role -> !serverMinecraftConfig.rolePrefixes.getPrefixForRole(role.getId()).isEmpty())
+        .filter(role -> !serverMinecraftConfig.rolePrefixes.get(role.getId()).isEmpty())
         .findFirst();
 
       rolePrefix =
-        highestRole.map(role -> serverMinecraftConfig.rolePrefixes.getPrefixForRole(role.getId())).orElse("");
+        highestRole.map(role -> serverMinecraftConfig.rolePrefixes.get(role.getId())).orElse("");
     }
 
     var hex = "#" + Integer.toHexString(color.getRGB()).substring(2);
 
     // parse configured message formats
-    var discord_chunk = new StringTemplate(serverMinecraftConfig.DISCORD_CHUNK_FORMAT)
-      .add("discord_color", serverMinecraftConfig.DISCORD_COLOR)
+    var discord_chunk = new StringTemplate(serverMinecraftConfig.discordChunkFormat)
+      .add("discord_color", serverMinecraftConfig.discordColor)
       .toString();
 
     var display_name = author.getGlobalName();
@@ -139,15 +140,15 @@ public class MessageListener extends ListenerAdapter {
       display_name = author.getName();
     }
 
-    var username_chunk = new StringTemplate(serverMinecraftConfig.USERNAME_CHUNK_FORMAT)
+    var username_chunk = new StringTemplate(serverMinecraftConfig.usernameChunkFormat)
       .add("role_color", hex)
       .add("username", escapeTags(author.getName()))
       .add("display_name", escapeTags(display_name))
       .add("nickname", escapeTags(nickname))
       .toString();
 
-    var attachment_chunk = serverMinecraftConfig.ATTACHMENT_FORMAT;
-    var message_chunk = new StringTemplate(serverMinecraftConfig.MESSAGE_FORMAT)
+    var attachment_chunk = serverMinecraftConfig.attachmentFormat;
+    var message_chunk = new StringTemplate(serverMinecraftConfig.messageFormat)
       .add("discord_chunk", discord_chunk)
       .add("role_prefix", escapeTags(rolePrefix))
       .add("username_chunk", username_chunk)
@@ -156,14 +157,14 @@ public class MessageListener extends ListenerAdapter {
     var attachmentChunks = new ArrayList<String>();
 
     List<Message.Attachment> attachments = new ArrayList<>();
-    if (serverMinecraftConfig.SHOW_ATTACHMENTS) {
+    if (serverDiscordConfig.showAttachmentsIngame) {
       attachments = message.getAttachments();
     }
 
     for (var attachment : attachments) {
       var chunk = new StringTemplate(attachment_chunk)
         .add("url", attachment.getUrl())
-        .add("attachment_color", serverMinecraftConfig.ATTACHMENT_COLOR)
+        .add("attachment_color", serverMinecraftConfig.attachmentColor)
         .toString();
 
       attachmentChunks.add(chunk);
@@ -176,13 +177,13 @@ public class MessageListener extends ListenerAdapter {
       message_chunk = message_chunk.replace(" {attachments}", "{attachments}");
     }
 
-    if (serverMinecraftConfig.LINK_FORMAT.isPresent()) {
+    if (serverMinecraftConfig.linkFormat.isPresent()) {
       // Replace links with the link format
       content = LINK_REGEX.matcher(content).replaceAll(match -> {
         var url = match.group();
-        var replacement = new StringTemplate(serverMinecraftConfig.LINK_FORMAT.get())
+        var replacement = new StringTemplate(serverMinecraftConfig.linkFormat.get())
           .add("url", url)
-          .add("link_color", serverMinecraftConfig.LINK_COLOR)
+          .add("link_color", serverMinecraftConfig.linkColor)
           .toString();
 
         return Matcher.quoteReplacement(replacement);

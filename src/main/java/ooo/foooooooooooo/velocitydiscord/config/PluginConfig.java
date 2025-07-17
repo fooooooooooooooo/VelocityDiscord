@@ -1,58 +1,38 @@
 package ooo.foooooooooooo.velocitydiscord.config;
 
 import com.electronwill.nightconfig.core.CommentedConfig;
-import com.electronwill.nightconfig.core.Config;
 import com.electronwill.nightconfig.core.file.FileConfig;
-import com.electronwill.nightconfig.core.serde.annotations.SerdeDefault;
-import com.electronwill.nightconfig.core.serde.annotations.SerdeKey;
 import ooo.foooooooooooo.velocitydiscord.Constants;
+import ooo.foooooooooooo.velocitydiscord.config.definitions.*;
+import ooo.foooooooooooo.velocitydiscord.discord.MessageCategory;
 import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.*;
-import java.util.function.Supplier;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
 
-@SuppressWarnings("unused")
-public class PluginConfig implements ServerConfig {
+public class PluginConfig {
   private static final String[] splitVersion = Constants.PluginVersion.split("\\.");
   public static final String ConfigVersion = splitVersion[0] + '.' + splitVersion[1];
   private static final String configMajorVersion = splitVersion[0];
 
   private static boolean configCreatedThisRun = false;
 
-  @SerdeKey("exclude_servers")
-  @SerdeDefault(provider = "defaultExcludedServers")
-  public List<String> EXCLUDED_SERVERS;
-  private final transient Supplier<List<String>> defaultExcludedServers = List::of;
+  private final Map<String, String> serverDisplayNames = new HashMap<>();
 
-  @SerdeKey("excluded_servers_receive_messages")
-  @SerdeDefault(provider = "defaultExcludedServersReceiveMessages")
-  public boolean EXCLUDED_SERVERS_RECEIVE_MESSAGES;
-  private final transient Supplier<Boolean> defaultExcludedServersReceiveMessages = () -> false;
+  private Path dataDir;
+  private HashMap<String, ServerOverrideConfig> serverOverridesMap = new HashMap<>();
 
-  @SerdeKey("ping_interval")
-  @SerdeDefault(provider = "defaultPingIntervalSeconds")
-  public int PING_INTERVAL_SECONDS;
-  private final transient Supplier<Integer> defaultPingIntervalSeconds = () -> 15;
+  private final Logger logger;
+  private Config config;
 
-  public transient DiscordConfig DISCORD;
-  public transient DiscordChatConfig DISCORD_CHAT;
-  public transient MinecraftConfig MINECRAFT;
-
-  public transient DiscordBotConfig BOT;
-  public transient ProxyDiscordChatConfig DISCORD_CHAT_PROXY;
-  public transient MinecraftGlobalConfig MINECRAFT_GLOBAL;
-
-  private transient final Map<String, String> serverDisplayNames = new HashMap<>();
-
-  private transient Path dataDir;
-  private transient HashMap<String, OverrideConfig> serverOverridesMap = new HashMap<>();
-
-  private transient final Logger logger;
-  private transient Config config;
+  public GlobalConfig global = new GlobalConfig();
+  public LocalConfig local = new LocalConfig();
 
   public PluginConfig(Path dataDir, Logger logger) {
     this.logger = logger;
@@ -70,42 +50,13 @@ public class PluginConfig implements ServerConfig {
     this.onLoad();
   }
 
-  private void logKeys(Config config, int indent) {
-    var indentStr = "  ".repeat(Math.max(0, indent));
-    for (var entry : config.entrySet()) {
-      if (entry.getValue() instanceof Config) {
-        System.out.println(indentStr + entry.getKey() + ":");
-        logKeys(entry.getValue(), indent + 1);
-      } else {
-        System.out.println(indentStr + entry.getKey() + ": " + entry.getValue());
-      }
-    }
-  }
-
   private void loadConfig() {
     if (this.config == null || this.config.isEmpty()) {
       throw new RuntimeException("ERROR: Config is empty");
     }
 
-    this.logger.info("raw config:");
-    logKeys(this.config, 0);
-
-    Deserialization.deserializer().deserializeFields(this.config, this);
-
-    this.BOT = Deserialization.deserialize(this.config.get("discord"), new DiscordBotConfig());
-    this.DISCORD = Deserialization.deserialize(this.config.get("discord"), new DiscordConfig());
-
-    Config discordChatConfig = this.config.get("discord.chat");
-    if (discordChatConfig != null) {
-      this.logger.info("raw discord.chat:");
-      logKeys(discordChatConfig, 0);
-    }
-
-    this.DISCORD_CHAT = Deserialization.deserialize(discordChatConfig, new DiscordChatConfig());
-
-    this.DISCORD_CHAT_PROXY = Deserialization.deserialize(this.config.get("discord.chat"), new ProxyDiscordChatConfig());
-    this.MINECRAFT = Deserialization.deserialize(this.config.get("minecraft"), new MinecraftConfig());
-    this.MINECRAFT_GLOBAL = Deserialization.deserialize(this.config.get("minecraft"), new MinecraftGlobalConfig());
+    this.global.load(this.config);
+    this.local.load(this.config);
   }
 
   private void onLoad() {
@@ -145,7 +96,7 @@ public class PluginConfig implements ServerConfig {
     var fileConfig = FileConfig.of(configFile);
     fileConfig.load();
 
-    return fileConfig;
+    return new Config(fileConfig);
   }
 
   private static boolean versionCompatible(String newVersion) {
@@ -172,7 +123,7 @@ public class PluginConfig implements ServerConfig {
 
   // Assume it's the first run if the config hasn't been edited or has been created this run
   public boolean isFirstRun() {
-    return this.DISCORD.isDefaultValues() || configCreatedThisRun;
+    return configCreatedThisRun;
   }
 
   public void loadOverrides() {
@@ -205,13 +156,12 @@ public class PluginConfig implements ServerConfig {
         var serverName = entry.getKey();
 
         // todo: maybe better than this
-        if (this.EXCLUDED_SERVERS.contains(serverName) && !this.EXCLUDED_SERVERS_RECEIVE_MESSAGES) {
+        if (this.global.excludedServers.contains(serverName) && !this.global.excludedServersReceiveMessages) {
           this.logger.info("Ignoring override for excluded server: {}", serverName);
           continue;
         }
 
-        // todo: load normal config then load override config on top of it
-        // this.serverOverridesMap.put(serverName, new OverrideConfig(serverOverride, serverName, this));
+        this.serverOverridesMap.put(serverName, new ServerOverrideConfig(serverOverride, this));
       } else {
         this.logger.warn("Invalid server override for `{}`: `{}`", entry.getKey(), entry.getValue());
       }
@@ -219,7 +169,7 @@ public class PluginConfig implements ServerConfig {
   }
 
   public boolean serverDisabled(String name) {
-    return this.EXCLUDED_SERVERS.contains(name);
+    return this.global.excludedServers.contains(name);
   }
 
   public String serverName(String name) {
@@ -232,7 +182,7 @@ public class PluginConfig implements ServerConfig {
     // reset old values
     this.serverDisplayNames.clear();
     this.serverOverridesMap.clear();
-    this.EXCLUDED_SERVERS.clear();
+    this.global.excludedServers.clear();
 
     this.config = PluginConfig.loadFile(this.dataDir);
 
@@ -245,170 +195,109 @@ public class PluginConfig implements ServerConfig {
     }
   }
 
-  private boolean isWebhook(DiscordChatConfig.UserMessageType messageType) {
-    return messageType == DiscordChatConfig.UserMessageType.WEBHOOK;
-  }
+  //  private boolean isWebhook(DiscordChatConfig.UserMessageType messageType) {
+  //    return messageType == DiscordChatConfig.UserMessageType.WEBHOOK;
+  //  }
 
   private String checkInvalidValues() {
-    if (this.DISCORD_CHAT.isWebhookUsed() && this.DISCORD.WEBHOOK.invalid()) {
-      var errors = new ArrayList<String>();
-
-      // check each message category
-      if (isWebhook(this.DISCORD_CHAT.ADVANCEMENT_TYPE) && this.DISCORD_CHAT.ADVANCEMENT_WEBHOOK.invalid()) {
-        errors.add("`discord.chat.advancement.webhook` is set and `discord.chat.advancement.type` is set to `webhook`");
-      }
-      if (isWebhook(this.DISCORD_CHAT.MESSAGE_TYPE) && this.DISCORD_CHAT.MESSAGE_WEBHOOK.invalid()) {
-        errors.add("`discord.chat.message.webhook` is set and `discord.chat.message.type` is set to `webhook`");
-      }
-      if (isWebhook(this.DISCORD_CHAT.JOIN_TYPE) && this.DISCORD_CHAT.JOIN_WEBHOOK.invalid()) {
-        errors.add("`discord.chat.join.webhook` is set and `discord.chat.join.type` is set to `webhook`");
-      }
-      if (isWebhook(this.DISCORD_CHAT.DEATH_TYPE) && this.DISCORD_CHAT.DEATH_WEBHOOK.invalid()) {
-        errors.add("`discord.chat.death.webhook` is set and `discord.chat.death.type` is set to `webhook`");
-      }
-      if (isWebhook(this.DISCORD_CHAT.ADVANCEMENT_TYPE) && this.DISCORD_CHAT.ADVANCEMENT_WEBHOOK.invalid()) {
-        errors.add("`discord.chat.advancement.webhook` is set and `discord.chat.advancement.type` is set to `webhook`");
-      }
-      if (isWebhook(this.DISCORD_CHAT.LEAVE_TYPE) && this.DISCORD_CHAT.LEAVE_WEBHOOK.invalid()) {
-        errors.add("`discord.chat.leave.webhook` is set and `discord.chat.leave.type` is set to `webhook`");
-      }
-      if (isWebhook(this.DISCORD_CHAT.DISCONNECT_TYPE) && this.DISCORD_CHAT.DISCONNECT_WEBHOOK.invalid()) {
-        errors.add("`discord.chat.disconnect.webhook` is set and `discord.chat.disconnect.type` is set to `webhook`");
-      }
-      if (isWebhook(this.DISCORD_CHAT.SERVER_SWITCH_TYPE) && this.DISCORD_CHAT.SERVER_SWITCH_WEBHOOK.invalid()) {
-        errors.add(
-          "`discord.chat.server_switch.webhook` is set and `discord.chat.server_switch.type` is set to `webhook`");
-      }
-
-      if (!errors.isEmpty()) {
-        var errorStart = "ERROR: neither `discord.webhook` nor ";
-        return errors.stream().map(s -> errorStart + s).reduce((a, b) -> a + "\n" + b).orElse(null);
-      }
-    }
+    //    if (this.inner.discord.webhook.isWebhookUsed() && this.DISCORD.WEBHOOK.invalid()) {
+    //      var errors = new ArrayList<String>();
+    //
+    //      // check each message category
+    //      if (isWebhook(this.DISCORD_CHAT.ADVANCEMENT_TYPE) && this.DISCORD_CHAT.ADVANCEMENT_WEBHOOK.invalid()) {
+    //        errors.add("`discord.chat.advancement.webhook` is set and `discord.chat.advancement.type` is set to `webhook`");
+    //      }
+    //      if (isWebhook(this.DISCORD_CHAT.MESSAGE_TYPE) && this.DISCORD_CHAT.MESSAGE_WEBHOOK.invalid()) {
+    //        errors.add("`discord.chat.message.webhook` is set and `discord.chat.message.type` is set to `webhook`");
+    //      }
+    //      if (isWebhook(this.DISCORD_CHAT.JOIN_TYPE) && this.DISCORD_CHAT.JOIN_WEBHOOK.invalid()) {
+    //        errors.add("`discord.chat.join.webhook` is set and `discord.chat.join.type` is set to `webhook`");
+    //      }
+    //      if (isWebhook(this.DISCORD_CHAT.DEATH_TYPE) && this.DISCORD_CHAT.DEATH_WEBHOOK.invalid()) {
+    //        errors.add("`discord.chat.death.webhook` is set and `discord.chat.death.type` is set to `webhook`");
+    //      }
+    //      if (isWebhook(this.DISCORD_CHAT.ADVANCEMENT_TYPE) && this.DISCORD_CHAT.ADVANCEMENT_WEBHOOK.invalid()) {
+    //        errors.add("`discord.chat.advancement.webhook` is set and `discord.chat.advancement.type` is set to `webhook`");
+    //      }
+    //      if (isWebhook(this.DISCORD_CHAT.LEAVE_TYPE) && this.DISCORD_CHAT.LEAVE_WEBHOOK.invalid()) {
+    //        errors.add("`discord.chat.leave.webhook` is set and `discord.chat.leave.type` is set to `webhook`");
+    //      }
+    //      if (isWebhook(this.DISCORD_CHAT.DISCONNECT_TYPE) && this.DISCORD_CHAT.DISCONNECT_WEBHOOK.invalid()) {
+    //        errors.add("`discord.chat.disconnect.webhook` is set and `discord.chat.disconnect.type` is set to `webhook`");
+    //      }
+    //      if (isWebhook(this.DISCORD_CHAT.SERVER_SWITCH_TYPE) && this.DISCORD_CHAT.SERVER_SWITCH_WEBHOOK.invalid()) {
+    //        errors.add(
+    //          "`discord.chat.server_switch.webhook` is set and `discord.chat.server_switch.type` is set to `webhook`");
+    //      }
+    //
+    //      if (!errors.isEmpty()) {
+    //        var errorStart = "ERROR: neither `discord.webhook` nor ";
+    //        return errors.stream().map(s -> errorStart + s).reduce((a, b) -> a + "\n" + b).orElse(null);
+    //      }
+    //    }
 
     return null;
   }
 
-  public ServerConfig getServerConfig(String serverName) {
-    var config = this.serverOverridesMap.get(serverName);
-    if (config != null) return config;
-    return this;
-  }
-
-  @Override
-  public DiscordConfig getDiscordConfig() {
-    return this.DISCORD;
-  }
-
-  @Override
-  public DiscordChatConfig getDiscordChatConfig() {
-    return this.DISCORD_CHAT;
-  }
-
-  @Override
-  public MinecraftConfig getMinecraftConfig() {
-    return this.MINECRAFT;
+  public ServerOverrideConfig getServerConfig(String serverName) {
+    return this.serverOverridesMap.get(serverName);
   }
 
   public Config getInner() {
     return this.config;
   }
 
-  public String debug() {
-    var sb = new StringBuilder();
+  public static class ServerOverrideConfig {
+    public final LocalConfig local;
 
-    sb.append("PluginConfig:\n");
-    sb.append("  config_version: ").append(ConfigVersion).append("\n");
-    sb.append("  excluded_servers: ").append(this.EXCLUDED_SERVERS).append("\n");
-    sb.append("  excluded_servers_receive_messages: ").append(this.EXCLUDED_SERVERS_RECEIVE_MESSAGES).append("\n");
-    sb.append("  ping_interval_seconds: ").append(this.PING_INTERVAL_SECONDS).append("\n");
-    sb.append("  server_names: ").append(this.serverDisplayNames).append("\n");
-
-    sb.append("  discord: ").append("\n");
-    for (var line : this.DISCORD.debug().split("\n")) {
-      sb.append("    ").append(line).append("\n");
+    public ServerOverrideConfig(
+      Config overrideConfig,
+      PluginConfig pluginConfig
+    ) {
+      this.local = new LocalConfig();
+      this.local.load(pluginConfig.getInner());
+      // load the override config on top of the base config
+      this.local.load(overrideConfig);
     }
 
-    sb.append("  discord.chat: ").append("\n");
-    for (var line : this.DISCORD_CHAT.debug().split("\n")) {
-      sb.append("    ").append(line).append("\n");
-    }
-
-    sb.append("  minecraft: ").append("\n");
-    for (var line : this.MINECRAFT.debug().split("\n")) {
-      sb.append("    ").append(line).append("\n");
-    }
-
-    sb.append("  discord.bot: ").append("\n");
-    for (var line : this.BOT.debug().split("\n")) {
-      sb.append("    ").append(line).append("\n");
-    }
-
-    sb.append("  discord.chat.proxy: ").append("\n");
-    for (var line : this.DISCORD_CHAT_PROXY.debug().split("\n")) {
-      sb.append("    ").append(line).append("\n");
-    }
-
-    sb.append("  minecraft.global: ").append("\n");
-    for (var line : this.MINECRAFT_GLOBAL.debug().split("\n")) {
-      sb.append("    ").append(line).append("\n");
-    }
-
-    sb.append("  server_overrides: ").append("\n");
-    for (var entry : this.serverOverridesMap.entrySet()) {
-      sb.append("    ").append(entry.getKey()).append(": ").append("\n");
-
-      for (var line : entry.getValue().debug().split("\n")) {
-        sb.append("      ").append(line).append("\n");
-      }
-    }
-
-    return sb.toString();
-  }
-
-  public static class OverrideConfig implements ServerConfig {
-    @SerdeKey("discord")
-    public DiscordConfig DISCORD;
-    @SerdeKey("discord.chat")
-    public DiscordChatConfig DISCORD_CHAT;
-    @SerdeKey("minecraft")
-    public MinecraftConfig MINECRAFT;
-
-    @Override
     public DiscordConfig getDiscordConfig() {
-      return this.DISCORD;
+      return this.local.discord;
     }
 
-    @Override
-    public DiscordChatConfig getDiscordChatConfig() {
-      return this.DISCORD_CHAT;
+    public ChatConfig getChatConfig() {
+      return this.local.discord.chat;
     }
 
-    @Override
     public MinecraftConfig getMinecraftConfig() {
-      return this.MINECRAFT;
+      return this.local.minecraft;
     }
 
-    public String debug() {
-      var sb = new StringBuilder();
+    public boolean isWebhookUsed() {
+      var chat = this.getChatConfig();
+      return Arrays.stream(new UserMessageType[]{
+        chat.message.type,
+        chat.death.type,
+        chat.advancement.type,
+        chat.join.type,
+        chat.leave.type,
+        chat.disconnect.type,
+        chat.serverSwitch.type,
+      }).anyMatch(t -> t == UserMessageType.WEBHOOK);
+    }
 
-      sb.append("discord:\n");
-      for (var line : this.DISCORD.debug().split("\n")) {
-        sb.append("  ").append(line).append("\n");
-      }
+    public WebhookConfig getWebhookConfig(MessageCategory type) {
+      var messageSpecificWebhook = switch (type) {
+        case ADVANCEMENT -> this.local.discord.chat.advancement.webhook;
+        case MESSAGE -> this.local.discord.chat.message.webhook;
+        case JOIN -> this.local.discord.chat.join.webhook;
+        case DEATH -> this.local.discord.chat.death.webhook;
+        case LEAVE -> this.local.discord.chat.leave.webhook;
+        case DISCONNECT -> this.local.discord.chat.disconnect.webhook;
+        case SERVER_SWITCH -> this.local.discord.chat.serverSwitch.webhook;
+      };
 
-      sb.append("discord.chat:\n");
-      for (var line : this.DISCORD_CHAT.debug().split("\n")) {
-        sb.append("  ").append(line).append("\n");
-      }
-
-      sb.append("minecraft:\n");
-      for (var line : this.MINECRAFT.debug().split("\n")) {
-        sb.append("  ").append(line).append("\n");
-      }
-
-      return sb.toString();
+      // todo: fall back to global webhook if message specific one is not set
+      return this.local.discord.webhook;
     }
   }
-
 }

@@ -41,7 +41,7 @@ enable_mentions = true
 # Enable @everyone and @here pings from Minecraft chat
 enable_everyone_and_here = false
 
-# Set the interval (in minutes) for updating the channel topic
+# Interval (in minutes) for updating the channel topic
 # Use a value of 0 to disable
 # Not server overridable
 update_channel_topic_interval = 0
@@ -92,11 +92,11 @@ player_list_player = "{username}"
 player_list_separator = ", "
 
 # Maximum number of players to show in the topic
-# Set to < 1 to show all players
+# Set to 0 to show all players
 player_list_max_count = 10
 
 [discord.webhook]
-# Full webhook URL to send more fancy Minecraft chat messages to
+# Full webhook URL to send chat messages to
 webhook_url = ""
 # Full URL of an avatar service to get the player's avatar from
 # Placeholders available: {uuid}, {username}
@@ -108,14 +108,15 @@ webhook_username = "{username}"
 
 # Minecraft > Discord message formats
 # Uses the same formatting as the Discord client (a subset of markdown)
-# Messages can be disabled with empty string ("") or false
 #
-# x_message_type can be one of the following:
+# Messages can be disabled by setting format to empty string ("") or false
+#
+# type can be one of the following:
 # "text"  - Normal text only message with the associated x_message format
 # "embed" - Discord embed with the associated x_message format as the description field
 # Default for all is "text"
 #
-# x_message_embed_color is the color of the embed, in #RRGGBB format
+# embed_color is the color of the embed, in #RRGGBB format
 [discord.chat.message]
 # Placeholders available: {username}, {prefix}, {server}, {message}
 # Can be disabled with "" or false

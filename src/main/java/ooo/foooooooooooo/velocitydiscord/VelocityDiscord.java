@@ -157,7 +157,7 @@ public class VelocityDiscord {
       error = CONFIG.reloadConfig(this.dataDirectory);
 
       // disable server ping scheduler if it was disabled
-      if (CONFIG.PING_INTERVAL_SECONDS == 0 && this.pingScheduler != null) {
+      if (CONFIG.global.pingIntervalSeconds == 0 && this.pingScheduler != null) {
         this.pingScheduler.cancel();
         this.pingScheduler = null;
       }
@@ -165,7 +165,7 @@ public class VelocityDiscord {
       tryStartPingScheduler();
 
       // disable channel topic scheduler if it was disabled
-      if (CONFIG.BOT.UPDATE_CHANNEL_TOPIC_INTERVAL_MINUTES == 0 && this.topicScheduler != null) {
+      if (CONFIG.global.discord.updateChannelTopicIntervalMinutes == 0 && this.topicScheduler != null) {
         this.topicScheduler.cancel();
         this.topicScheduler = null;
       }
@@ -201,19 +201,19 @@ public class VelocityDiscord {
   }
 
   private void tryStartPingScheduler() {
-    if (CONFIG.PING_INTERVAL_SECONDS > 0 || this.pingScheduler != null) {
+    if (CONFIG.global.pingIntervalEnabled() || this.pingScheduler != null) {
       this.pingScheduler = SERVER.getScheduler().buildTask(
         this, () -> {
           if (this.listener != null) this.listener.checkServerHealth();
         }
-      ).repeat(CONFIG.PING_INTERVAL_SECONDS, TimeUnit.SECONDS).schedule();
+      ).repeat(CONFIG.global.pingIntervalSeconds, TimeUnit.SECONDS).schedule();
     }
   }
 
   private void tryStartTopicScheduler() {
-    if (CONFIG.BOT.updateChannelTopicDisabled()) return;
+    if (!CONFIG.global.discord.updateChannelTopicEnabled()) return;
 
-    var interval = CONFIG.BOT.UPDATE_CHANNEL_TOPIC_INTERVAL_MINUTES;
+    var interval = CONFIG.global.discord.updateChannelTopicIntervalMinutes;
     if (interval < 10) {
       LOGGER.warn("Invalid update_channel_topic_interval value: {}. Must be between > 10, setting to 10", interval);
       interval = 10;
