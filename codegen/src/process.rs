@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 
-use anyhow::{Context, bail};
-use convert_case::{Case, Casing};
+use anyhow::bail;
 use serde_json::Value;
 
 use crate::java_type::JavaType;
@@ -19,26 +18,100 @@ use crate::structures::{Class, Enum, Structure};
 
 const REFERENCE_PREFIX: &str = "#/definitions/";
 
-fn resolve_reference<'a>(root: &'a Schema, reference: &'a str) -> anyhow::Result<&'a Schema> {
-  match &root.definitions {
-    Some(definitions) => {
-      if let Some(schema) = definitions.get(reference.trim_start_matches(REFERENCE_PREFIX)) {
-        return Ok(schema);
-      }
+struct References {
+  map: HashMap<String, String>,
+}
 
-      bail!("Reference '{reference}' not found in schema definitions");
-    }
-    None => bail!("Schema has no definitions section"),
+impl References {
+  fn new() -> Self {
+    Self { map: HashMap::new() }
+  }
+
+  fn get(&self, reference: &str) -> Option<&String> {
+    self.map.get(reference.trim_start_matches(REFERENCE_PREFIX))
+  }
+
+  fn insert(&mut self, reference: &str, name: String) {
+    self
+      .map
+      .insert(reference.trim_start_matches(REFERENCE_PREFIX).to_owned(), name);
   }
 }
 
+pub struct Context<'a> {
+  pub root: &'a Schema,
+  structures: HashMap<String, Structure>,
+  definitions: References,
+}
+
+impl<'a> Context<'a> {
+  pub fn new(root: &'a Schema) -> Self {
+    Self {
+      root,
+      structures: HashMap::new(),
+      definitions: References::new(),
+    }
+  }
+
+  pub fn into_structures(self) -> HashMap<String, Structure> {
+    self.structures
+  }
+
+  fn get_definition(&mut self, reference: &str) -> anyhow::Result<String> {
+    let resolved = self.definitions.get(reference).map(ToOwned::to_owned);
+
+    if let Some(name) = resolved {
+      return Ok(name);
+    }
+
+    if let Some(definitions) = &self.root.definitions {
+      let reference = reference.trim_start_matches(REFERENCE_PREFIX);
+      let resolved = definitions.get(reference);
+      if let Some(schema) = resolved {
+        let name = process_class(self, reference.to_owned(), schema)?;
+        self.insert_definition(reference, name.to_owned());
+        return Ok(name);
+      }
+    }
+
+    bail!("Failed to resolve reference '{reference}' in schema definitions");
+  }
+
+  fn insert_definition(&mut self, reference: &str, name: String) {
+    self.definitions.insert(reference, name);
+  }
+
+  fn insert_structure(&mut self, name: String, structure: Structure) {
+    self.structures.insert(name, structure);
+  }
+}
+
+pub fn collect_definitions(context: &mut Context) -> anyhow::Result<()> {
+  println!(
+    "processing {} definitions",
+    context.root.definitions.as_ref().map_or(0, |d| d.len())
+  );
+
+  if let Some(definitions) = &context.root.definitions {
+    for (reference, schema) in definitions.iter() {
+      let name = process_class(context, reference.to_owned(), schema)?;
+      context.insert_definition(reference, name);
+    }
+  }
+
+  println!("Collected {} definitions from schema", context.definitions.map.len());
+  for (reference, name) in context.definitions.map.iter() {
+    println!(" - {reference}: {name}");
+  }
+
+  Ok(())
+}
+
 fn process_property(
-  prefix: &str,
-  root: &Schema,
+  context: &mut Context,
   parent_key: &str,
   key: &str,
   value: &Schema,
-  structures: &mut HashMap<String, Structure>,
 ) -> anyhow::Result<Option<Property>> {
   if key == "$schema" {
     eprintln!("Skipping $schema property");
@@ -47,10 +120,8 @@ fn process_property(
 
   if value.kind.is_none() {
     if let Some(reference) = &value.reference {
-      let reference = reference.trim_start_matches("#/definitions/");
-      let referenced_schema = resolve_reference(root, reference)?;
-
-      return process_property(prefix, root, parent_key, key, referenced_schema, structures);
+      let name = context.get_definition(reference)?;
+      return Ok(Some(Property::Class(ClassProperty { name })));
     }
 
     bail!("Property '{key}' is missing required 'type' field");
@@ -62,9 +133,9 @@ fn process_property(
       // enum
       if let Some(r#enum) = &value.r#enum {
         let variants: Vec<String> = r#enum.iter().map(|v| v.to_owned()).collect();
-        let name = format!("{parent_key}_{key}").to_case(Case::Pascal);
+        let name = format!("{parent_key}_{key}");
 
-        structures.insert(
+        context.insert_structure(
           name.clone(),
           Structure::Enum(Enum {
             name: name.clone(),
@@ -146,9 +217,9 @@ fn process_property(
         // disableable enum
         if let Some(r#enum) = &value.r#enum {
           let variants: Vec<String> = r#enum.iter().map(|v| v.to_owned()).collect();
-          let name = format!("{parent_key}_{key}").to_case(Case::Pascal);
+          let name = format!("{parent_key}_{key}");
 
-          structures.insert(
+          context.insert_structure(
             name.clone(),
             Structure::Enum(Enum {
               name: name.clone(),
@@ -256,7 +327,9 @@ fn process_property(
       }
 
       // otherwise treat as class
-      let nested_name = process_class(prefix, root, value, key.to_owned(), structures)?;
+      // let nested_name = process_class(context, format!("{parent_key}_{key}"),
+      // value)?;
+      let nested_name = process_class(context, key.to_owned(), value)?;
       Ok(Some(Property::Class(ClassProperty { name: nested_name })))
     }
     Some(other) => bail!("Property '{key}' has unsupported type: {other:?}"),
@@ -264,39 +337,29 @@ fn process_property(
   }
 }
 
-fn collect_properties(
-  prefix: &str,
-  root: &Schema,
-  schema: &Schema,
-  name: &str,
-  structures: &mut HashMap<String, Structure>,
-) -> anyhow::Result<HashMap<String, Property>> {
-  let mut properties = HashMap::new();
-
-  if let Some(all_of) = &schema.all_of {
-    for item in all_of.iter() {
-      let nested_properties = collect_properties(prefix, root, item, name, structures)?;
-      properties.extend(nested_properties);
-    }
+pub fn process_class(context: &mut Context, name: String, schema: &Schema) -> anyhow::Result<String> {
+  // if $ref at root level, just return the definition name
+  if let Some(reference) = &schema.reference {
+    return context.get_definition(reference);
   }
 
-  if let Some(reference) = &schema.reference {
-    let reference = reference.trim_start_matches("#/definitions/");
-    let referenced_schema = resolve_reference(root, reference)?;
+  let mut properties = HashMap::new();
 
-    return collect_properties(prefix, root, referenced_schema, name, structures);
+  // if allOf, resolve references as sub classes, and objects as properties
+  if let Some(all_of) = &schema.all_of {
+    for item in all_of.iter() {
+      if let Some(reference) = &item.reference {
+        let name = context.get_definition(reference)?;
+        properties.insert(name.to_owned(), Property::Class(ClassProperty { name }));
+      }
+    }
   }
 
   if let Some(props) = &schema.properties {
     for (key, value) in props.iter() {
-      // skip server override config
-      if key == "override" {
-        continue;
-      }
-
-      match process_property(prefix, root, name, key, value, structures) {
+      match process_property(context, &name, key, value) {
         Ok(Some(property)) => {
-          properties.insert(key.to_case(Case::Camel), property);
+          properties.insert(key.to_owned(), property);
         }
         Ok(None) => {}
         Err(e) => eprintln!("Error processing property {key} in class {name}: {e:?}"),
@@ -304,61 +367,7 @@ fn collect_properties(
     }
   }
 
-  Ok(properties)
-}
-
-pub fn process_class(
-  prefix: &str,
-  root: &Schema,
-  schema: &Schema,
-  name: String,
-  structures: &mut HashMap<String, Structure>,
-) -> anyhow::Result<String> {
-  print!("mapping name: {name} -> ");
-
-  let name = name.trim_end_matches("Config").trim_end_matches("config");
-
-  let name = if name == "Root" {
-    "RootConfig".to_owned()
-  } else {
-    format!("{prefix}_{name}Config")
-  };
-  let name = name.to_case(Case::Pascal);
-
-  println!("{name}");
-
-  if let Some(reference) = &schema.reference {
-    let reference = reference.trim_start_matches("#/definitions/");
-    let referenced_schema = resolve_reference(root, reference)?;
-
-    return process_class(prefix, root, referenced_schema, reference.into(), structures);
-  }
-
-  let properties = match collect_properties(prefix, root, schema, &name, structures) {
-    Ok(props) => props,
-    Err(e) => {
-      eprintln!("Failed to collect properties for class '{name}': {e:#}");
-      HashMap::new()
-    }
-  };
-
   let class = Class { properties };
-  structures.insert(name.to_owned(), Structure::Class(class));
+  context.insert_structure(name.to_owned(), Structure::Class(class));
   Ok(name)
-}
-
-pub fn process_override_config(
-  root: &Schema,
-  structures: &mut HashMap<String, Structure>,
-) -> anyhow::Result<HashMap<String, Property>> {
-  let properties = root.properties.as_ref().context("Root schema has no properties")?;
-  let overrides = properties
-    .get("override")
-    .context("schema.properties missing 'override'")?;
-  let overrides = overrides
-    .additional_properties
-    .as_ref()
-    .context("overrides missing additionalProperties")?;
-
-  collect_properties("", root, overrides, "OverrideConfig", structures)
 }

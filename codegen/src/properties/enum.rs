@@ -1,5 +1,5 @@
 use crate::properties::AsJava;
-use crate::utils::string_literal;
+use crate::utils::{pascal, string_literal};
 
 #[allow(clippy::enum_variant_names)]
 pub enum EnumProperty {
@@ -12,19 +12,25 @@ pub enum EnumProperty {
 impl AsJava for EnumProperty {
   fn as_property_type(&self) -> String {
     match self {
-      EnumProperty::DisableableWithDefault { name, .. } => format!("Optional<{}>", name),
-      EnumProperty::DisableableWithoutDefault { name } => format!("Optional<{}>", name),
-      EnumProperty::NormalWithDefault { name, .. } => name.to_owned(),
-      EnumProperty::NormalWithoutDefault { name } => name.to_owned(),
+      EnumProperty::DisableableWithDefault { name, .. } => format!("Optional<{}>", pascal(name)),
+      EnumProperty::DisableableWithoutDefault { name } => format!("Optional<{}>", pascal(name)),
+      EnumProperty::NormalWithDefault { name, .. } => pascal(name),
+      EnumProperty::NormalWithoutDefault { name } => pascal(name),
     }
   }
 
   fn as_default(&self) -> Option<String> {
     match self {
       EnumProperty::DisableableWithDefault { name, default } => {
-        Some(format!("Optional.of({name}.from({})))", string_literal(default)))
+        let name = pascal(name);
+        let default = string_literal(default);
+        Some(format!("Optional.of({name}.from({default})))",))
       }
-      EnumProperty::NormalWithDefault { default, name } => Some(format!("{name}.from({})", string_literal(default))),
+      EnumProperty::NormalWithDefault { default, name } => {
+        let name = pascal(name);
+        let default = string_literal(default);
+        Some(format!("{name}.from({default})"))
+      }
       _ => None,
     }
   }
@@ -32,15 +38,21 @@ impl AsJava for EnumProperty {
   fn as_parse_function(&self, key: &str, default_property: &str) -> String {
     match self {
       EnumProperty::DisableableWithDefault { name, .. } => {
+        let name = pascal(name);
         format!("{name}.from(ConfigUtils.parseDisableableStringWithDefault(config, {key}, {default_property}))")
       }
       EnumProperty::DisableableWithoutDefault { name } => {
+        let name = pascal(name);
         format!("{name}.from(ConfigUtils.parseDisableableString(config, {key}))")
       }
       EnumProperty::NormalWithDefault { name, .. } => {
+        let name = pascal(name);
         format!("{name}.from(ConfigUtils.parseStringWithDefault(config, {key}, {default_property}))")
       }
-      EnumProperty::NormalWithoutDefault { name } => format!("{name}.from(ConfigUtils.parseString(config, {key}))"),
+      EnumProperty::NormalWithoutDefault { name } => {
+        let name = pascal(name);
+        format!("{name}.from(ConfigUtils.parseString(config, {key}))")
+      }
     }
   }
 }

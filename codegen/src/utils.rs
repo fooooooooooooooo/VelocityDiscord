@@ -25,3 +25,19 @@ pub fn display_path(path: &Path) -> String {
     .replace(r"\\", "/")
     .replace('\\', "/")
 }
+
+pub fn pascal<S>(str: S) -> String
+where
+  S: AsRef<str>,
+  S: ToString,
+{
+  str.to_case(Case::Pascal)
+}
+
+pub fn camel<S>(str: S) -> String
+where
+  S: AsRef<str>,
+  S: ToString,
+{
+  str.to_case(Case::Camel)
+}

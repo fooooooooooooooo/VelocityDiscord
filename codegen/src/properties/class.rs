@@ -1,4 +1,5 @@
 use crate::properties::AsJava;
+use crate::utils::pascal;
 
 pub struct ClassProperty {
   pub name: String,
@@ -6,10 +7,11 @@ pub struct ClassProperty {
 
 impl AsJava for ClassProperty {
   fn as_property_type(&self) -> String {
-    self.name.to_owned()
+    pascal(&self.name)
   }
 
-  fn as_parse_function(&self, _: &str, _: &str) -> String {
-    format!("new {}().load(config)", self.name)
+  fn as_parse_function(&self, key: &str, _: &str) -> String {
+    let name = pascal(&self.name);
+    format!("new {name}().load(config.get({key}))")
   }
 }

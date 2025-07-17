@@ -1,14 +1,12 @@
-use std::collections::HashMap;
 use std::fs::{File, OpenOptions};
 use std::io::Write;
 use std::path::Path;
 
-use anyhow::{Context, bail};
+use anyhow::{Context as _, bail};
 
 use crate::generate::generate_structure;
-use crate::process::{process_class, process_override_config};
+use crate::process::{Context, collect_definitions, process_class};
 use crate::schema::Schema;
-use crate::structures::{Class, Structure};
 use crate::utils::display_path;
 
 pub mod generate;
@@ -73,35 +71,20 @@ fn main() -> anyhow::Result<()> {
   let schema: Schema =
     serde_json::from_reader(schema).with_context(|| "Failed to parse schema.json as valid JSON schema")?;
 
-  let mut global_structures: HashMap<String, Structure> = HashMap::new();
+  let mut context = Context::new(&schema);
 
-  process_class("Global", &schema, &schema, "Root".to_owned(), &mut global_structures)?;
+  collect_definitions(&mut context).with_context(|| "Failed to collect definitions from schema")?;
+  process_class(&mut context, "root".to_owned(), &schema)?;
 
-  let global_structures = global_structures
+  let structures = context
+    .into_structures()
     .into_iter()
     .map(|(name, structure)| {
       generate_structure(&name, structure).with_context(|| format!("Failed to generate structure for {name}"))
     })
     .collect::<anyhow::Result<Vec<_>>>()?;
 
-  let mut structures = HashMap::new();
-
-  // if override config exists
-  match process_override_config(&schema, &mut structures) {
-    Ok(properties) => {
-      structures.insert("OverrideConfig".into(), Structure::Class(Class { properties }));
-    }
-    Err(e) => eprintln!("failed to process override config: {e}"),
-  }
-
-  let structures = structures
-    .into_iter()
-    .map(|(name, structure)| {
-      generate_structure(&name, structure).with_context(|| format!("Failed to generate structure for {name}"))
-    })
-    .collect::<anyhow::Result<Vec<_>>>()?;
-
-  for (name, content) in structures.into_iter().chain(global_structures.into_iter()) {
+  for (name, content) in structures {
     let file_name = format!("{}.java", name);
     let file_path = output_dir.join(file_name);
     let display_path = display_path(&file_path);

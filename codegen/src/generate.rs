@@ -11,7 +11,7 @@ use crate::properties::integer::IntegerProperty;
 use crate::properties::string::StringProperty;
 use crate::properties::{AsJava, Property};
 use crate::structures::{Class, Enum, Structure};
-use crate::utils::{default_property_name, string_literal};
+use crate::utils::{default_property_name, pascal, string_literal};
 
 const GENERATED_HEADER: &str = "// this file is generated\n// do not edit manually\n";
 const PACKAGE_NAME: &str = "ooo.foooooooooooo.velocitydiscord.config.generated";
@@ -25,6 +25,7 @@ const COLOR_IMPORT: &str = "java.awt.Color";
 
 fn generate_class(name: &str, class: Class) -> anyhow::Result<String> {
   let mut content = String::new();
+  let name = pascal(name);
 
   let mut imports = HashSet::new();
 
@@ -120,6 +121,7 @@ fn generate_class(name: &str, class: Class) -> anyhow::Result<String> {
   }
 
   writeln!(content, "  public {name} load(Config config) {{")?;
+  writeln!(content, "    if (config == null) return this;")?;
   for (name, prop) in &properties {
     let key = string_literal(name);
     let default_property = default_property_name(name);
@@ -142,7 +144,7 @@ fn generate_class(name: &str, class: Class) -> anyhow::Result<String> {
 
     if matches!(prop, Property::Class(_)) {
       // dont override classes, call override on them
-      writeln!(content, "    this.{name}.override(config);")?;
+      writeln!(content, "    this.{name}.override(config.get({key}));")?;
       continue;
     };
 
@@ -162,6 +164,7 @@ fn generate_class(name: &str, class: Class) -> anyhow::Result<String> {
 
 fn generate_enum(Enum { name, variants }: Enum) -> anyhow::Result<String> {
   let mut content = String::new();
+  let name = pascal(name);
 
   writeln!(content, "{GENERATED_HEADER}")?;
   writeln!(content, "package {PACKAGE_NAME};")?;
@@ -209,5 +212,5 @@ pub fn generate_structure(name: &str, structure: Structure) -> anyhow::Result<(S
     Structure::Enum(r#enum) => generate_enum(r#enum)?,
   };
 
-  Ok((name.to_owned(), content))
+  Ok((pascal(name), content))
 }
