@@ -21,7 +21,7 @@ public class ListCommandConfig {
 
     this.serverFormat = config.getOrDefault("server_format", this.serverFormat);
     this.playerFormat = config.getOrDefault("player_format", this.playerFormat);
-    this.noPlayersFormat = config.getDisableableStringOrDefault("no_players_format", this.noPlayersFormat);
-    this.serverOfflineFormat = config.getDisableableStringOrDefault("server_offline_format", this.serverOfflineFormat);
+    this.noPlayersFormat = config.getDisableableStringOrDefault("no_players", this.noPlayersFormat);
+    this.serverOfflineFormat = config.getDisableableStringOrDefault("server_offline", this.serverOfflineFormat);
   }
 }

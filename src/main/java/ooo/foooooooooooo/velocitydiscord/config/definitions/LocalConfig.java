@@ -10,6 +10,7 @@ public class LocalConfig {
 
   public void load(Config config) {
     this.discord.load(config.getConfig("discord"));
+    this.minecraft.load(config.getConfig("minecraft"));
   }
 
   public boolean isWebhookUsed() {

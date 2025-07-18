@@ -4,26 +4,21 @@ import com.electronwill.nightconfig.core.CommentedConfig;
 import com.electronwill.nightconfig.core.file.FileConfig;
 import ooo.foooooooooooo.velocitydiscord.Constants;
 import ooo.foooooooooooo.velocitydiscord.config.definitions.*;
-import ooo.foooooooooooo.velocitydiscord.discord.MessageCategory;
 import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.Map;
 import java.util.Objects;
 
-public class PluginConfig {
+public class PluginConfig implements ServerConfig {
   private static final String[] splitVersion = Constants.PluginVersion.split("\\.");
   public static final String ConfigVersion = splitVersion[0] + '.' + splitVersion[1];
   private static final String configMajorVersion = splitVersion[0];
 
   private static boolean configCreatedThisRun = false;
-
-  private final Map<String, String> serverDisplayNames = new HashMap<>();
 
   private Path dataDir;
   private HashMap<String, ServerOverrideConfig> serverOverridesMap = new HashMap<>();
@@ -112,11 +107,7 @@ public class PluginConfig {
     String version = this.config.get("config_version");
 
     if (!versionCompatible(version)) {
-      var error = String.format(
-        "ERROR: Can't use the existing configuration file: version mismatch (mod: %s, config: %s)",
-        ConfigVersion,
-        version
-      );
+      var error = String.format("ERROR: Can't use the existing configuration file: version mismatch (mod: %s, config: %s)", ConfigVersion, version);
       throw new RuntimeException(error);
     }
   }
@@ -127,19 +118,6 @@ public class PluginConfig {
   }
 
   public void loadOverrides() {
-    CommentedConfig server_names = this.config.get("server_names");
-
-    if (server_names != null) {
-      for (var entry : server_names.entrySet()) {
-        if (entry.getValue() instanceof String) {
-          this.serverDisplayNames.put(entry.getKey(), entry.getValue());
-        } else {
-          var warning = String.format("Invalid server name for `%s`: `%s`", entry.getKey(), entry.getValue());
-          this.logger.warn(warning);
-        }
-      }
-    }
-
     // server overrides
 
     CommentedConfig serverOverrides = this.config.get("override");
@@ -152,7 +130,7 @@ public class PluginConfig {
     this.serverOverridesMap = new HashMap<>();
 
     for (var entry : serverOverrides.entrySet()) {
-      if (entry.getValue() instanceof Config serverOverride) {
+      if (entry.getValue() instanceof com.electronwill.nightconfig.core.Config serverOverride) {
         var serverName = entry.getKey();
 
         // todo: maybe better than this
@@ -161,7 +139,8 @@ public class PluginConfig {
           continue;
         }
 
-        this.serverOverridesMap.put(serverName, new ServerOverrideConfig(serverOverride, this));
+        var config = new Config(serverOverride);
+        this.serverOverridesMap.put(serverName, new ServerOverrideConfig(config, this));
       } else {
         this.logger.warn("Invalid server override for `{}`: `{}`", entry.getKey(), entry.getValue());
       }
@@ -173,14 +152,14 @@ public class PluginConfig {
   }
 
   public String serverName(String name) {
-    return this.serverDisplayNames.getOrDefault(name, name);
+    return this.global.serverDisplayNames.getOrDefault(name, name);
   }
 
   public @Nullable String reloadConfig(Path dataDirectory) {
     this.dataDir = dataDirectory;
 
     // reset old values
-    this.serverDisplayNames.clear();
+    this.global.serverDisplayNames.clear();
     this.serverOverridesMap.clear();
     this.global.excludedServers.clear();
 
@@ -239,65 +218,56 @@ public class PluginConfig {
     return null;
   }
 
-  public ServerOverrideConfig getServerConfig(String serverName) {
-    return this.serverOverridesMap.get(serverName);
+  public ServerConfig getServerConfig(String serverName) {
+    if (this.serverOverridesMap.containsKey(serverName)) {
+      return this.serverOverridesMap.get(serverName);
+    }
+
+    return this;
   }
 
   public Config getInner() {
     return this.config;
   }
 
-  public static class ServerOverrideConfig {
+  @Override
+  public DiscordConfig getDiscordConfig() {
+    return this.local.discord;
+  }
+
+  @Override
+  public ChatConfig getChatConfig() {
+    return this.local.discord.chat;
+  }
+
+  @Override
+  public MinecraftConfig getMinecraftConfig() {
+    return this.local.minecraft;
+  }
+
+  public static class ServerOverrideConfig implements ServerConfig {
     public final LocalConfig local;
 
-    public ServerOverrideConfig(
-      Config overrideConfig,
-      PluginConfig pluginConfig
-    ) {
+    public ServerOverrideConfig(Config overrideConfig, PluginConfig pluginConfig) {
       this.local = new LocalConfig();
       this.local.load(pluginConfig.getInner());
       // load the override config on top of the base config
       this.local.load(overrideConfig);
     }
 
+    @Override
     public DiscordConfig getDiscordConfig() {
       return this.local.discord;
     }
 
+    @Override
     public ChatConfig getChatConfig() {
       return this.local.discord.chat;
     }
 
+    @Override
     public MinecraftConfig getMinecraftConfig() {
       return this.local.minecraft;
-    }
-
-    public boolean isWebhookUsed() {
-      var chat = this.getChatConfig();
-      return Arrays.stream(new UserMessageType[]{
-        chat.message.type,
-        chat.death.type,
-        chat.advancement.type,
-        chat.join.type,
-        chat.leave.type,
-        chat.disconnect.type,
-        chat.serverSwitch.type,
-      }).anyMatch(t -> t == UserMessageType.WEBHOOK);
-    }
-
-    public WebhookConfig getWebhookConfig(MessageCategory type) {
-      var messageSpecificWebhook = switch (type) {
-        case ADVANCEMENT -> this.local.discord.chat.advancement.webhook;
-        case MESSAGE -> this.local.discord.chat.message.webhook;
-        case JOIN -> this.local.discord.chat.join.webhook;
-        case DEATH -> this.local.discord.chat.death.webhook;
-        case LEAVE -> this.local.discord.chat.leave.webhook;
-        case DISCONNECT -> this.local.discord.chat.disconnect.webhook;
-        case SERVER_SWITCH -> this.local.discord.chat.serverSwitch.webhook;
-      };
-
-      // todo: fall back to global webhook if message specific one is not set
-      return this.local.discord.webhook;
     }
   }
 }

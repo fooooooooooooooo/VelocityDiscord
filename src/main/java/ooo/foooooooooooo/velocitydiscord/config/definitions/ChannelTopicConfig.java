@@ -57,11 +57,11 @@ public class ChannelTopicConfig {
     if (config == null) return;
 
     this.format = config.getDisableableStringOrDefault("format", this.format);
-    this.serverFormat = config.getDisableableStringOrDefault("server_format", this.serverFormat);
-    this.serverOfflineFormat = config.getDisableableStringOrDefault("server_offline_format", this.serverOfflineFormat);
+    this.serverFormat = config.getDisableableStringOrDefault("server", this.serverFormat);
+    this.serverOfflineFormat = config.getDisableableStringOrDefault("server_offline", this.serverOfflineFormat);
     this.playerListNoPlayersHeader = config.getDisableableStringOrDefault("player_list_no_players_header", this.playerListNoPlayersHeader);
     this.playerListHeader = config.getDisableableStringOrDefault("player_list_header", this.playerListHeader);
-    this.playerListPlayerFormat = config.getOrDefault("player_list_player_format", this.playerListPlayerFormat);
+    this.playerListPlayerFormat = config.getOrDefault("player_list_player", this.playerListPlayerFormat);
     this.playerListSeparator = config.getOrDefault("player_list_separator", this.playerListSeparator);
     this.playerListMaxCount = config.getOrDefault("player_list_max_count", this.playerListMaxCount);
   }

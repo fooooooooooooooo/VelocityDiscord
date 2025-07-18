@@ -30,21 +30,21 @@ public class MinecraftConfig {
   public String attachmentColor = "#4abdff";
   public String linkColor = "#4abdff";
 
-  public Map<String, String> rolePrefixes = new HashMap<>();
+  public HashMap<String, String> rolePrefixes = new HashMap<>();
 
   public void load(Config config) {
     if (config == null) return;
 
-    this.discordChunkFormat = config.getOrDefault("discord_chunk_format", this.discordChunkFormat);
-    this.usernameChunkFormat = config.getOrDefault("username_chunk_format", this.usernameChunkFormat);
-    this.messageFormat = config.getOrDefault("message_format", this.messageFormat);
-    this.attachmentFormat = config.getOrDefault("attachment_format", this.attachmentFormat);
-    this.linkFormat = config.getDisableableStringOrDefault("link_format", this.linkFormat);
+    this.discordChunkFormat = config.getOrDefault("discord_chunk", this.discordChunkFormat);
+    this.usernameChunkFormat = config.getOrDefault("username_chunk", this.usernameChunkFormat);
+    this.messageFormat = config.getOrDefault("message", this.messageFormat);
+    this.attachmentFormat = config.getOrDefault("attachments", this.attachmentFormat);
+    this.linkFormat = config.getDisableableStringOrDefault("links", this.linkFormat);
 
     this.discordColor = config.getOrDefault("discord_color", this.discordColor);
     this.attachmentColor = config.getOrDefault("attachment_color", this.attachmentColor);
     this.linkColor = config.getOrDefault("link_color", this.linkColor);
 
-    this.rolePrefixes = config.getOrDefault("role_prefixes", new HashMap<>());
+    this.rolePrefixes = config.getMapOrDefault("role_prefixes", this.rolePrefixes);
   }
 }

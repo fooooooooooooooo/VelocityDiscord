@@ -36,7 +36,7 @@ show_attachments_ingame = false
 # Placeholders available: {amount}
 # Can be disabled with "" or false
 # Not server overridable
-activity_format = "activity_format_test"
+activity_text = "activity_text_test"
 
 # Enable mentioning Discord users from Minecraft chat
 enable_mentions = false
@@ -96,13 +96,13 @@ player_list_max_count = 123
 
 [discord.webhook]
 # Full webhook URL to send more fancy Minecraft chat messages to
-url = "webhook_url_test"
+url = "url_test"
 # Full URL of an avatar service to get the player's avatar from
 # Placeholders available: {uuid}, {username}
 avatar_url = "avatar_url_test"
 # The format of the webhook's username
 # Placeholders available: {username}, {server}
-username = "webhook_username_test"
+username = "username_test"
 
 # Minecraft > Discord message formats
 # Uses the same formatting as the Discord client (a subset of markdown)
@@ -299,10 +299,8 @@ link_color = "#ff00ff"
 # Role prefix configuration
 # Format: "role_id" = "prefix format using MiniMessage"
 [minecraft.role_prefixes]
-# "123456789" = "<dark_gray>[</dark_gray><red><b>OWNER</b></red><dark_gray>]</dark_gray>"
-# "987654321" = "<dark_gray>[</dark_gray><blue>ADMIN</blue><dark_gray>]</dark_gray>"
-# "456789123" = "<dark_gray>[</dark_gray><green>MOD</green><dark_gray>]</dark_gray>"
-# "789123456" = "<dark_gray>[</dark_gray><aqua>HELPER</aqua><dark_gray>]</dark_gray>"
+ "123456789" = "role_prefix_test_1"
+ "987654321" = "role_prefix_test_2"
 
 # Override config for specific servers
 # Any config option under [discord] or [minecraft] can be overridden (other than options labelled not server overridable)

@@ -1,7 +1,11 @@
 package ooo.foooooooooooo.velocitydiscord.config;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import javax.annotation.Nullable;
 import java.awt.*;
+import java.util.HashMap;
 import java.util.Optional;
 import java.util.function.Supplier;
 
@@ -28,6 +32,21 @@ public class Config {
 
   public <T> T get(String key) {
     return this.config.get(key);
+  }
+
+  public <T> HashMap<String, T> getMapOrDefault(String key, HashMap<String, T> defaultValue) {
+    var value = this.config.getRaw(key);
+    if (value instanceof com.electronwill.nightconfig.core.Config subConfig) {
+      var map = new HashMap<String, T>();
+      for (var entry : subConfig.entrySet()) {
+        map.put(entry.getKey(), entry.getValue());
+      }
+      return map;
+    } else if (value == null) {
+      return defaultValue;
+    } else {
+      throw new RuntimeException(String.format("ERROR: `%s` is not a valid map for `%s`", value, key));
+    }
   }
 
   public @Nullable Config getConfig(String key) {
