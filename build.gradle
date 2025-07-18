@@ -11,16 +11,6 @@ configurations {
 
 repositories {
   maven {
-    url = uri("https://maven.pkg.github.com/fooooooooooooooo/night-config")
-    credentials {
-      username = project.findProperty("gpr.user") ?: System.getenv("GITHUB_USERNAME")
-      password = project.findProperty("gpr.key") ?: System.getenv("GITHUB_TOKEN")
-    }
-    content {
-      includeGroup "com.electronwill.night-config"
-    }
-  }
-  maven {
     name = 'papermc'
     url = 'https://repo.papermc.io/repository/maven-public/'
   }
