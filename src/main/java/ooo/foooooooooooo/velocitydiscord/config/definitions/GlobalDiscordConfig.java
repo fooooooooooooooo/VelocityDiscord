@@ -32,7 +32,10 @@ public class GlobalDiscordConfig {
 
     this.token = config.get("token");
     this.activityText = config.getDisableableStringOrDefault("activity_text", this.activityText);
-    this.updateChannelTopicIntervalMinutes = config.getOrDefault("update_channel_topic_interval", this.updateChannelTopicIntervalMinutes);
+    this.updateChannelTopicIntervalMinutes = config.getOrDefault(
+      "update_channel_topic_interval",
+      this.updateChannelTopicIntervalMinutes
+    );
 
     this.chat.load(config.getConfig("chat"));
     this.commands.load(config.getConfig("commands"));
@@ -40,5 +43,9 @@ public class GlobalDiscordConfig {
 
   public boolean updateChannelTopicEnabled() {
     return this.updateChannelTopicIntervalMinutes > 0;
+  }
+
+  public boolean isTokenUnset() {
+    return this.token.equals("TOKEN") || this.token.isBlank();
   }
 }

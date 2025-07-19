@@ -19,7 +19,6 @@ import net.dv8tion.jda.api.utils.messages.MessageCreateData;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import ooo.foooooooooooo.velocitydiscord.VelocityDiscord;
 import ooo.foooooooooooo.velocitydiscord.config.ServerConfig;
-import ooo.foooooooooooo.velocitydiscord.config.Webhook;
 import ooo.foooooooooooo.velocitydiscord.config.definitions.WebhookConfig;
 import ooo.foooooooooooo.velocitydiscord.discord.commands.ICommand;
 import ooo.foooooooooooo.velocitydiscord.discord.commands.ListCommand;
@@ -121,7 +120,7 @@ public class Discord extends ListenerAdapter {
   }
 
   private void loadChannels() {
-    var defaultChannelId = VelocityDiscord.CONFIG.local.discord.defaultChannelId;
+    var defaultChannelId = VelocityDiscord.CONFIG.local.discord.mainChannelId;
     this.mainChannel = loadChannel(defaultChannelId);
     this.proxyStartChannel = loadChannel(VelocityDiscord.CONFIG.global.discord.chat.proxyStart.channel.orElse(
       defaultChannelId));
@@ -132,7 +131,7 @@ public class Discord extends ListenerAdapter {
     for (var server : VelocityDiscord.SERVER.getAllServers()) {
       var serverName = server.getServerInfo().getName();
       var config = VelocityDiscord.CONFIG.getServerConfig(serverName);
-      var defaultChannel = this.jda.getTextChannelById(config.getDiscordConfig().defaultChannelId);
+      var defaultChannel = this.jda.getTextChannelById(config.getDiscordConfig().mainChannelId);
       this.serverChannels.put(serverName, new Channels(this, serverName, config, defaultChannel));
     }
 
@@ -858,14 +857,14 @@ public class Discord extends ListenerAdapter {
         return WebhookClient.createClient(discord.jda, config.url);
       } catch (Exception e) {
         VelocityDiscord.LOGGER.error("Failed to create webhook client for server {}", this.serverName, e);
-        return null;
       }
+        return null;
     }
 
     private IncomingWebhookClient getMainWebhook(Discord discord) {
       if (this.mainWebhook == null) {
         var config = VelocityDiscord.CONFIG.getServerConfig(this.serverName).getDiscordConfig().webhook;
-        if (Webhook.isValidWebhookUrl(config.url)) {
+        if (config.isInvalid()) {
           this.mainWebhook = createClient(discord, config);
         }
       }
@@ -875,7 +874,7 @@ public class Discord extends ListenerAdapter {
 
     @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
     private IncomingWebhookClient getClient(Discord discord, Optional<WebhookConfig> config) {
-      if (config.isEmpty() || !Webhook.isValidWebhookUrl(config.get().url)) {
+      if (config.isEmpty() || config.get().isInvalid()) {
         return getMainWebhook(discord);
       }
 

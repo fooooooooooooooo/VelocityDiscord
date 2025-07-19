@@ -5,6 +5,7 @@ import com.electronwill.nightconfig.core.file.FileConfig;
 import ooo.foooooooooooo.velocitydiscord.Constants;
 import ooo.foooooooooooo.velocitydiscord.config.definitions.*;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
@@ -14,32 +15,28 @@ import java.util.HashMap;
 import java.util.Objects;
 
 public class PluginConfig implements ServerConfig {
+  private static final Logger logger = LoggerFactory.getLogger(PluginConfig.class);
+
   private static final String[] splitVersion = Constants.PluginVersion.split("\\.");
   public static final String ConfigVersion = splitVersion[0] + '.' + splitVersion[1];
   private static final String configMajorVersion = splitVersion[0];
 
   private static boolean configCreatedThisRun = false;
 
-  private Path dataDir;
   private HashMap<String, ServerOverrideConfig> serverOverridesMap = new HashMap<>();
 
-  private final Logger logger;
   private Config config;
 
   public GlobalConfig global = new GlobalConfig();
   public LocalConfig local = new LocalConfig();
 
-  public PluginConfig(Path dataDir, Logger logger) {
-    this.logger = logger;
-    this.dataDir = dataDir;
+  public PluginConfig(Path dataDir) {
     this.config = PluginConfig.loadFile(dataDir);
     this.loadConfig();
     this.onLoad();
   }
 
-  public PluginConfig(Config config, Logger logger) {
-    this.logger = logger;
-    this.dataDir = null;
+  public PluginConfig(Config config) {
     this.config = config;
     this.loadConfig();
     this.onLoad();
@@ -55,15 +52,13 @@ public class PluginConfig implements ServerConfig {
   }
 
   private void onLoad() {
-    checkConfig();
+    var error = checkErrors(this.config);
+    if (error != null) logger.error(error);
+    error = this.local.checkErrors();
+    if (error != null) logger.error(error);
 
-    loadOverrides();
+    this.serverOverridesMap = loadOverrides(this.global, this.config);
 
-    var error = checkInvalidValues();
-
-    if (error != null) {
-      this.logger.error(error);
-    }
   }
 
   private static Config loadFile(Path dataDir) {
@@ -98,53 +93,60 @@ public class PluginConfig implements ServerConfig {
     return newVersion != null && newVersion.split("\\.")[0].equals(configMajorVersion);
   }
 
-  private void checkConfig() {
-    if (this.config == null || this.config.isEmpty()) {
-      throw new RuntimeException("ERROR: Config is empty");
+  private static @Nullable String checkErrors(Config config) {
+    if (config == null || config.isEmpty()) {
+      return ("ERROR: Config is empty");
     }
 
     // check for compatible config version
-    String version = this.config.get("config_version");
+    String version = config.get("config_version");
 
     if (!versionCompatible(version)) {
-      var error = String.format("ERROR: Can't use the existing configuration file: version mismatch (mod: %s, config: %s)", ConfigVersion, version);
-      throw new RuntimeException(error);
+      return String.format(
+        "ERROR: Can't use the existing configuration file: version mismatch (mod: %s, config: %s)",
+        ConfigVersion,
+        version
+      );
     }
+
+    return null;
   }
 
   // Assume it's the first run if the config hasn't been edited or has been created this run
-  public boolean isFirstRun() {
-    return configCreatedThisRun;
+  public boolean isConfigNotSetup() {
+    return configCreatedThisRun || this.global.discord.isTokenUnset() || this.local.discord.isDefaultChannel();
   }
 
-  public void loadOverrides() {
+  public static HashMap<String, ServerOverrideConfig> loadOverrides(GlobalConfig baseGlobalConfig, Config baseConfig) {
     // server overrides
 
-    CommentedConfig serverOverrides = this.config.get("override");
+    CommentedConfig overrideConfig = baseConfig.get("override");
 
-    if (serverOverrides == null) {
-      this.logger.debug("No server overrides found");
-      return;
+    if (overrideConfig == null) {
+      logger.debug("No server overrides found");
+      return null;
     }
 
-    this.serverOverridesMap = new HashMap<>();
+    var overrides = new HashMap<String, ServerOverrideConfig>();
 
-    for (var entry : serverOverrides.entrySet()) {
+    for (var entry : overrideConfig.entrySet()) {
       if (entry.getValue() instanceof com.electronwill.nightconfig.core.Config serverOverride) {
         var serverName = entry.getKey();
 
         // todo: maybe better than this
-        if (this.global.excludedServers.contains(serverName) && !this.global.excludedServersReceiveMessages) {
-          this.logger.info("Ignoring override for excluded server: {}", serverName);
+        if (baseGlobalConfig.excludedServers.contains(serverName) && !baseGlobalConfig.excludedServersReceiveMessages) {
+          logger.info("Ignoring override for excluded server: {}", serverName);
           continue;
         }
 
         var config = new Config(serverOverride);
-        this.serverOverridesMap.put(serverName, new ServerOverrideConfig(config, this));
+        overrides.put(serverName, new ServerOverrideConfig(baseConfig, config));
       } else {
-        this.logger.warn("Invalid server override for `{}`: `{}`", entry.getKey(), entry.getValue());
+        logger.warn("Invalid server override for `{}`: `{}`", entry.getKey(), entry.getValue());
       }
     }
+
+    return overrides;
   }
 
   public boolean serverDisabled(String name) {
@@ -156,78 +158,40 @@ public class PluginConfig implements ServerConfig {
   }
 
   public @Nullable String reloadConfig(Path dataDirectory) {
-    this.dataDir = dataDirectory;
-
-    // reset old values
-    this.global.serverDisplayNames.clear();
-    this.serverOverridesMap.clear();
-    this.global.excludedServers.clear();
-
-    this.config = PluginConfig.loadFile(this.dataDir);
-
     try {
-      loadOverrides();
+      var newConfig = PluginConfig.loadFile(dataDirectory);
 
-      return checkInvalidValues();
+      var errors = checkErrors(newConfig);
+      if (errors != null && !errors.isEmpty()) return errors;
+
+      var newGlobal = new GlobalConfig();
+      var newLocal = new LocalConfig();
+
+      newGlobal.load(newConfig);
+      newLocal.load(newConfig);
+
+      var overrides = loadOverrides(newGlobal, newConfig);
+
+      errors = newLocal.checkErrors();
+      if (errors != null && !errors.isEmpty()) return errors;
+
+      this.serverOverridesMap = overrides;
+
+      this.config = newConfig;
+
+      this.global = newGlobal;
+      this.local = newLocal;
+
+      return null;
     } catch (Exception e) {
       return "ERROR: " + e.getMessage();
     }
   }
 
-  //  private boolean isWebhook(DiscordChatConfig.UserMessageType messageType) {
-  //    return messageType == DiscordChatConfig.UserMessageType.WEBHOOK;
-  //  }
-
-  private String checkInvalidValues() {
-    //    if (this.inner.discord.webhook.isWebhookUsed() && this.DISCORD.WEBHOOK.invalid()) {
-    //      var errors = new ArrayList<String>();
-    //
-    //      // check each message category
-    //      if (isWebhook(this.DISCORD_CHAT.ADVANCEMENT_TYPE) && this.DISCORD_CHAT.ADVANCEMENT_WEBHOOK.invalid()) {
-    //        errors.add("`discord.chat.advancement.webhook` is set and `discord.chat.advancement.type` is set to `webhook`");
-    //      }
-    //      if (isWebhook(this.DISCORD_CHAT.MESSAGE_TYPE) && this.DISCORD_CHAT.MESSAGE_WEBHOOK.invalid()) {
-    //        errors.add("`discord.chat.message.webhook` is set and `discord.chat.message.type` is set to `webhook`");
-    //      }
-    //      if (isWebhook(this.DISCORD_CHAT.JOIN_TYPE) && this.DISCORD_CHAT.JOIN_WEBHOOK.invalid()) {
-    //        errors.add("`discord.chat.join.webhook` is set and `discord.chat.join.type` is set to `webhook`");
-    //      }
-    //      if (isWebhook(this.DISCORD_CHAT.DEATH_TYPE) && this.DISCORD_CHAT.DEATH_WEBHOOK.invalid()) {
-    //        errors.add("`discord.chat.death.webhook` is set and `discord.chat.death.type` is set to `webhook`");
-    //      }
-    //      if (isWebhook(this.DISCORD_CHAT.ADVANCEMENT_TYPE) && this.DISCORD_CHAT.ADVANCEMENT_WEBHOOK.invalid()) {
-    //        errors.add("`discord.chat.advancement.webhook` is set and `discord.chat.advancement.type` is set to `webhook`");
-    //      }
-    //      if (isWebhook(this.DISCORD_CHAT.LEAVE_TYPE) && this.DISCORD_CHAT.LEAVE_WEBHOOK.invalid()) {
-    //        errors.add("`discord.chat.leave.webhook` is set and `discord.chat.leave.type` is set to `webhook`");
-    //      }
-    //      if (isWebhook(this.DISCORD_CHAT.DISCONNECT_TYPE) && this.DISCORD_CHAT.DISCONNECT_WEBHOOK.invalid()) {
-    //        errors.add("`discord.chat.disconnect.webhook` is set and `discord.chat.disconnect.type` is set to `webhook`");
-    //      }
-    //      if (isWebhook(this.DISCORD_CHAT.SERVER_SWITCH_TYPE) && this.DISCORD_CHAT.SERVER_SWITCH_WEBHOOK.invalid()) {
-    //        errors.add(
-    //          "`discord.chat.server_switch.webhook` is set and `discord.chat.server_switch.type` is set to `webhook`");
-    //      }
-    //
-    //      if (!errors.isEmpty()) {
-    //        var errorStart = "ERROR: neither `discord.webhook` nor ";
-    //        return errors.stream().map(s -> errorStart + s).reduce((a, b) -> a + "\n" + b).orElse(null);
-    //      }
-    //    }
-
-    return null;
-  }
-
   public ServerConfig getServerConfig(String serverName) {
-    if (this.serverOverridesMap.containsKey(serverName)) {
-      return this.serverOverridesMap.get(serverName);
-    }
-
+    var override = this.serverOverridesMap.get(serverName);
+    if (override != null) return override;
     return this;
-  }
-
-  public Config getInner() {
-    return this.config;
   }
 
   @Override
@@ -246,11 +210,10 @@ public class PluginConfig implements ServerConfig {
   }
 
   public static class ServerOverrideConfig implements ServerConfig {
-    public final LocalConfig local;
+    public final LocalConfig local = new LocalConfig();
 
-    public ServerOverrideConfig(Config overrideConfig, PluginConfig pluginConfig) {
-      this.local = new LocalConfig();
-      this.local.load(pluginConfig.getInner());
+    public ServerOverrideConfig(Config baseConfig, Config overrideConfig) {
+      this.local.load(baseConfig);
       // load the override config on top of the base config
       this.local.load(overrideConfig);
     }

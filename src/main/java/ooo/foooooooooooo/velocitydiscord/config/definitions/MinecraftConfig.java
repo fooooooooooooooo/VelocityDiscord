@@ -3,7 +3,6 @@ package ooo.foooooooooooo.velocitydiscord.config.definitions;
 import ooo.foooooooooooo.velocitydiscord.config.Config;
 
 import java.util.HashMap;
-import java.util.Map;
 import java.util.Optional;
 
 @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
@@ -14,17 +13,21 @@ public class MinecraftConfig {
   /// Placeholders available: `role_color`, `display_name`, `username`, `nickname`
   ///
   /// `<insert>` tag allows you to shift right-click the username to insert `@username` in the chat
-  public String usernameChunkFormat = "<{role_color}><insert:@{username}><hover:show_text:{display_name}>{nickname}</hover></insert><reset>";
+  public String usernameChunkFormat =
+    "<{role_color}><insert:@{username}><hover:show_text:{display_name}>{nickname}</hover></insert><reset>";
 
   /// Placeholders available: {discord_chunk}, {username_chunk}, {attachments}, {message}
-  public String messageFormat = "{discord_chunk} {role_prefix} {username_chunk}<dark_gray>: <reset>{message} {attachments}";
+  public String messageFormat =
+    "{discord_chunk} {role_prefix} {username_chunk}<dark_gray>: <reset>{message} {attachments}";
 
   /// Placeholders available: `url`, `attachment_color`
-  public String attachmentFormat = "<dark_gray><click:open_url:{url}>[<{attachment_color}>Attachment<dark_gray>]</click><reset>";
+  public String attachmentFormat =
+    "<dark_gray><click:open_url:{url}>[<{attachment_color}>Attachment<dark_gray>]</click><reset>";
 
   /// Placeholders available: `url`, `link_color`
   public Optional<String> linkFormat = Optional.of(
-    "<click:open_url:\"{url}\"><hover:show_text:\"Click to open {url}\"><dark_gray>[</dark_gray><{link_color}>Link<dark_gray>]</hover></click>");
+    "<click:open_url:\"{url}\"><hover:show_text:\"Click to open " +
+      "{url}\"><dark_gray>[</dark_gray><{link_color}>Link<dark_gray>]</hover></click>");
 
   public String discordColor = "#7289da";
   public String attachmentColor = "#4abdff";
@@ -46,5 +49,9 @@ public class MinecraftConfig {
     this.linkColor = config.getOrDefault("link_color", this.linkColor);
 
     this.rolePrefixes = config.getMapOrDefault("role_prefixes", this.rolePrefixes);
+  }
+
+  public String getRolePrefix(String role) {
+    return this.rolePrefixes.getOrDefault(role, "");
   }
 }

@@ -1,8 +1,5 @@
 package ooo.foooooooooooo.velocitydiscord.config;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import javax.annotation.Nullable;
 import java.awt.*;
 import java.util.HashMap;
@@ -11,7 +8,8 @@ import java.util.function.Supplier;
 
 @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
 public class Config {
-  private static final String INVALID_VALUE_FORMAT_STRING = "ERROR: `%s` is not a valid value for `%s`, acceptable values: `false`, any string";
+  private static final String INVALID_VALUE_FORMAT_STRING =
+    "ERROR: `%s` is not a valid value for `%s`, acceptable values: `false`, any string";
 
   public static final Color GREEN = new Color(0x40bf4f);
   public static final Color RED = new Color(0xbf4040);
@@ -105,12 +103,12 @@ public class Config {
     return getDisableableString(path).map(Color::decode);
   }
 
-  public static String encodeColor(Color color) {
-    return String.format("#%02x%02x%02x", color.getRed(), color.getGreen(), color.getBlue());
-  }
-
   public Optional<Color> getDisableableColorOrDefault(String path, Optional<Color> defaultValue) {
     return getDisableableStringOrDefault(path, defaultValue.map(Config::encodeColor)).map(Color::decode);
+  }
+
+  public static String encodeColor(Color color) {
+    return String.format("#%02x%02x%02x", color.getRed(), color.getGreen(), color.getBlue());
   }
 
   public <T> T maybeOverride(String path, T currentValue, Supplier<T> overrideValueSupplier) {

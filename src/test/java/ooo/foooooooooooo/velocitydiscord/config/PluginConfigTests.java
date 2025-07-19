@@ -3,8 +3,6 @@ package ooo.foooooooooooo.velocitydiscord.config;
 import ooo.foooooooooooo.velocitydiscord.config.definitions.UserMessageType;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.awt.*;
 import java.nio.file.Path;
@@ -14,12 +12,10 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class PluginConfigTests {
-  Logger logger = LoggerFactory.getLogger(PluginConfigTests.class);
-
   @Test
   public void allConfigKeysLoadedCorrectly(@TempDir Path tempDir) {
     var config = TestUtils.createConfig(TestUtils.getResource("config.toml"), tempDir);
-    var pluginConfig = new PluginConfig(config, this.logger);
+    var pluginConfig = new PluginConfig(config);
 
     // global config
     assertEquals(List.of("survival"), pluginConfig.global.excludedServers);
@@ -35,7 +31,7 @@ public class PluginConfigTests {
 
     // local discord config
     var discord = pluginConfig.local.discord;
-    assertEquals("123456789012345678", discord.defaultChannelId);
+    assertEquals("123456789012345678", discord.mainChannelId);
     assertTrue(discord.showBotMessages);
     assertFalse(discord.showAttachmentsIngame);
     assertFalse(discord.enableMentions);
@@ -118,7 +114,7 @@ public class PluginConfigTests {
   @Test
   public void serverDisplayNamesWorks(@TempDir Path tempDir) {
     var config = TestUtils.createConfig(TestUtils.getResource("real_test_config.toml"), tempDir);
-    var pluginConfig = new PluginConfig(config, this.logger);
+    var pluginConfig = new PluginConfig(config);
 
     assertEquals("Server A", pluginConfig.global.serverDisplayNames.get("server_a"));
     assertEquals("Server B", pluginConfig.global.serverDisplayNames.get("server_b"));

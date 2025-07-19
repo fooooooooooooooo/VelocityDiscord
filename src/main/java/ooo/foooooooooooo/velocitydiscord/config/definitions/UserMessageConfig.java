@@ -38,4 +38,9 @@ public class UserMessageConfig {
       this.webhook.get().load(webhookConfig);
     }
   }
+
+  public boolean isInvalidWebhook() {
+    return this.type == UserMessageType.WEBHOOK && (
+      this.webhook.isEmpty() || (this.webhook.get().isInvalid()));
+  }
 }

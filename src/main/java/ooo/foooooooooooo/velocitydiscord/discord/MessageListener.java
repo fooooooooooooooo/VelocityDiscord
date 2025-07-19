@@ -7,7 +7,6 @@ import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import ooo.foooooooooooo.velocitydiscord.VelocityDiscord;
-import ooo.foooooooooooo.velocitydiscord.config.Webhook;
 import ooo.foooooooooooo.velocitydiscord.util.StringTemplate;
 
 import javax.annotation.Nonnull;
@@ -73,7 +72,8 @@ public class MessageListener extends ListenerAdapter {
 
     for (var server : VelocityDiscord.SERVER.getAllServers()) {
       var serverName = server.getServerInfo().getName();
-      if (!VelocityDiscord.CONFIG.global.excludedServersReceiveMessages && VelocityDiscord.CONFIG.serverDisabled(serverName)) {
+      if (!VelocityDiscord.CONFIG.global.excludedServersReceiveMessages &&
+        VelocityDiscord.CONFIG.serverDisabled(serverName)) {
         continue;
       }
 
@@ -96,7 +96,8 @@ public class MessageListener extends ListenerAdapter {
     }
 
     if (author.getId().equals(this.jda.getSelfUser().getId()) || (
-      author.getId().equals(Webhook.getWebhookId(serverDiscordConfig.webhook.url)))) {
+      author.getId().equals(serverDiscordConfig.webhook.id)
+    )) {
       VelocityDiscord.LOGGER.debug("ignoring own message");
       return null;
     }
@@ -120,11 +121,10 @@ public class MessageListener extends ListenerAdapter {
       var highestRole = member
         .getRoles()
         .stream()
-        .filter(role -> !serverMinecraftConfig.rolePrefixes.get(role.getId()).isEmpty())
+        .filter(role -> !serverMinecraftConfig.getRolePrefix(role.getId()).isEmpty())
         .findFirst();
 
-      rolePrefix =
-        highestRole.map(role -> serverMinecraftConfig.rolePrefixes.get(role.getId())).orElse("");
+      rolePrefix = highestRole.map(role -> serverMinecraftConfig.getRolePrefix(role.getId())).orElse("");
     }
 
     var hex = "#" + Integer.toHexString(color.getRGB()).substring(2);

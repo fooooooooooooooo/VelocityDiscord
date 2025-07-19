@@ -7,10 +7,12 @@ import ooo.foooooooooooo.velocitydiscord.discord.MessageCategory;
 import java.util.Arrays;
 
 public class DiscordConfig {
+  private static final String DEFAULT_CHANNEL_ID = "000000000000000000";
+
   /**
    * Default channel ID to send Minecraft chat messages to
    */
-  public String defaultChannelId = "000000000000000000";
+  public String mainChannelId = DEFAULT_CHANNEL_ID;
 
   /**
    * Show messages from bots in Minecraft chat
@@ -45,7 +47,7 @@ public class DiscordConfig {
   public void load(Config config) {
     if (config == null) return;
 
-    this.defaultChannelId = config.getOrDefault("channel", this.defaultChannelId);
+    this.mainChannelId = config.getOrDefault("channel", this.mainChannelId);
     this.showBotMessages = config.getOrDefault("show_bot_messages", this.showBotMessages);
     this.showAttachmentsIngame = config.getOrDefault("show_attachments_ingame", this.showAttachmentsIngame);
     this.enableMentions = config.getOrDefault("enable_mentions", this.enableMentions);
@@ -87,5 +89,9 @@ public class DiscordConfig {
     };
 
     return messageSpecificWebhook.orElse(this.webhook);
+  }
+
+  public boolean isDefaultChannel() {
+    return this.mainChannelId.equals(DEFAULT_CHANNEL_ID);
   }
 }

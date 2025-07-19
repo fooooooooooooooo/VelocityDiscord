@@ -21,17 +21,11 @@ import javax.annotation.Nullable;
 import java.nio.file.Path;
 import java.util.concurrent.TimeUnit;
 
-@Plugin(
-  id = "discord",
-  name = Constants.PluginName,
-  description = Constants.PluginDescription,
-  version = Constants.PluginVersion,
-  url = Constants.PluginUrl,
-  authors = {"fooooooooooooooo"},
-  dependencies = {
-    @Dependency(id = Constants.YeplibId, optional = true), @Dependency(id = Constants.LuckPermsId, optional = true)
-  }
-)
+@Plugin(id = "discord", name = Constants.PluginName, description = Constants.PluginDescription, version =
+  Constants.PluginVersion, url = Constants.PluginUrl, authors = {"fooooooooooooooo"}, dependencies = {
+  @Dependency(id = Constants.YeplibId, optional = true),
+  @Dependency(id = Constants.LuckPermsId, optional = true)
+})
 public class VelocityDiscord {
   public static final MinecraftChannelIdentifier YepIdentifier = MinecraftChannelIdentifier.create("velocity", "yep");
 
@@ -150,7 +144,7 @@ public class VelocityDiscord {
     String error = null;
 
     if (CONFIG == null) {
-      CONFIG = new PluginConfig(this.dataDirectory, VelocityDiscord.LOGGER);
+      CONFIG = new PluginConfig(this.dataDirectory);
     } else {
       LOGGER.info("Reloading config");
 
@@ -190,11 +184,11 @@ public class VelocityDiscord {
       }
     }
 
-    pluginDisabled = CONFIG.isFirstRun();
+    pluginDisabled = CONFIG.isConfigNotSetup();
 
     if (pluginDisabled) {
-      LOGGER.error("This is the first time you are running this plugin."
-        + " Please configure it in the config.toml file. Disabling plugin.");
+      LOGGER.error("This is the first time you are running this plugin." +
+        " Please configure it in the config.toml file. Disabling plugin.");
     }
 
     return error;
