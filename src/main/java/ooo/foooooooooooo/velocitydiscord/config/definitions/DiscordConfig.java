@@ -52,10 +52,8 @@ public class DiscordConfig {
     this.showAttachmentsIngame = config.getOrDefault("show_attachments_ingame", this.showAttachmentsIngame);
     this.enableMentions = config.getOrDefault("enable_mentions", this.enableMentions);
     this.enableEveryoneAndHere = config.getOrDefault("enable_everyone_and_here", this.enableEveryoneAndHere);
-    this.updateChannelTopicIntervalMinutes = config.getOrDefault(
-      "update_channel_topic_interval",
-      this.updateChannelTopicIntervalMinutes
-    );
+    this.updateChannelTopicIntervalMinutes =
+      config.getOrDefault("update_channel_topic_interval", this.updateChannelTopicIntervalMinutes);
 
     this.chat.load(config.getConfig("chat"));
 

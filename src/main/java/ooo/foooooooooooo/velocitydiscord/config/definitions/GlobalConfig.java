@@ -23,7 +23,8 @@ public class GlobalConfig {
 
   public void load(Config config) {
     this.excludedServers = config.getOrDefault("exclude_servers", this.excludedServers);
-    this.excludedServersReceiveMessages = config.getOrDefault("excluded_servers_receive_messages", this.excludedServersReceiveMessages);
+    this.excludedServersReceiveMessages =
+      config.getOrDefault("excluded_servers_receive_messages", this.excludedServersReceiveMessages);
 
     this.pingIntervalSeconds = config.getOrDefault("ping_interval", this.pingIntervalSeconds);
 

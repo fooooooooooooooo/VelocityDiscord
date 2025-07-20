@@ -27,7 +27,8 @@ public class YepListener {
     var uuid = event.getPlayer().getUniqueId().toString();
     var server = event.getSource().getServer().getServerInfo().getName();
 
-    VelocityDiscord.getDiscord()
+    VelocityDiscord
+      .getDiscord()
       .onPlayerAdvancement(
         event.getUsername(),
         uuid,
@@ -45,7 +46,8 @@ public class YepListener {
     var uuid = event.getPlayer().getUniqueId().toString();
     var server = event.getSource().getServer().getServerInfo().getName();
 
-    VelocityDiscord.getDiscord()
+    VelocityDiscord
+      .getDiscord()
       .onPlayerDeath(event.getUsername(), uuid, server, event.getDisplayName(), event.getMessage());
   }
 }

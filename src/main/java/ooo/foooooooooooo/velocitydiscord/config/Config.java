@@ -4,9 +4,11 @@ import javax.annotation.Nullable;
 import java.awt.*;
 import java.util.HashMap;
 import java.util.Optional;
-import java.util.function.Supplier;
 
-@SuppressWarnings("OptionalUsedAsFieldOrParameterType")
+@SuppressWarnings({
+  "OptionalUsedAsFieldOrParameterType",
+  "unused"
+})
 public class Config {
   private static final String INVALID_VALUE_FORMAT_STRING =
     "ERROR: `%s` is not a valid value for `%s`, acceptable values: `false`, any string";
@@ -109,13 +111,5 @@ public class Config {
 
   public static String encodeColor(Color color) {
     return String.format("#%02x%02x%02x", color.getRed(), color.getGreen(), color.getBlue());
-  }
-
-  public <T> T maybeOverride(String path, T currentValue, Supplier<T> overrideValueSupplier) {
-    if (this.config.contains(path)) {
-      return overrideValueSupplier.get();
-    } else {
-      return currentValue;
-    }
   }
 }

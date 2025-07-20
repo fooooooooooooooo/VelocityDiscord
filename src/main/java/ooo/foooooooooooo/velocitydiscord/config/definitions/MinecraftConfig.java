@@ -25,9 +25,8 @@ public class MinecraftConfig {
     "<dark_gray><click:open_url:{url}>[<{attachment_color}>Attachment<dark_gray>]</click><reset>";
 
   /// Placeholders available: `url`, `link_color`
-  public Optional<String> linkFormat = Optional.of(
-    "<click:open_url:\"{url}\"><hover:show_text:\"Click to open " +
-      "{url}\"><dark_gray>[</dark_gray><{link_color}>Link<dark_gray>]</hover></click>");
+  public Optional<String> linkFormat = Optional.of("""
+    <click:open_url:"{url}"><hover:show_text:"Click to open {url}"><dark_gray>[</dark_gray><{link_color}>Link<dark_gray>]</hover></click>""");
 
   public String discordColor = "#7289da";
   public String attachmentColor = "#4abdff";

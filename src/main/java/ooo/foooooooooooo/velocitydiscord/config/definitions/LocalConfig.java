@@ -32,8 +32,7 @@ public class LocalConfig {
 
       if (!invalidCategories.isEmpty()) {
         var errorFormat = """
-          ERROR: `discord.webhook` and `discord.chat.%s.webhook` are unset or invalid, but `discord.chat.%s.type` is set to `webhook`
-          """;
+          ERROR: `discord.webhook` and `discord.chat.%s.webhook` are unset or invalid, but `discord.chat.%s.type` is set to `webhook`""";
         var error = new StringBuilder();
 
         for (var category : invalidCategories) {

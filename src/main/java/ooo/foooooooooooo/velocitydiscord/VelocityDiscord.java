@@ -187,8 +187,8 @@ public class VelocityDiscord {
     pluginDisabled = CONFIG.isConfigNotSetup();
 
     if (pluginDisabled) {
-      LOGGER.error("This is the first time you are running this plugin." +
-        " Please configure it in the config.toml file. Disabling plugin.");
+      LOGGER.error("""
+        This is the first time you are running this plugin. Please configure it in the config.toml file. Disabling plugin.""");
     }
 
     return error;

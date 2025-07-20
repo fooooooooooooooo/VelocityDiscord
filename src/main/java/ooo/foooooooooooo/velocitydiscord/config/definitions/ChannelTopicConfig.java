@@ -25,8 +25,10 @@ public class ChannelTopicConfig {
   /// - `software`: Software name
   /// - `average_ping`: Average ping of all players
   /// - `uptime`: Server uptime in hours and minutes
-  /// - `server[SERVERNAME]`: Dynamic placeholder for each server's name and status (e.g., `server[MyServer]`, `server[AnotherServer]`, `server[Lobby]`, etc.)
-  public Optional<String> format = Optional.of("{players}/{max_players} {player_list} {hostname}:{port} Uptime: {uptime}");
+  /// - `server[SERVERNAME]`: Dynamic placeholder for each server's name and status (e.g., `server[MyServer]`, `
+  /// server[AnotherServer]`, `server[Lobby]`, etc.)
+  public Optional<String> format =
+    Optional.of("{players}/{max_players} {player_list} {hostname}:{port} Uptime: {uptime}");
 
   /// Template for `server[SERVERNAME]` placeholder in the channel topic
   ///
@@ -59,7 +61,8 @@ public class ChannelTopicConfig {
     this.format = config.getDisableableStringOrDefault("format", this.format);
     this.serverFormat = config.getDisableableStringOrDefault("server", this.serverFormat);
     this.serverOfflineFormat = config.getDisableableStringOrDefault("server_offline", this.serverOfflineFormat);
-    this.playerListNoPlayersHeader = config.getDisableableStringOrDefault("player_list_no_players_header", this.playerListNoPlayersHeader);
+    this.playerListNoPlayersHeader =
+      config.getDisableableStringOrDefault("player_list_no_players_header", this.playerListNoPlayersHeader);
     this.playerListHeader = config.getDisableableStringOrDefault("player_list_header", this.playerListHeader);
     this.playerListPlayerFormat = config.getOrDefault("player_list_player", this.playerListPlayerFormat);
     this.playerListSeparator = config.getOrDefault("player_list_separator", this.playerListSeparator);

@@ -122,10 +122,10 @@ public class Discord extends ListenerAdapter {
   private void loadChannels() {
     var defaultChannelId = VelocityDiscord.CONFIG.local.discord.mainChannelId;
     this.mainChannel = loadChannel(defaultChannelId);
-    this.proxyStartChannel = loadChannel(VelocityDiscord.CONFIG.global.discord.chat.proxyStart.channel.orElse(
-      defaultChannelId));
-    this.proxyStopChannel = loadChannel(VelocityDiscord.CONFIG.global.discord.chat.proxyStop.channel.orElse(
-      defaultChannelId));
+    this.proxyStartChannel =
+      loadChannel(VelocityDiscord.CONFIG.global.discord.chat.proxyStart.channel.orElse(defaultChannelId));
+    this.proxyStopChannel =
+      loadChannel(VelocityDiscord.CONFIG.global.discord.chat.proxyStop.channel.orElse(defaultChannelId));
 
     this.serverChannels.clear();
     for (var server : VelocityDiscord.SERVER.getAllServers()) {
@@ -192,7 +192,8 @@ public class Discord extends ListenerAdapter {
     }
 
     if (serverDiscordConfig.message.format.isPresent()) {
-      var message = new StringTemplate(serverDiscordConfig.message.format.get()).add("username", username)
+      var message = new StringTemplate(serverDiscordConfig.message.format.get())
+        .add("username", username)
         .add("server", VelocityDiscord.CONFIG.serverName(server))
         .add("message", content)
         .add("prefix", prefix.orElse(""))
@@ -226,7 +227,8 @@ public class Discord extends ListenerAdapter {
       return;
     }
 
-    var message = new StringTemplate(serverDiscordConfig.join.format.get()).add("username", player.getUsername())
+    var message = new StringTemplate(serverDiscordConfig.join.format.get())
+      .add("username", player.getUsername())
       .add("server", VelocityDiscord.CONFIG.serverName(server))
       .add("prefix", prefix.orElse(""))
       .toString();
@@ -253,7 +255,8 @@ public class Discord extends ListenerAdapter {
       return;
     }
 
-    var message = new StringTemplate(serverDiscordConfig.serverSwitch.format.get()).add("username", username)
+    var message = new StringTemplate(serverDiscordConfig.serverSwitch.format.get())
+      .add("username", username)
       .add("current", VelocityDiscord.CONFIG.serverName(current))
       .add("previous", VelocityDiscord.CONFIG.serverName(previous))
       .add("prefix", prefix.orElse(""))
@@ -276,7 +279,8 @@ public class Discord extends ListenerAdapter {
       return;
     }
 
-    var message = new StringTemplate(serverDiscordConfig.disconnect.format.get()).add("username", username)
+    var message = new StringTemplate(serverDiscordConfig.disconnect.format.get())
+      .add("username", username)
       .add("prefix", prefix.orElse(""))
       .toString();
 
@@ -296,7 +300,8 @@ public class Discord extends ListenerAdapter {
       return;
     }
 
-    var message = new StringTemplate(serverDiscordConfig.leave.format.get()).add("username", username)
+    var message = new StringTemplate(serverDiscordConfig.leave.format.get())
+      .add("username", username)
       .add("server", VelocityDiscord.CONFIG.serverName(server))
       .add("prefix", prefix.orElse(""))
       .toString();
@@ -314,7 +319,8 @@ public class Discord extends ListenerAdapter {
 
     if (serverDiscordConfig.death.format.isEmpty()) return;
 
-    var message = new StringTemplate(serverDiscordConfig.death.format.get()).add("username", username)
+    var message = new StringTemplate(serverDiscordConfig.death.format.get())
+      .add("username", username)
       .add("displayname", displayName)
       .add("death_message", death)
       .toString();
@@ -339,7 +345,8 @@ public class Discord extends ListenerAdapter {
 
     if (serverDiscordConfig.advancement.format.isEmpty()) return;
 
-    var message = new StringTemplate(serverDiscordConfig.advancement.format.get()).add("username", username)
+    var message = new StringTemplate(serverDiscordConfig.advancement.format.get())
+      .add("username", username)
       .add("displayname", displayname)
       .add("advancement_title", title)
       .add("advancement_description", description)
@@ -387,10 +394,9 @@ public class Discord extends ListenerAdapter {
     var serverDiscordConfig = VelocityDiscord.CONFIG.getServerConfig(server).getChatConfig();
 
     if (serverDiscordConfig.serverStart.format.isPresent()) {
-      var message = new StringTemplate(serverDiscordConfig.serverStart.format.get()).add(
-        "server",
-        VelocityDiscord.CONFIG.serverName(server)
-      ).toString();
+      var message = new StringTemplate(serverDiscordConfig.serverStart.format.get())
+        .add("server", VelocityDiscord.CONFIG.serverName(server))
+        .toString();
 
       var targetChannel = this.serverChannels.get(server).serverStartChannel;
       switch (serverDiscordConfig.serverStart.type) {
@@ -404,10 +410,9 @@ public class Discord extends ListenerAdapter {
     var serverDiscordConfig = VelocityDiscord.CONFIG.getServerConfig(server).getChatConfig();
 
     if (serverDiscordConfig.serverStart.format.isPresent()) {
-      var message = new StringTemplate(serverDiscordConfig.serverStart.format.get()).add(
-        "server",
-        VelocityDiscord.CONFIG.serverName(server)
-      ).toString();
+      var message = new StringTemplate(serverDiscordConfig.serverStart.format.get())
+        .add("server", VelocityDiscord.CONFIG.serverName(server))
+        .toString();
 
       var targetChannel = this.serverChannels.get(server).serverStopChannel;
       switch (serverDiscordConfig.serverStart.type) {
@@ -423,8 +428,8 @@ public class Discord extends ListenerAdapter {
     }
 
     if (this.lastPlayerCount != count) {
-      var message = new StringTemplate(VelocityDiscord.CONFIG.global.discord.activityText.get()).add("amount", count)
-        .toString();
+      var message =
+        new StringTemplate(VelocityDiscord.CONFIG.global.discord.activityText.get()).add("amount", count).toString();
 
       this.jda.getPresence().setActivity(Activity.playing(message));
 
@@ -444,13 +449,14 @@ public class Discord extends ListenerAdapter {
 
     // only generate player list if it's in the TOPIC_FORMAT
     if (config.channelTopic.format.get().contains("{player_list}")) {
-      var players = VelocityDiscord.SERVER.getAllPlayers()
+      var players = VelocityDiscord.SERVER
+        .getAllPlayers()
         .stream()
         .limit(config.channelTopic.playerListMaxCount)
-        .map(player -> new StringTemplate(config.channelTopic.playerListPlayerFormat).add(
-          "username",
-          player.getUsername()
-        ).add("ping", player.getPing()).toString())
+        .map(player -> new StringTemplate(config.channelTopic.playerListPlayerFormat)
+          .add("username", player.getUsername())
+          .add("ping", player.getPing())
+          .toString())
         .reduce("", (a, b) -> a + config.channelTopic.playerListSeparator + b);
 
       if (!players.isEmpty()) {
@@ -468,17 +474,16 @@ public class Discord extends ListenerAdapter {
 
     var s = VelocityDiscord.SERVER;
     var serverCount = s.getAllServers().size();
-    var serverList = s.getAllServers()
-      .stream()
-      .map(registeredServer -> registeredServer.getServerInfo().getName())
-      .toList();
+    var serverList =
+      s.getAllServers().stream().map(registeredServer -> registeredServer.getServerInfo().getName()).toList();
     var hostname = s.getBoundAddress().getHostName();
     var port = String.valueOf(s.getBoundAddress().getPort());
     var queryMotd = PlainTextComponentSerializer.plainText().serialize(s.getConfiguration().getMotd());
     var queryPort = s.getConfiguration().getQueryPort();
     var queryMaxPlayers = s.getConfiguration().getShowMaxPlayers();
     var pluginCount = s.getPluginManager().getPlugins().size();
-    var pluginList = s.getPluginManager()
+    var pluginList = s
+      .getPluginManager()
       .getPlugins()
       .stream()
       .map(plugin -> plugin.getDescription().getName())
@@ -525,10 +530,8 @@ public class Discord extends ListenerAdapter {
           var protocol = serverPing.getVersion().getProtocol();
           var motd = PlainTextComponentSerializer.plainText().serialize(serverPing.getDescriptionComponent());
 
-          var serverStatus = new StringTemplate(serverDiscordConfig.channelTopic.serverFormat.get()).add(
-              "name",
-              VelocityDiscord.CONFIG.serverName(name)
-            )
+          var serverStatus = new StringTemplate(serverDiscordConfig.channelTopic.serverFormat.get())
+            .add("name", VelocityDiscord.CONFIG.serverName(name))
             .add("players", online)
             .add("max_players", max)
             .add("version", ver)
@@ -544,10 +547,9 @@ public class Discord extends ListenerAdapter {
           continue;
         }
 
-        var serverStatus = new StringTemplate(serverDiscordConfig.channelTopic.serverOfflineFormat.get()).add(
-          "name",
-          VelocityDiscord.CONFIG.serverName(name)
-        ).toString();
+        var serverStatus = new StringTemplate(serverDiscordConfig.channelTopic.serverOfflineFormat.get())
+          .add("name", VelocityDiscord.CONFIG.serverName(name))
+          .toString();
 
         serverStatuses.put(name, serverStatus);
       }
@@ -559,7 +561,8 @@ public class Discord extends ListenerAdapter {
     if (serverDiscordConfig.channelTopic.format.isEmpty()) return "";
 
     // Build the message
-    var template = new StringTemplate(serverDiscordConfig.channelTopic.format.get()).add("players", playerCount)
+    var template = new StringTemplate(serverDiscordConfig.channelTopic.format.get())
+      .add("players", playerCount)
       .add("player_list", playerList)
       .add("servers", serverCount)
       .add("server_list", String.join(", ", serverList.stream().map(VelocityDiscord.CONFIG::serverName).toList()))
@@ -654,7 +657,8 @@ public class Discord extends ListenerAdapter {
 
     var avatar = new StringTemplate(webhookConfig.avatarUrl).add("username", username).add("uuid", uuid).toString();
 
-    var discordName = new StringTemplate(webhookConfig.username).add("username", username)
+    var discordName = new StringTemplate(webhookConfig.username)
+      .add("username", username)
       .add("server", VelocityDiscord.CONFIG.serverName(server))
       .toString();
 
@@ -697,7 +701,8 @@ public class Discord extends ListenerAdapter {
     var msg = message;
 
     for (var member : channels.chatChannel.getMembers()) {
-      msg = Pattern.compile(Pattern.quote("@" + member.getUser().getName()), Pattern.CASE_INSENSITIVE)
+      msg = Pattern
+        .compile(Pattern.quote("@" + member.getUser().getName()), Pattern.CASE_INSENSITIVE)
         .matcher(msg)
         .replaceAll(member.getAsMention());
     }
@@ -858,7 +863,7 @@ public class Discord extends ListenerAdapter {
       } catch (Exception e) {
         VelocityDiscord.LOGGER.error("Failed to create webhook client for server {}", this.serverName, e);
       }
-        return null;
+      return null;
     }
 
     private IncomingWebhookClient getMainWebhook(Discord discord) {
