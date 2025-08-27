@@ -11,15 +11,17 @@ import ooo.foooooooooooo.velocitydiscord.util.StringTemplate;
 
 import javax.annotation.Nonnull;
 import java.awt.*;
-import java.util.ArrayList;
-import java.util.HashMap;
+import java.net.URI;
+import java.util.*;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class MessageListener extends ListenerAdapter {
-  private static final Pattern LINK_REGEX =
-    Pattern.compile("[^:/?#\\s]+:(?://)?(?:[^?#\\s]+)?(?:\\?[^#\\s]+)?(?:#\\S+)?");
+  private static final Pattern LINK_REGEX = Pattern.compile(
+    "[hH][tT]{2}[pP][sS]?://([a-zA-Z0-9\\u00a1-\\uffff]+(:[a-zA-Z0-9\\u00a1-\\uffff]+)?@)" +
+      "?[a-zA-Z0-9\\u00a1-\\uffff][a-zA-Z0-9\\u00a1-\\uffff_-]{0,62}(?:\\.[a-zA-Z0-9\\u00a1-\\uffff_-]{1,61})*" +
+      "(?::\\d{1,5})?(?:/[a-zA-Z0-9\\u00a1-\\uffff_\\-().]*)*(?:[?#][a-zA-Z0-9\\u00a1-\\uffff_\\-()?/=&#%.*]*)?");
 
   private final HashMap<String, Discord.Channels> serverChannels;
   private final HashMap<Long, List<String>> channelToServersMap = new HashMap<>();
@@ -181,12 +183,16 @@ public class MessageListener extends ListenerAdapter {
       // Replace links with the link format
       content = LINK_REGEX.matcher(content).replaceAll(match -> {
         var url = match.group();
-        var replacement = new StringTemplate(serverMinecraftConfig.linkFormat.get())
-          .add("url", url)
-          .add("link_color", serverMinecraftConfig.linkColor)
-          .toString();
+        if (validateUrl(url)) {
+          var replacement = new StringTemplate(serverMinecraftConfig.linkFormat.get())
+            .add("url", url)
+            .add("link_color", serverMinecraftConfig.linkColor)
+            .toString();
 
-        return Matcher.quoteReplacement(replacement);
+          return Matcher.quoteReplacement(replacement);
+        } else {
+          return Matcher.quoteReplacement(url);
+        }
       });
     }
 
@@ -194,6 +200,16 @@ public class MessageListener extends ListenerAdapter {
     message_chunk.add("attachments", String.join(" ", attachmentChunks));
 
     return message_chunk.toString();
+  }
+
+  private static final Set<String> SUPPORTED_URI_PROTOCOLS = Set.of("http", "https");
+
+  private boolean validateUrl(String url) {
+    try {
+      return SUPPORTED_URI_PROTOCOLS.contains(new URI(url).getScheme().toLowerCase(Locale.ROOT));
+    } catch (Exception e) {
+      return false;
+    }
   }
 
   private String escapeTags(String input) {

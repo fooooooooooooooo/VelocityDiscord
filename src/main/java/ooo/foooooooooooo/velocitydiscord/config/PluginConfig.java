@@ -58,7 +58,6 @@ public class PluginConfig implements ServerConfig {
     if (error != null) logger.error(error);
 
     this.serverOverridesMap = loadOverrides(this.global, this.config);
-
   }
 
   private static Config loadFile(Path dataDir) {
@@ -124,7 +123,7 @@ public class PluginConfig implements ServerConfig {
 
     if (overrideConfig == null) {
       logger.debug("No server overrides found");
-      return null;
+      return new HashMap<>();
     }
 
     var overrides = new HashMap<String, ServerOverrideConfig>();
