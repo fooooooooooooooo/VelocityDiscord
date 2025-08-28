@@ -409,14 +409,14 @@ public class Discord extends ListenerAdapter {
   public void onServerStop(String server) {
     var serverDiscordConfig = VelocityDiscord.CONFIG.getServerConfig(server).getChatConfig();
 
-    if (serverDiscordConfig.serverStart.format.isPresent()) {
-      var message = new StringTemplate(serverDiscordConfig.serverStart.format.get())
+    if (serverDiscordConfig.serverStop.format.isPresent()) {
+      var message = new StringTemplate(serverDiscordConfig.serverStop.format.get())
         .add("server", VelocityDiscord.CONFIG.serverName(server))
         .toString();
 
       var targetChannel = this.serverChannels.get(server).serverStopChannel;
-      switch (serverDiscordConfig.serverStart.type) {
-        case EMBED -> sendEmbedMessage(targetChannel, message, serverDiscordConfig.serverStart.embedColor);
+      switch (serverDiscordConfig.serverStop.type) {
+        case EMBED -> sendEmbedMessage(targetChannel, message, serverDiscordConfig.serverStop.embedColor);
         case TEXT -> sendMessage(targetChannel, message);
       }
     }
