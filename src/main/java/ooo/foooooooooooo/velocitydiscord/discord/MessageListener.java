@@ -20,8 +20,8 @@ import java.util.regex.Pattern;
 public class MessageListener extends ListenerAdapter {
   private static final Pattern LINK_REGEX = Pattern.compile(
     "[hH][tT]{2}[pP][sS]?://([a-zA-Z0-9\\u00a1-\\uffff]+(:[a-zA-Z0-9\\u00a1-\\uffff]+)?@)" +
-      "?[a-zA-Z0-9\\u00a1-\\uffff][a-zA-Z0-9\\u00a1-\\uffff_-]{0,62}(?:\\.[a-zA-Z0-9\\u00a1-\\uffff_-]{1,61})*" +
-      "(?::\\d{1,5})?(?:/[a-zA-Z0-9\\u00a1-\\uffff_\\-().]*)*(?:[?#][a-zA-Z0-9\\u00a1-\\uffff_\\-()?/=&#%.*]*)?");
+    "?[a-zA-Z0-9\\u00a1-\\uffff][a-zA-Z0-9\\u00a1-\\uffff_-]{0,62}(?:\\.[a-zA-Z0-9\\u00a1-\\uffff_-]{1,62})*" +
+    "(?::\\d{1,5})?(?:/[a-zA-Z0-9\\u00a1-\\uffff_\\-().]*)*(?:[?#][a-zA-Z0-9\\u00a1-\\uffff_\\-()?/=&#%.*]*)?");
 
   private final HashMap<String, Discord.Channels> serverChannels;
   private final HashMap<Long, List<String>> channelToServersMap = new HashMap<>();
@@ -75,7 +75,7 @@ public class MessageListener extends ListenerAdapter {
     for (var server : VelocityDiscord.SERVER.getAllServers()) {
       var serverName = server.getServerInfo().getName();
       if (!VelocityDiscord.CONFIG.global.excludedServersReceiveMessages &&
-        VelocityDiscord.CONFIG.serverDisabled(serverName)) {
+          VelocityDiscord.CONFIG.serverDisabled(serverName)) {
         continue;
       }
 
@@ -212,7 +212,10 @@ public class MessageListener extends ListenerAdapter {
     }
   }
 
+  /**
+   * `<` and `>`  within another tag break everything, and `‹` `›` are very close in minecraft font
+   */
   private String escapeTags(String input) {
-    return input.replace("<", "ᐸ").replace(">", "ᐳ");
+    return input.replace("<", "‹").replace(">", "›");
   }
 }
