@@ -1,7 +1,7 @@
 #:schema https://raw.githubusercontent.com/fooooooooooooooo/VelocityDiscord/refs/heads/master/schema.json
 
 # Don't change this
-config_version = "2.0"
+config_version = "2.1"
 
 # Comma separated list of server names to exclude from the bridge (defined under [servers] inside your velocity.toml)
 # e.g., exclude_servers = ["lobby", "survival"]
@@ -97,14 +97,14 @@ player_list_max_count = 10
 
 [discord.webhook]
 # Full webhook URL to send chat messages to
-webhook_url = ""
+url = ""
 # Full URL of an avatar service to get the player's avatar from
 # Placeholders available: {uuid}, {username}
 avatar_url = "https://visage.surgeplay.com/face/96/{uuid}"
 
 # The format of the webhook's username
 # Placeholders available: {username}, {server}
-webhook_username = "{username}"
+username = "{username}"
 
 # Minecraft > Discord message formats
 # Uses the same formatting as the Discord client (a subset of markdown)
