@@ -97,14 +97,14 @@ player_list_max_count = 10
 
 [discord.webhook]
 # Full webhook URL to send chat messages to
-webhook_url = ""
+url = ""
 # Full URL of an avatar service to get the player's avatar from
 # Placeholders available: {uuid}, {username}
 avatar_url = "https://visage.surgeplay.com/face/96/{uuid}"
 
 # The format of the webhook's username
 # Placeholders available: {username}, {server}
-webhook_username = "{username}"
+username = "{username}"
 
 # Minecraft > Discord message formats
 # Uses the same formatting as the Discord client (a subset of markdown)

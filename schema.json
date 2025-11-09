@@ -10,7 +10,7 @@
       "type": "object",
       "unevaluatedProperties": false,
       "properties": {
-        "webhook_url": {
+        "url": {
           "description": "Full webhook URL to send more fancy Minecraft chat messages to",
           "type": "string"
         },
@@ -18,7 +18,7 @@
           "description": "Full URL of an avatar service to get the player's avatar from\n\nPlaceholders available: {uuid}, {username}",
           "type": "string"
         },
-        "webhook_username": {
+        "username": {
           "description": "The format of the webhook's username\n\nPlaceholders available: {username}, {server}",
           "type": "string"
         }

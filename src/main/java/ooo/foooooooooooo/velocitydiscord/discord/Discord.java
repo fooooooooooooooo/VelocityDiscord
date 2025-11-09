@@ -869,7 +869,7 @@ public class Discord extends ListenerAdapter {
     private IncomingWebhookClient getMainWebhook(Discord discord) {
       if (this.mainWebhook == null) {
         var config = VelocityDiscord.CONFIG.getServerConfig(this.serverName).getDiscordConfig().webhook;
-        if (config.isInvalid()) {
+        if (!config.isInvalid()) {
           this.mainWebhook = createClient(discord, config);
         }
       }
