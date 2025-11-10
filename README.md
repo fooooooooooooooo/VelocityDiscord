@@ -49,4 +49,4 @@ Chat from all servers gets bridged with a discord channel
 
 ### Configuration
 
-The config file is generated at `plugins/discord/config.toml`. See [here](wiki/Configuration) for the default config
+The config file is generated at `plugins/discord/config.toml`. See [here](https://github.com/fooooooooooooooo/VelocityDiscord/wiki/Configuration) for the default config
