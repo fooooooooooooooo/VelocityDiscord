@@ -149,12 +149,13 @@ public class Discord extends ListenerAdapter {
       );
     }
 
+    var guild = this.mainChannel.getGuild();
     if (!this.commands.isEmpty()) {
-      var guild = this.mainChannel.getGuild();
-
       for (var entry : this.commands.entrySet()) {
         guild.upsertCommand(entry.getKey(), entry.getValue().description()).queue();
       }
+    } else {
+      guild.updateCommands().queue();
     }
   }
 
