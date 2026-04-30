@@ -46,7 +46,12 @@ public class VelocityListener {
 
     var prefix = getPrefix(uuid);
 
-    this.discord.onPlayerChat(username, uuid.toString(), prefix, server, event.getMessage());
+    var message = event.getMessage();
+    if (event.getResult().getMessage().isPresent()) {
+      message = event.getResult().getMessage().get();
+    }
+
+    this.discord.onPlayerChat(username, uuid.toString(), prefix, server, message);
   }
 
   @Subscribe
