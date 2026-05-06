@@ -1,5 +1,5 @@
 plugins {
-  id 'com.gradleup.shadow' version '8.3.0'
+  id 'com.gradleup.shadow' version '9.3.0'
   id 'java-library'
 }
 
@@ -30,6 +30,7 @@ dependencies {
 
   shade implementation("net.dv8tion:JDA:$jda_version") {
     exclude module: 'opus-java'
+    exclude module: 'tink'
   }
 
   compileOnly "net.kyori:adventure-text-minimessage:$minimessage_version"
@@ -39,10 +40,11 @@ dependencies {
 
   testImplementation platform("org.junit:junit-bom:$junit_version")
   testImplementation 'org.junit.jupiter:junit-jupiter'
+  testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
   testImplementation "com.electronwill.night-config:toml:$night_config_version"
   testImplementation "ch.qos.logback:logback-classic:$logback_version"
 
-  compileOnly 'net.luckperms:api:5.4'
+  compileOnly "net.luckperms:api:$luckperms_api_version"
 }
 
 shadowJar {

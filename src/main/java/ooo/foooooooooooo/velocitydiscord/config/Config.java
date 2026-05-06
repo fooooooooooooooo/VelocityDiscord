@@ -1,9 +1,10 @@
 package ooo.foooooooooooo.velocitydiscord.config;
 
-import javax.annotation.Nullable;
 import java.awt.*;
 import java.util.HashMap;
 import java.util.Optional;
+
+import org.jetbrains.annotations.Nullable;
 
 @SuppressWarnings({
   "OptionalUsedAsFieldOrParameterType",
@@ -39,6 +40,7 @@ public class Config {
     if (value instanceof com.electronwill.nightconfig.core.Config subConfig) {
       var map = new HashMap<String, T>();
       for (var entry : subConfig.entrySet()) {
+        if (entry == null) continue;
         map.put(entry.getKey(), entry.getValue());
       }
       return map;

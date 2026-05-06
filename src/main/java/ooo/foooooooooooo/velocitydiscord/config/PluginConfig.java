@@ -4,10 +4,11 @@ import com.electronwill.nightconfig.core.CommentedConfig;
 import com.electronwill.nightconfig.core.file.FileConfig;
 import ooo.foooooooooooo.velocitydiscord.Constants;
 import ooo.foooooooooooo.velocitydiscord.config.definitions.*;
+
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.Nullable;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -129,6 +130,11 @@ public class PluginConfig implements ServerConfig {
     var overrides = new HashMap<String, ServerOverrideConfig>();
 
     for (var entry : overrideConfig.entrySet()) {
+      if (entry == null) {
+        logger.warn("Invalid server override entry: null");
+        continue;
+      }
+
       if (entry.getValue() instanceof com.electronwill.nightconfig.core.Config serverOverride) {
         var serverName = entry.getKey();
 

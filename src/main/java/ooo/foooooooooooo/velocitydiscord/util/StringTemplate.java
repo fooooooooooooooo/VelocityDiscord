@@ -1,44 +1,45 @@
 package ooo.foooooooooooo.velocitydiscord.util;
 
-import javax.annotation.Nonnull;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.jetbrains.annotations.NotNull;
+
 public class StringTemplate {
   private final Map<String, String> variables = new HashMap<>();
-  @Nonnull
+  @NotNull
   private String template;
 
-  public StringTemplate(@Nonnull String template) {
+  public StringTemplate(@NotNull String template) {
     this.template = template;
   }
 
-  public StringTemplate add(@Nonnull String key, @Nonnull String value) {
+  public StringTemplate add(@NotNull String key, @NotNull String value) {
     this.variables.put(key, value);
 
     return this;
   }
 
-  public StringTemplate add(@Nonnull String key, int value) {
+  public StringTemplate add(@NotNull String key, int value) {
     this.variables.put(key, String.valueOf(value));
 
     return this;
   }
 
-  public StringTemplate add(@Nonnull String key, boolean value) {
+  public StringTemplate add(@NotNull String key, boolean value) {
     this.variables.put(key, String.valueOf(value));
 
     return this;
   }
 
-  public StringTemplate add(@Nonnull String key, double value) {
+  public StringTemplate add(@NotNull String key, double value) {
     this.variables.put(key, String.valueOf(value));
 
     return this;
   }
 
   @Override
-  @Nonnull
+  @NotNull
   public String toString() {
     var result = this.template;
 
@@ -49,7 +50,7 @@ public class StringTemplate {
     return result;
   }
 
-  public StringTemplate replace(@Nonnull String target, @Nonnull String replacement) {
+  public StringTemplate replace(@NotNull String target, @NotNull String replacement) {
     this.template = this.template.replace(target, replacement);
 
     return this;

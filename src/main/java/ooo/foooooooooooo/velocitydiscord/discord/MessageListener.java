@@ -9,13 +9,14 @@ import net.kyori.adventure.text.minimessage.MiniMessage;
 import ooo.foooooooooooo.velocitydiscord.VelocityDiscord;
 import ooo.foooooooooooo.velocitydiscord.util.StringTemplate;
 
-import javax.annotation.Nonnull;
 import java.awt.*;
 import java.net.URI;
 import java.util.*;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import org.jetbrains.annotations.NotNull;
 
 public class MessageListener extends ListenerAdapter {
   private static final Pattern LINK_REGEX = Pattern.compile(
@@ -44,7 +45,7 @@ public class MessageListener extends ListenerAdapter {
   }
 
   @Override
-  public void onMessageReceived(@Nonnull MessageReceivedEvent event) {
+  public void onMessageReceived(@NotNull MessageReceivedEvent event) {
     if (!event.isFromType(ChannelType.TEXT)) {
       VelocityDiscord.LOGGER.trace("ignoring non text channel message");
       return;
@@ -113,10 +114,7 @@ public class MessageListener extends ListenerAdapter {
 
     var member = guild.getMember(author);
     if (member != null) {
-      color = member.getColor();
-      if (color == null) {
-        color = Color.white;
-      }
+      color = Objects.requireNonNullElse(member.getColors().getPrimary(), Color.white);
       nickname = member.getEffectiveName();
 
       // Get the role prefix
@@ -136,15 +134,12 @@ public class MessageListener extends ListenerAdapter {
       .add("discord_color", serverMinecraftConfig.discordColor)
       .toString();
 
-    var display_name = author.getGlobalName();
-
-    if (display_name == null) {
-      display_name = author.getName();
-    }
+    var username = author.getName();
+    var display_name = Objects.requireNonNullElse(author.getGlobalName(), username);
 
     var username_chunk = new StringTemplate(serverMinecraftConfig.usernameChunkFormat)
       .add("role_color", hex)
-      .add("username", escapeTags(author.getName()))
+      .add("username", escapeTags(username))
       .add("display_name", escapeTags(display_name))
       .add("nickname", escapeTags(nickname))
       .toString();

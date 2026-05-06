@@ -25,14 +25,13 @@ import ooo.foooooooooooo.velocitydiscord.discord.commands.ListCommand;
 import ooo.foooooooooooo.velocitydiscord.discord.message.IQueuedMessage;
 import ooo.foooooooooooo.velocitydiscord.util.StringTemplate;
 
-import javax.annotation.Nonnull;
-import java.awt.*;
+import java.awt.Color;
 import java.lang.management.ManagementFactory;
 import java.util.*;
-import java.util.List;
-import java.util.Queue;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
+
+import org.jetbrains.annotations.NotNull;
 
 public class Discord extends ListenerAdapter {
   private static final Pattern EveryoneAndHerePattern = Pattern.compile("@(?<ping>everyone|here)");
@@ -103,7 +102,7 @@ public class Discord extends ListenerAdapter {
   // region JDA events
 
   @Override
-  public void onReady(@Nonnull ReadyEvent event) {
+  public void onReady(@NotNull ReadyEvent event) {
     VelocityDiscord.LOGGER.info(
       "Bot ready, Guilds: {} ({} available)",
       event.getGuildTotalCount(),
@@ -160,7 +159,7 @@ public class Discord extends ListenerAdapter {
   }
 
   @Override
-  public void onSlashCommandInteraction(@Nonnull SlashCommandInteractionEvent event) {
+  public void onSlashCommandInteraction(@NotNull SlashCommandInteractionEvent event) {
     if (!this.ready) return;
 
     var command = event.getName();
@@ -479,7 +478,8 @@ public class Discord extends ListenerAdapter {
       s.getAllServers().stream().map(registeredServer -> registeredServer.getServerInfo().getName()).toList();
     var hostname = s.getBoundAddress().getHostName();
     var port = String.valueOf(s.getBoundAddress().getPort());
-    var queryMotd = PlainTextComponentSerializer.plainText().serialize(s.getConfiguration().getMotd());
+    var queryMotdComponent = s.getConfiguration().getMotd();
+    var queryMotd = queryMotdComponent != null ? PlainTextComponentSerializer.plainText().serialize(queryMotdComponent) : "";
     var queryPort = s.getConfiguration().getQueryPort();
     var queryMaxPlayers = s.getConfiguration().getShowMaxPlayers();
     var pluginCount = s.getPluginManager().getPlugins().size();
@@ -529,7 +529,8 @@ public class Discord extends ListenerAdapter {
           var max = players.getMax();
           var ver = serverPing.getVersion().getName();
           var protocol = serverPing.getVersion().getProtocol();
-          var motd = PlainTextComponentSerializer.plainText().serialize(serverPing.getDescriptionComponent());
+          var descriptionComponent = serverPing.getDescriptionComponent();
+          var motd = descriptionComponent != null ? PlainTextComponentSerializer.plainText().serialize(descriptionComponent) : "";
 
           var serverStatus = new StringTemplate(serverDiscordConfig.channelTopic.serverFormat.get())
             .add("name", VelocityDiscord.CONFIG.serverName(name))
@@ -631,7 +632,7 @@ public class Discord extends ListenerAdapter {
 
   // region Message sending
 
-  private void sendMessage(TextChannel targetChannel, @Nonnull String message) {
+  private void sendMessage(TextChannel targetChannel, @NotNull String message) {
     if (this.ready) {
       targetChannel.sendMessage(message).queue();
     } else {

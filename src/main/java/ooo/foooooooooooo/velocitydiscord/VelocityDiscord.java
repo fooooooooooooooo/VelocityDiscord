@@ -15,9 +15,10 @@ import ooo.foooooooooooo.velocitydiscord.compat.LuckPerms;
 import ooo.foooooooooooo.velocitydiscord.config.PluginConfig;
 import ooo.foooooooooooo.velocitydiscord.discord.Discord;
 import ooo.foooooooooooo.velocitydiscord.yep.YepListener;
+
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 
-import javax.annotation.Nullable;
 import java.nio.file.Path;
 import java.util.concurrent.TimeUnit;
 
