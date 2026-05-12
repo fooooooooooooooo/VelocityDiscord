@@ -29,6 +29,10 @@ public class VelocityListener {
 
   @Subscribe
   public void onPlayerChat(PlayerChatEvent event) {
+    if (!event.getResult().isAllowed()) {
+      return;
+    }
+
     var currentServer = event.getPlayer().getCurrentServer();
 
     if (currentServer.isEmpty()) {
@@ -46,7 +50,12 @@ public class VelocityListener {
 
     var prefix = getPrefix(uuid);
 
-    this.discord.onPlayerChat(username, uuid.toString(), prefix, server, event.getMessage());
+    var message = event.getMessage();
+    if (event.getResult().getMessage().isPresent()) {
+      message = event.getResult().getMessage().get();
+    }
+
+    this.discord.onPlayerChat(username, uuid.toString(), prefix, server, message);
   }
 
   @Subscribe
