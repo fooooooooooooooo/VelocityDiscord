@@ -29,6 +29,10 @@ public class VelocityListener {
 
   @Subscribe
   public void onPlayerChat(PlayerChatEvent event) {
+    if (!event.getResult().isAllowed()) {
+      return;
+    }
+
     var currentServer = event.getPlayer().getCurrentServer();
 
     if (currentServer.isEmpty()) {
